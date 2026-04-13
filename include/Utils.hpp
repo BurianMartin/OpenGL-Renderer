@@ -25,3 +25,5 @@
 #define debug_warn(x)
 #define debug_error(x)
 #endif
+
+#define n_rgb(x) (static_cast<float>(x) / 255.0f)

@@ -1,0 +1,22 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c17",
+            "intelliSenseMode": "linux-gcc-x64",
+            "compilerArgs": [
+                "/home/buri/OpenGL_Experiments/include",
+                "/home/buri/OpenGL_Experiments/include/App",
+                "/home/buri/OpenGL_Experiments/include/Core",
+                "/home/buri/OpenGL_Experiments/src/App",
+                "/home/buri/OpenGL_Experiments/src"
+            ]
+        }
+    ],
+    "version": 4
+}

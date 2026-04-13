@@ -2,9 +2,17 @@
 
 Application::Application()
 {
-    debug_info("App created");
-    debug_warn("App created");
-    debug_error("App created");
+
+    Init();
+
+    float vertices[] = {
+        0.0f, 0.5f, 0.0f,
+        -0.5f, -0.5f, 0.0f,
+        0.5f, -0.5f, 0.0f};
+
+    Model triangle(vertices, sizeof(vertices), nullptr, 0, GL_TRIANGLES);
+
+    scene.Add_Model(std::move(triangle), std::make_unique<Shader>("/home/buri/OpenGL_Experiments/shaders/vertex.glsl", "/home/buri/OpenGL_Experiments/shaders/time_color.glsl"));
 }
 
 Application::~Application() {}
@@ -17,7 +25,7 @@ void Application::Init()
         return;
     }
 
-    window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
+    window = glfwCreateWindow(1080, 1080, "Hello World", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -26,23 +34,38 @@ void Application::Init()
 
         return;
     }
+
+    glfwMakeContextCurrent(window);
+
+    if (!gladLoadGL(glfwGetProcAddress))
+    {
+        debug_error("Erorr while initializing GLAD");
+    }
+
+    renderer.Init();
 }
 
 void Application::Run()
 {
-    glfwMakeContextCurrent(window);
+
     while (!glfwWindowShouldClose(window))
     {
+        renderer.Render_Frame(scene);
         /* Render here */
-        glClear(GL_COLOR_BUFFER_BIT);
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
 
         /* Poll for and process events */
         glfwPollEvents();
-    }
 
+        Handle_Events();
+    }
+    scene.Clear();
     glfwTerminate();
     return;
+}
+
+void Application::Handle_Events()
+{
 }
