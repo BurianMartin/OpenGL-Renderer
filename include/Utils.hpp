@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include <stdexcept>
 
 /*
  * This is an include for general purpouse macros, constants and defines
@@ -19,6 +20,7 @@
 #define debug_error(x)                                                  \
     {                                                                   \
         std::cout << "\x1B[31m" << "Dbg - Error: " << x << "\033[0m\n"; \
+        throw std::runtime_error("");                                   \
     }
 #else
 #define debug_info(x)
