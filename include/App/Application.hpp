@@ -2,11 +2,10 @@
 #include "Utils.hpp"
 #include "Scene.hpp"
 #include "Renderer.hpp"
+#include "App/BaseLayer.hpp"
 
 #include <glad/gl.h>
-
 #include <GLFW/glfw3.h>
-
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -25,6 +24,8 @@ namespace Solitare
 
         GLint current_scene_ = 0;
 
+        void Init();
+
     public:
         Application();
         ~Application();
@@ -32,6 +33,8 @@ namespace Solitare
         void Run();
 
         void Destroy();
+
+        void AddScene(std::shared_ptr<Core::Scene> scene); // Returns the scene ID in the vector of scenes
     };
 
 } // namespace Solitare

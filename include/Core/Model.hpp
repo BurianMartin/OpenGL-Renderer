@@ -8,13 +8,16 @@ namespace Core
 {
     class Model
     {
-        const std::shared_ptr<Mesh> mesh; // non-owning reference (or shared_ptr)
-        glm::vec3 position;
-        glm::vec3 scale;
-        glm::quat rotation; // prefer quat over Euler to avoid gimbal lock
+        const std::shared_ptr<Mesh> mesh_; // non-owning reference (or shared_ptr)
+        glm::vec3 position_;
+        glm::vec3 scale_;
+        glm::quat rotation_; // prefer quat over Euler to avoid gimbal lock
 
     public:
         void Draw() const;
         glm::mat4 getModelMatrix() const;
+
+        Model(std::shared_ptr<Mesh> mesh) : mesh_(mesh) {}
+        ~Model() = default;
     };
 }

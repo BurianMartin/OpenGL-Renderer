@@ -1,4 +1,8 @@
+#pragma once
 #include "Core/Layer.hpp"
+#include "Model.hpp"
+#include "Mesh.hpp"
+#include "Shader.hpp"
 
 #include <glad/gl.h>
 
@@ -8,13 +12,14 @@ namespace Solitare
     {
     public:
         BaseLayer();
-        ~BaseLayer();
+        ~BaseLayer() = default;
 
         void OnEvent() override;
         void OnUpdate() override;
         void Transition() override;
         void Suspend() const override;
         void OnRender() const override;
+        void Destroy() override;
     };
 
 } // namespace Solitare

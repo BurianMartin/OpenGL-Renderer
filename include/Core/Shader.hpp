@@ -10,32 +10,36 @@
 #include <fstream>
 #include <sstream>
 
-class Shader
+namespace Core
 {
-public:
-    GLuint ID;
 
-    Shader(const char *vertexPath, const char *fragmentPath);
-    ~Shader();
+    class Shader
+    {
+    public:
+        GLuint ID;
 
-    void Use();
+        Shader(const char *vertexPath, const char *fragmentPath);
+        ~Shader();
 
-    void SetBool(const std::string &name, bool value);
+        void Use();
 
-    void SetInt(const std::string &name, int value);
+        void SetBool(const std::string &name, bool value);
 
-    void SetFloat(const std::string &name, float value);
+        void SetInt(const std::string &name, int value);
 
-    void SetVec2(const std::string &name, const glm::vec2 &value);
-    void SetVec3(const std::string &name, const glm::vec3 &value);
-    void SetVec4(const std::string &name, const glm::vec4 &value);
+        void SetFloat(const std::string &name, float value);
 
-    void SetMat2(const std::string &name, const glm::mat2 &value);
-    void SetMat3(const std::string &name, const glm::mat3 &value);
-    void SetMat4(const std::string &name, const glm::mat4 &value);
+        void SetVec2(const std::string &name, const glm::vec2 &value);
+        void SetVec3(const std::string &name, const glm::vec3 &value);
+        void SetVec4(const std::string &name, const glm::vec4 &value);
 
-private:
-    void CheckCompileErrors(GLuint shader, const std::string &type);
+        void SetMat2(const std::string &name, const glm::mat2 &value);
+        void SetMat3(const std::string &name, const glm::mat3 &value);
+        void SetMat4(const std::string &name, const glm::mat4 &value);
 
-    std::string LoadFile(const char *path);
-};
+    private:
+        void CheckCompileErrors(GLuint shader, const std::string &type);
+
+        std::string LoadFile(const char *path);
+    };
+} // namespace Core

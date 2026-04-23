@@ -9,14 +9,16 @@ namespace Core
     class Scene
     {
     private:
-        std::vector<Layer> layers_;
+        std::vector<std::shared_ptr<Layer>> layers_;
 
     public:
         Scene();
-        ~Scene();
+        ~Scene() = default;
 
-        void AddLayer(const Layer &layer);
+        void AddLayer(std::shared_ptr<Layer> layer);
 
-        const std::vector<Layer> &GetLayers() const;
+        const std::vector<std::shared_ptr<Layer>> &GetLayers() const;
+
+        void Destroy();
     };
 }
