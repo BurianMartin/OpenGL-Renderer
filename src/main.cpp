@@ -2,9 +2,11 @@
 
 int main(void)
 {
-    Application App;
+    Solitare::Application App;
 
     App.Run();
+
+    App.Destroy();
 
     return 0;
 }

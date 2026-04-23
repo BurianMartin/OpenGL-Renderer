@@ -1,49 +1,37 @@
 #pragma once
-
-#include <memory>
-
 #include "Utils.hpp"
 #include "Scene.hpp"
 #include "Renderer.hpp"
 
-#define NEXT_SCENE 0b00000001
-#define PREV_SCENE 0b00000010
+#include <glad/gl.h>
 
-class Application
+#include <GLFW/glfw3.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+#include <vector>
+
+namespace Solitare
 {
-private:
-    GLFWwindow *window;
-    Renderer renderer;
-    std::vector<Scene> scenes;
-
-    GLuint current_scene;
-
-    uint8_t flags;
-
-    void Init();
-    void Handle_Internal_Events();
-    void Clear_Flags();
-
-public:
-    Application();
-    ~Application();
-
-    void Run();
-
-    void Next_Scene();
-    void Prev_Scene();
-
-    enum class Direction
+    class Application
     {
-        Left = 0,
-        Right,
-        Down,
-        Up,
-        Forward,
-        Backward
+    private:
+        Core::Renderer renderer;
+        GLFWwindow *window;
+
+        std::vector<std::shared_ptr<Core::Scene>> scenes_;
+
+        GLint current_scene_ = 0;
+
+    public:
+        Application();
+        ~Application();
+
+        void Run();
+
+        void Destroy();
     };
 
-    void Move_Cam(Direction dir);
-
-    static void Handle_Key_Events(GLFWwindow *window, int key, int scancode, int action, int mods);
-};
+} // namespace Solitare

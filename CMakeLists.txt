@@ -13,9 +13,8 @@ find_package(glm REQUIRED)
 add_executable(OpenGL_App 
         src/main.cpp
         src/glad/gl.c  
-        src/App/Scene.cpp
+        src/Core/Scene.cpp
         src/Core/Model.cpp
-        src/Core/Camera.cpp
         src/Core/Shader.cpp
         src/Core/Renderer.cpp
         src/App/Application.cpp

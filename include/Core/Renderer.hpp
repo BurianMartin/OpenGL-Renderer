@@ -1,21 +1,20 @@
 #pragma once
 #include "Utils.hpp"
-#include "Shader.hpp"
 #include "Scene.hpp"
 
-#include <glad/gl.h>
-#include <GLFW/glfw3.h>
+#include <memory>
 
-class Renderer
+namespace Core
 {
-private:
-    ;
+    class Renderer
+    {
+    private:
+        /* data */
+    public:
+        Renderer() {}
+        ~Renderer() {}
 
-public:
-    Renderer();
-    ~Renderer();
+        void RenderScene(std::shared_ptr<Scene> scene);
+    };
 
-    void Init();
-
-    void Render_Frame(Scene &scene);
-};
+} // namespace Core
