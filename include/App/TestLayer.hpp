@@ -3,16 +3,17 @@
 #include "Model.hpp"
 #include "Mesh.hpp"
 #include "Shader.hpp"
+#include "Colors.hpp"
 
 #include <glad/gl.h>
 
 namespace Solitare
 {
-    class BaseLayer : public Core::Layer
+    class TestLayer : public Core::Layer
     {
     public:
-        BaseLayer();
-        ~BaseLayer() = default;
+        TestLayer();
+        ~TestLayer() = default;
 
         void OnEvent() override;
         void OnUpdate() override;

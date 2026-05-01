@@ -11,8 +11,8 @@ namespace Core
     private:
         /* data */
     public:
-        Renderer() {}
-        ~Renderer() {}
+        Renderer() = default;
+        ~Renderer() = default;
 
         void RenderScene(std::shared_ptr<Scene> scene);
     };

@@ -18,7 +18,7 @@ add_executable(OpenGL_App
         src/Core/Shader.cpp
         src/Core/Renderer.cpp
         src/App/Application.cpp
-        src/App/BaseLayer.cpp
+        src/App/TestLayer.cpp
         src/Core/Mesh.cpp
     ) 
 

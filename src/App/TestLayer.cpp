@@ -1,6 +1,7 @@
-#include "App/BaseLayer.hpp"
+#include "App/TestLayer.hpp"
+#include "TestLayer.hpp"
 
-Solitare::BaseLayer::BaseLayer()
+Solitare::TestLayer::TestLayer()
 {
     float vertices[] = {
         0.0f, 0.5f, 0.0f,
@@ -27,42 +28,41 @@ Solitare::BaseLayer::BaseLayer()
         "shaders/vertex.glsl",
         "shaders/solid_color.glsl");
 
+    glUseProgram(solidColorShader->ID);
+
+    solidColorShader->SetVec4("triangle_color", Color_A1::Magenta);
+
     shaderModels_[solidColorShader].push_back(model);
 }
 
-void Solitare::BaseLayer::OnEvent()
-{
-}
-void Solitare::BaseLayer::OnUpdate()
+void Solitare::TestLayer::OnEvent()
 {
 }
 
-void Solitare::BaseLayer::Transition()
+void Solitare::TestLayer::OnUpdate()
 {
 }
 
-void Solitare::BaseLayer::Suspend() const
+void Solitare::TestLayer::Transition()
 {
 }
 
-void Solitare::BaseLayer::Destroy()
+void Solitare::TestLayer::Suspend() const
 {
 }
 
-void Solitare::BaseLayer::OnRender() const
+void Solitare::TestLayer::Destroy()
 {
-    debug_info("Rendering BaseLayer");
+}
 
-    glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-
+void Solitare::TestLayer::OnRender() const
+{
     for (const auto &[shader, models] : shaderModels_)
     {
         shader->Use();
         for (const auto &model : models)
         {
             model->Draw();
-            debug_info("Drawing a model");
         }
     }
 }
