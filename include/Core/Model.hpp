@@ -13,6 +13,8 @@ namespace Core
         glm::vec3 scale_;
         glm::quat rotation_; // prefer quat over Euler to avoid gimbal lock
 
+        // TODO: Add textures to models after adding complex meshes
+
     public:
         void Draw() const;
         glm::mat4 getModelMatrix() const;

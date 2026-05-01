@@ -44,6 +44,8 @@ namespace Core
         unsigned int getTriangleCount() const { return indexCount / 3; }
         GLenum getDrawMode() const { return drawMode; }
 
+        // TODO: Add complex meshes like a cube, sphere and others
+
     private:
         void setup(const std::vector<Vertex> &vertices, const std::vector<unsigned int> &indices);
         void destroy();
