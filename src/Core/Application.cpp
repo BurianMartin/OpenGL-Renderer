@@ -1,18 +1,18 @@
-#include "App/Application.hpp"
+#include "Core/Application.hpp"
+#include "Application.hpp"
 
-namespace Solitare
+namespace Core
 {
-
-    Application::Application()
+    Application::Application(WindowSpecification specification) : specification_(specification)
     {
         Init();
 
         auto testScene = std::make_shared<Core::Scene>();
-        auto testLayer = std::make_shared<TestLayer>();
+        auto testLayer = std::make_shared<Solitare::TestLayer>();
 
         testScene->AddLayer(testLayer);
 
-        testScene->SetBackgroundColor(Color_A1::Lime);
+        testScene->SetBackgroundColor(Solitare::Color_A1::Lime);
 
         AddScene(testScene);
     }
@@ -29,7 +29,14 @@ namespace Solitare
             return;
         }
 
-        window = glfwCreateWindow(1080, 1080, "Hello World", NULL, NULL);
+        if (specification_.Title.empty())
+        {
+            specification_.Title = "OpenGL App";
+        }
+        specification_.EventCallback = [this](Event &event)
+        { RaiseEvent(event); };
+
+        window = glfwCreateWindow(1080, 1080, specification_.Title.c_str(), NULL, NULL);
         if (!window)
         {
             glfwTerminate();
@@ -40,6 +47,8 @@ namespace Solitare
         }
 
         glfwMakeContextCurrent(window);
+
+        EventHandler_ = std::make_shared<Core::EventHandler>(window, specification_);
 
         if (!gladLoadGL(glfwGetProcAddress))
         {
@@ -73,7 +82,18 @@ namespace Solitare
     }
     void Application::AddScene(std::shared_ptr<Core::Scene> scene)
     {
+        current_scene_ = 0;
         scenes_.push_back(scene);
+    }
+
+    void Application::RaiseEvent(Event &event)
+    {
+        if (current_scene_ == -1)
+        {
+            debug_warn("No active scene to raise event on");
+        }
+
+        scenes_[current_scene_]->HandleEvent(event);
     }
 
 } // namespace Solitare

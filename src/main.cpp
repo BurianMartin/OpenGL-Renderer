@@ -1,8 +1,8 @@
-#include "App/Application.hpp"
+#include "Core/Application.hpp"
 
 int main(void)
 {
-    Solitare::Application App;
+    Core::Application App;
 
     App.Run();
 

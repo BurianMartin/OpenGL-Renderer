@@ -1,4 +1,7 @@
+#pragma once
 #include "Utils.hpp"
+
+#include "Core/Window.hpp"
 #include "Core/InputEvents.hpp"
 
 #include <glad/gl.h>
@@ -9,14 +12,16 @@
 
 namespace Core
 {
-    class Event_Handler
+    class EventHandler
     {
     private:
         GLFWwindow *window_;
+        WindowSpecification spec_;
 
     public:
-        Event_Handler();
-        ~Event_Handler() = default;
+        EventHandler() = default;
+        EventHandler(GLFWwindow *window, WindowSpecification spec);
+        ~EventHandler() = default;
 
         void RaiseEvent(Event &e);
     };

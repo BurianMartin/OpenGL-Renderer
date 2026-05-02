@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Utils.hpp"
 #include "Core/Event.hpp"
 

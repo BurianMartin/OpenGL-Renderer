@@ -1,8 +1,10 @@
 #pragma once
 #include "Utils.hpp"
-#include "Layer.hpp"
+#include "Core/Layer.hpp"
+#include "Core/InputEvents.hpp"
 
 #include <vector>
+#include <ranges>
 
 namespace Core
 {
@@ -46,6 +48,6 @@ namespace Core
 
         void SetBackgroundColor(glm::vec4 color);
 
-        void HandleEvent(/*Event event*/); // TODO: Implement this function
+        void HandleEvent(Event &event); // TODO: Implement this function
     };
 }

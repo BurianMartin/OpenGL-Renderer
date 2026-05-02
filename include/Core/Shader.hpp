@@ -16,9 +16,11 @@ namespace Core
     class Shader
     {
     public:
+        std::string Tag_;
+
         GLuint ID;
 
-        Shader(const char *vertexPath, const char *fragmentPath);
+        Shader(const char *vertexPath, const char *fragmentPath, const std::string &tag);
         ~Shader();
 
         void Use();

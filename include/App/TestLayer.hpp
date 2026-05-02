@@ -1,9 +1,10 @@
 #pragma once
 #include "Core/Layer.hpp"
-#include "Model.hpp"
-#include "Mesh.hpp"
-#include "Shader.hpp"
-#include "Colors.hpp"
+#include "Core/Model.hpp"
+#include "Core/Mesh.hpp"
+#include "Core/Shader.hpp"
+#include "App/Colors.hpp"
+#include "Core/InputEvents.hpp"
 
 #include <glad/gl.h>
 
@@ -15,7 +16,7 @@ namespace Solitare
         TestLayer();
         ~TestLayer() = default;
 
-        void OnEvent() override;
+        bool OnEvent(Core::Event &e) override;
         void OnUpdate() override;
         void Transition() override;
         void Suspend() const override;

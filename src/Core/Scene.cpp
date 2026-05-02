@@ -1,5 +1,4 @@
 #include "Core/Scene.hpp"
-#include "Scene.hpp"
 
 namespace Core
 {
@@ -69,6 +68,34 @@ namespace Core
     {
         backgroundType_ = Background_Type::Solid;
         backgroundColor_ = color;
+    }
+
+    void Scene::HandleEvent(Event &event)
+    {
+
+        // TODO: Possibly consume the event in scene and then no propagatoin trough layers
+        if (event.GetEventType() == Core::EventType::KeyPressed)
+        {
+            auto ev = static_cast<KeyPressedEvent &>(event);
+            switch (ev.GetKeyCode())
+            {
+            case GLFW_KEY_TAB:
+                return;
+                break;
+
+            default:
+                break;
+            }
+        }
+
+        for (std::shared_ptr<Core::Layer> &layer : std::views::reverse(layers_))
+        {
+            if (!layer->OnEvent(event))
+            {
+                // Event was consumed by this layer
+                break;
+            }
+        }
     }
 
 } // namespace Core

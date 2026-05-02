@@ -2,7 +2,8 @@
 
 namespace Core
 {
-    Shader::Shader(const char *vertexPath, const char *fragmentPath)
+    Shader::Shader(const char *vertexPath, const char *fragmentPath, const std::string &tag)
+        : Tag_(tag)
     {
         std::string vertSrc = LoadFile(vertexPath);
         std::string fragSrc = LoadFile(fragmentPath);

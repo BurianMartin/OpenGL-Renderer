@@ -12,14 +12,17 @@ find_package(glm REQUIRED)
 
 add_executable(OpenGL_App 
         src/main.cpp
-        src/glad/gl.c  
+        src/glad/gl.c
+
+        src/App/TestLayer.cpp
+        
+        src/Core/Mesh.cpp
         src/Core/Scene.cpp
         src/Core/Model.cpp
         src/Core/Shader.cpp
         src/Core/Renderer.cpp
-        src/App/Application.cpp
-        src/App/TestLayer.cpp
-        src/Core/Mesh.cpp
+        src/Core/Application.cpp
+        src/Core/EventHandler.cpp
     ) 
 
 target_include_directories(OpenGL_App

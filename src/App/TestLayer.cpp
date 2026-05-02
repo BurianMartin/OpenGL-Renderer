@@ -1,5 +1,4 @@
 #include "App/TestLayer.hpp"
-#include "TestLayer.hpp"
 
 namespace Solitare
 {
@@ -29,8 +28,10 @@ namespace Solitare
 
         auto solidColorShader = std::make_shared<Core::Shader>(
             "shaders/vertex.glsl",
-            "shaders/solid_color.glsl");
+            "shaders/solid_color.glsl",
+            "Solid");
 
+        shaders_.push_back(solidColorShader);
         glUseProgram(solidColorShader->ID);
 
         solidColorShader->SetVec4("triangle_color", Color_A1::Magenta);
@@ -38,29 +39,41 @@ namespace Solitare
         shaderModels_[solidColorShader].push_back(model);
     }
 
-    void TestLayer::OnEvent(/*const Core::Event& e*/)
+    bool TestLayer::OnEvent(Core::Event &e)
     {
-        /*
-        TODO: Implement the logic for the event system
 
-        switch(e.GetType())
+        // TODO: Implement the logic for event consumption
+        switch (e.GetEventType())
         {
-            case Core::EventType::KeyPressed:
-                // Handle key pressed event like:
-                OnKeyPressed(event);
-                break;
-
-            case Core::EventType::MouseButtonPressed:
-                // Handle mouse button pressed event like:
-                OnMouseButtonPressed(event);
-                break;
-
-            ... More event types, maybe even handle mouse movement here ?
-
-            default:
-                break;
+        case Core::EventType::KeyPressed:
+        {
+            // TEST CODE:
+            // Handle key pressed event like:
+            debug_info("Change triangle color");
+            auto it = std::ranges::find(shaders_, "Solid", &Core::Shader::Tag_);
+            auto shader = *it;
+            shader->SetVec4("triangle_color", Color_A1::Red);
+            return true;
+            // OnKeyPressed(event);
+            break;
+            // END TEST CODE, TODO: REMOVE LATER
         }
-        */
+
+        case Core::EventType::MouseButtonPressed:
+            // Handle mouse button pressed event like:
+
+            debug_info("Mouse Button Event consumed by TestLayer");
+            return true;
+            // OnMouseButtonPressed(event);
+            break;
+
+            // ... More event types, maybe even handle mouse movement here ?
+
+        default:
+            break;
+        }
+
+        return true;
     }
 
     void TestLayer::OnUpdate()

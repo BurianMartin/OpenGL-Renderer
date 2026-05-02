@@ -1,10 +1,13 @@
 #pragma once
 #include "Utils.hpp"
-#include "Scene.hpp"
-#include "Renderer.hpp"
-#include "App/TestLayer.hpp"
 #include "Colors.hpp"
-#include "Core/InputEvents.hpp"
+
+#include "Core/Scene.hpp"
+#include "Core/Window.hpp"
+#include "Core/Renderer.hpp"
+#include "Core/EventHandler.hpp"
+
+#include "App/TestLayer.hpp"
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
@@ -17,35 +20,25 @@
 
 namespace Core
 {
-
     // TODO: Moved the Application class from App to Core, make it more generic, integrate with events.
-
-    struct WindowSpecification
-    {
-        std::string Title;
-        uint32_t width;
-        uint32_t height;
-        bool isResizable = true;
-        bool VSync = true;
-
-        using EventCallbackFn = std::function<void(Event &)>;
-        EventCallbackFn EventCallback;
-    };
 
     class Application
     {
     private:
         Renderer renderer;
         GLFWwindow *window;
+        std::shared_ptr<Core::EventHandler> EventHandler_;
+
+        WindowSpecification specification_;
 
         std::vector<std::shared_ptr<Scene>> scenes_;
 
-        GLint current_scene_ = 0;
+        GLint current_scene_ = -1;
 
         void Init();
 
     public:
-        Application();
+        Application(WindowSpecification specification = WindowSpecification());
         ~Application();
 
         void Run();
@@ -53,6 +46,8 @@ namespace Core
         void Destroy();
 
         void AddScene(std::shared_ptr<Scene> scene); // Returns the scene ID in the vector of scenes
+
+        void RaiseEvent(Event &event);
     };
 
 } // namespace Core
