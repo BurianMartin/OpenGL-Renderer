@@ -25,6 +25,13 @@ namespace Core
         void DrawSkyboxBackground();
         void DrawSkydomeBackground();
 
+        /* TODO: Add event system that propagates events trough layers
+        ** Must be independent, may be owned by a custom Application class.
+        ** Has to be connected to the layer system to propagate well
+        ** Maybe scene.HandleEvent(Event e) -> propagates trough layers ? ..
+        ** .. So the scene can consume the event or leaves it to layers ?
+        */
+
     public:
         Scene();
         ~Scene() = default;
@@ -38,5 +45,7 @@ namespace Core
         void DrawBackground();
 
         void SetBackgroundColor(glm::vec4 color);
+
+        void HandleEvent(/*Event event*/); // TODO: Implement this function
     };
 }
