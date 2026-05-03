@@ -2,7 +2,6 @@
 
 namespace Solitare
 {
-
     TestLayer::TestLayer()
     {
         float vertices[] = {
@@ -39,30 +38,41 @@ namespace Solitare
         shaderModels_[solidColorShader].push_back(model);
     }
 
-    bool TestLayer::OnEvent(Core::Event &e)
+    bool TestLayer::OnEvent(Core::Event &event)
     {
 
         // TODO: Implement the logic for event consumption
-        switch (e.GetEventType())
+        switch (event.GetEventType())
         {
         case Core::EventType::KeyPressed:
         {
-            // TEST CODE:
-            // Handle key pressed event like:
-            debug_info("Change triangle color");
-            auto it = std::ranges::find(shaders_, "Solid", &Core::Shader::Tag_);
-            auto shader = *it;
-            shader->SetVec4("triangle_color", Color_A1::Red);
-            return true;
-            // OnKeyPressed(event);
-            break;
-            // END TEST CODE, TODO: REMOVE LATER
+            Core::KeyPressedEvent ev = static_cast<Core::KeyPressedEvent &>(event);
+
+            switch (ev.GetKeyCode())
+            {
+            case GLFW_KEY_TAB:
+            {
+                if (!ev.IsRepeat())
+                {
+                    debug_info("Change triangle color");
+                    auto shader = *std::ranges::find(shaders_, "Solid", &Core::Shader::Tag_); // Get shader by name/tag
+                    shader->SetVec4("triangle_color", Color_A1::RandomColor());
+                    return true;
+                }
+                else
+                {
+                    debug_info("Tab key repeat detected");
+                    return true;
+                }
+            }
+            default:
+                break;
+            }
         }
 
         case Core::EventType::MouseButtonPressed:
             // Handle mouse button pressed event like:
 
-            debug_info("Mouse Button Event consumed by TestLayer");
             return true;
             // OnMouseButtonPressed(event);
             break;

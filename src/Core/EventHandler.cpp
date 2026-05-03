@@ -2,7 +2,7 @@
 
 namespace Core
 {
-    EventHandler::EventHandler(GLFWwindow *window, WindowSpecification spec)
+    EventHandler::EventHandler(GLFWwindow *window, const WindowSpecification spec)
         : window_(window), spec_(spec)
     {
         glfwSetWindowUserPointer(window_, this);
@@ -19,12 +19,18 @@ namespace Core
                 break;}
 
             case GLFW_RELEASE:
-                {
+            {
                 KeyReleasedEvent event(key);
                 EventHandler->RaiseEvent(event);
                 break;
-                }
-                
+            }
+            case GLFW_REPEAT:
+            {
+                KeyPressedEvent event(key, true);
+                EventHandler->RaiseEvent(event);
+                break;
+            }
+
                 default:
                 break;
             } });

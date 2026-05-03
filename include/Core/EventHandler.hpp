@@ -1,8 +1,8 @@
 #pragma once
 #include "Utils.hpp"
 
-#include "Core/Window.hpp"
 #include "Core/InputEvents.hpp"
+#include "Core/Specifications.hpp"
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
@@ -16,11 +16,11 @@ namespace Core
     {
     private:
         GLFWwindow *window_;
-        WindowSpecification spec_;
+        const WindowSpecification spec_;
 
     public:
         EventHandler() = default;
-        EventHandler(GLFWwindow *window, WindowSpecification spec);
+        EventHandler(GLFWwindow *window, const WindowSpecification spec);
         ~EventHandler() = default;
 
         void RaiseEvent(Event &e);

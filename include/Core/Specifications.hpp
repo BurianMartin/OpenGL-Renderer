@@ -22,4 +22,11 @@ namespace Core
         using EventCallbackFn = std::function<void(Event &)>;
         EventCallbackFn EventCallback;
     };
+
+    struct ApplicationSpecification
+    {
+        std::string appName = "Application";
+        WindowSpecification windowSpec;
+    };
+
 } // namespace Core

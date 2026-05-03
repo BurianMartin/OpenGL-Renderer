@@ -1,9 +1,8 @@
 #include "Core/Application.hpp"
-#include "Application.hpp"
 
 namespace Core
 {
-    Application::Application(WindowSpecification specification) : specification_(specification)
+    Application::Application(ApplicationSpecification specification) : specification_(specification)
     {
         Init();
 
@@ -17,10 +16,6 @@ namespace Core
         AddScene(testScene);
     }
 
-    Application::~Application()
-    {
-    }
-
     void Application::Init()
     {
         if (!glfwInit())
@@ -29,15 +24,15 @@ namespace Core
             return;
         }
 
-        if (specification_.Title.empty())
+        if (specification_.windowSpec.Title.empty())
         {
-            specification_.Title = "OpenGL App";
+            specification_.windowSpec.Title = "OpenGL App";
         }
-        specification_.EventCallback = [this](Event &event)
+        specification_.windowSpec.EventCallback = [this](Event &event)
         { RaiseEvent(event); };
 
-        window = glfwCreateWindow(1080, 1080, specification_.Title.c_str(), NULL, NULL);
-        if (!window)
+        window_ = glfwCreateWindow(1080, 1080, specification_.windowSpec.Title.c_str(), NULL, NULL);
+        if (!window_)
         {
             glfwTerminate();
 
@@ -46,9 +41,9 @@ namespace Core
             return;
         }
 
-        glfwMakeContextCurrent(window);
+        glfwMakeContextCurrent(window_);
 
-        EventHandler_ = std::make_shared<Core::EventHandler>(window, specification_);
+        EventHandler_ = std::make_shared<Core::EventHandler>(window_, specification_.windowSpec);
 
         if (!gladLoadGL(glfwGetProcAddress))
         {
@@ -66,10 +61,10 @@ namespace Core
             return;
         }
 
-        while (!glfwWindowShouldClose(window))
+        while (!glfwWindowShouldClose(window_))
         {
-            renderer.RenderScene(scenes_[current_scene_]);
-            glfwSwapBuffers(window);
+            renderer_.RenderScene(scenes_[current_scene_]);
+            glfwSwapBuffers(window_);
             glfwPollEvents();
         }
     }
@@ -88,6 +83,23 @@ namespace Core
 
     void Application::RaiseEvent(Event &event)
     {
+        // TODO: Replace switch with a optional Event Handling function in app so App can handle events if needed
+        switch (event.GetEventType())
+        {
+        case EventType::KeyPressed:
+        {
+            KeyPressedEvent ev = static_cast<KeyPressedEvent &>(event);
+            if (ev.GetKeyCode() == GLFW_KEY_ESCAPE)
+            {
+                glfwSetWindowShouldClose(window_, true);
+                return; // Consume event
+            }
+            break;
+        }
+        default:
+            break;
+        }
+
         if (current_scene_ == -1)
         {
             debug_warn("No active scene to raise event on");
@@ -96,4 +108,4 @@ namespace Core
         scenes_[current_scene_]->HandleEvent(event);
     }
 
-} // namespace Solitare
+} // namespace Core

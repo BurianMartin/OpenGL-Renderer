@@ -3,9 +3,9 @@
 #include "Colors.hpp"
 
 #include "Core/Scene.hpp"
-#include "Core/Window.hpp"
 #include "Core/Renderer.hpp"
 #include "Core/EventHandler.hpp"
+#include "Core/Specifications.hpp"
 
 #include "App/TestLayer.hpp"
 
@@ -25,11 +25,11 @@ namespace Core
     class Application
     {
     private:
-        Renderer renderer;
-        GLFWwindow *window;
+        Renderer renderer_;
+        GLFWwindow *window_;
         std::shared_ptr<Core::EventHandler> EventHandler_;
 
-        WindowSpecification specification_;
+        ApplicationSpecification specification_;
 
         std::vector<std::shared_ptr<Scene>> scenes_;
 
@@ -38,8 +38,8 @@ namespace Core
         void Init();
 
     public:
-        Application(WindowSpecification specification = WindowSpecification());
-        ~Application();
+        Application(ApplicationSpecification specification = ApplicationSpecification());
+        ~Application() = default;
 
         void Run();
 

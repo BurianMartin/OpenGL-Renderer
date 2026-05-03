@@ -15,6 +15,7 @@ add_executable(OpenGL_App
         src/glad/gl.c
 
         src/App/TestLayer.cpp
+        src/App/Colors.cpp
         
         src/Core/Mesh.cpp
         src/Core/Scene.cpp

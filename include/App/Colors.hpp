@@ -26,6 +26,8 @@ namespace Solitare
         const glm::vec4 SkyBlue = {0.4f, 0.7f, 1.0f, 1.0f};
         const glm::vec4 Brown = {0.6f, 0.3f, 0.1f, 1.0f};
 
+        const glm::vec4 RandomColor();
+
     } // namespace Color
 
 }
