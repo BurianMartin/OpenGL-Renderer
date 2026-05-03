@@ -28,6 +28,7 @@ namespace Core
         {
             specification_.windowSpec.Title = "OpenGL App";
         }
+
         specification_.windowSpec.EventCallback = [this](Event &event)
         { RaiseEvent(event); };
 
@@ -83,21 +84,10 @@ namespace Core
 
     void Application::RaiseEvent(Event &event)
     {
-        // TODO: Replace switch with a optional Event Handling function in app so App can handle events if needed
-        switch (event.GetEventType())
+        // TODO: Replace if with a optional Event Handling function in app so App can handle events if needed
+        if (event.GetEventType() == Core::EventType::WindowClose)
         {
-        case EventType::KeyPressed:
-        {
-            KeyPressedEvent ev = static_cast<KeyPressedEvent &>(event);
-            if (ev.GetKeyCode() == GLFW_KEY_ESCAPE)
-            {
-                glfwSetWindowShouldClose(window_, true);
-                return; // Consume event
-            }
-            break;
-        }
-        default:
-            break;
+            glfwSetWindowShouldClose(window_, true);
         }
 
         if (current_scene_ == -1)

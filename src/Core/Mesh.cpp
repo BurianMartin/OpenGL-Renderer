@@ -1,8 +1,30 @@
 #include "Mesh.hpp"
 
-Core::Mesh::Mesh(const std::vector<Vertex> &vertices, const std::vector<unsigned int> &indices, GLenum drawMode)
+Core::Mesh::Mesh(const std::string &tag, const std::vector<Vertex> &vertices, const std::vector<unsigned int> &indices, GLenum drawMode)
 {
+    this->tag = tag;
     setup(vertices, indices);
+}
+
+Core::Mesh::Mesh(const std::string &tag, const std::vector<GLfloat> &vertices, const std::vector<GLuint> &indices, GLenum drawMode)
+{
+    this->tag = tag;
+
+    std::vector<Core::Vertex> vertexData;
+
+    GLint vertexCount = vertices.size();
+
+    for (int i = 0; i < vertexCount; i += 3)
+    {
+        Core::Vertex v;
+        v.position = {vertices[i], vertices[i + 1], vertices[i + 2]};
+
+        v.normal = {0.0f, 0.0f, 1.0f};
+        v.texCoords = {0.0f, 0.0f};
+
+        vertexData.push_back(v);
+    }
+    setup(vertexData, indices);
 }
 
 Core::Mesh::~Mesh()

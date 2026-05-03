@@ -38,8 +38,8 @@ namespace Core
         glfwSetWindowSizeCallback(window_, [](GLFWwindow *win, int width, int height)
                                   {
                                       EventHandler *EventHandler = static_cast<Core::EventHandler *>(glfwGetWindowUserPointer(win));
-                                      // TODO: Add window size event creation here
-                                      // WindowSizeEvent event(width, height);
+                                      // TODO: Add window resize event creation here
+                                      // WindowResizeEvent event(width, height);
                                       // EventHandler->RaiseEvent(event);
                                   });
 
@@ -68,10 +68,9 @@ namespace Core
         glfwSetWindowCloseCallback(window_, [](GLFWwindow *win)
                                    {
                                        EventHandler *EventHandler = static_cast<Core::EventHandler *>(glfwGetWindowUserPointer(win));
-                                       // TODO: Add window close event creation here
-                                       // WindowCloseEvent event;
-                                       // EventHandler->RaiseEvent(event);
-                                   });
+ 
+                                       WindowCloseEvent event;
+                                       EventHandler->RaiseEvent(event); });
 
         glfwSetCursorPosCallback(window_, [](GLFWwindow *win, double xpos, double ypos)
                                  {

@@ -9,8 +9,6 @@
 
 namespace Core
 {
-    // TODO: Add ApplicationSpecification struct that contains WindowSpecification, make it more robust with the app and event system, !URGENT!
-
     struct WindowSpecification
     {
         std::string Title;

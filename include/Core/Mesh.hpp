@@ -22,8 +22,11 @@ namespace Core
     class Mesh
     {
     public:
+        std::string tag;
+
         // --- Construction / Destruction ---
-        Mesh(const std::vector<Vertex> &vertices, const std::vector<unsigned int> &indices, GLenum drawMode = GL_TRIANGLES);
+        Mesh(const std::string &tag, const std::vector<Vertex> &vertices, const std::vector<unsigned int> &indices, GLenum drawMode = GL_TRIANGLES);
+        Mesh(const std::string &tag, const std::vector<GLfloat> &vertices, const std::vector<GLuint> &indices, GLenum drawMode = GL_TRIANGLES);
         ~Mesh();
 
         // Non-copyable (owns GPU resources)
@@ -43,8 +46,6 @@ namespace Core
         unsigned int getVertexCount() const { return vertexCount; }
         unsigned int getTriangleCount() const { return indexCount / 3; }
         GLenum getDrawMode() const { return drawMode; }
-
-        // TODO: Add complex meshes like a cube, sphere and others
 
     private:
         void setup(const std::vector<Vertex> &vertices, const std::vector<unsigned int> &indices);

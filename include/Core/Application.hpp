@@ -20,7 +20,8 @@
 
 namespace Core
 {
-    // TODO: Moved the Application class from App to Core, make it more generic, integrate with events.
+    // TODO: Moved the Application class from App to Core, make it more generic
+    // TODO: Add Camera class and controlls
 
     class Application
     {

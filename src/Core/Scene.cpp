@@ -72,9 +72,7 @@ namespace Core
 
     void Scene::HandleEvent(Event &event)
     {
-
-        // TODO: Possibly consume the event in scene and then no propagation trough layers
-        // For now, leave the Scene capture
+        // Optional Scene event consumption example:
         if (false && event.GetEventType() == Core::EventType::KeyPressed)
         {
             auto ev = static_cast<KeyPressedEvent &>(event);

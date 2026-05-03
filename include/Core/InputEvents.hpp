@@ -114,4 +114,17 @@ namespace Core
         EVENT_CLASS_TYPE(MouseButtonReleased);
     };
 
+    class WindowCloseEvent : public Event
+    {
+    private:
+        /* data */
+    public:
+        WindowCloseEvent() = default;
+        ~WindowCloseEvent() = default;
+
+        std::string ToString() const { return "WindowCloseEvent"; }
+
+        EVENT_CLASS_TYPE(WindowClose);
+    };
+
 } // namespace Core
