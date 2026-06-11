@@ -3,6 +3,7 @@
 #include "Core/Shader.hpp"
 #include "Core/Model.hpp"
 #include "Core/InputEvents.hpp"
+#include "Core/RenderContext.hpp"
 
 #include <map>
 
@@ -23,7 +24,7 @@ namespace Core
         virtual void OnUpdate() = 0;
         virtual void Transition() = 0;
         virtual void Suspend() const = 0;
-        virtual void OnRender() const = 0;
+        virtual void OnRender(RenderContext &ctx) const = 0;
 
         // ------------ Base methods end ------------
 

@@ -3,6 +3,13 @@
 
 namespace Core
 {
+    Model::Model(std::shared_ptr<Mesh> mesh) : mesh_(mesh)
+    {
+        position_ = glm::vec3(0.0f, 0.0f, 0.0f);
+        rotation_ = glm::vec3(0.0f, 0.0f, 0.0f);
+        scale_ = glm::vec3(1.0f, 1.0f, 1.0f); // scale of 0 makes it invisible
+    }
+
     void Model::Draw() const
     {
         mesh_->bind();

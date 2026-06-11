@@ -35,6 +35,7 @@ namespace Core
         std::vector<std::shared_ptr<Scene>> scenes_;
 
         GLint current_scene_ = -1;
+        GLfloat last_frame_time_ = 0.0f;
 
         void Init();
 

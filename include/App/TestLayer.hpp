@@ -5,6 +5,7 @@
 #include "Core/Shader.hpp"
 #include "App/Colors.hpp"
 #include "Core/InputEvents.hpp"
+#include "Core/RenderContext.hpp"
 
 #include <glad/gl.h>
 
@@ -20,7 +21,7 @@ namespace Solitare
         void OnUpdate() override;
         void Transition() override;
         void Suspend() const override;
-        void OnRender() const override;
+        void OnRender(Core::RenderContext &ctx) const override;
         void Destroy() override;
     };
 
