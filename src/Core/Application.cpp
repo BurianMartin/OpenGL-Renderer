@@ -6,7 +6,7 @@ namespace Core
     {
         Init();
 
-        auto testScene = std::make_shared<Core::Scene>();
+        auto testScene = std::make_shared<Core::Scene>((float)specification_.windowSpec.width / (float)specification_.windowSpec.height);
         auto testLayer = std::make_shared<Solitare::TestLayer>();
 
         testScene->AddLayer(testLayer);
@@ -32,7 +32,7 @@ namespace Core
         specification_.windowSpec.EventCallback = [this](Event &event)
         { RaiseEvent(event); };
 
-        window_ = glfwCreateWindow(1080, 1080, specification_.windowSpec.Title.c_str(), NULL, NULL);
+        window_ = glfwCreateWindow(specification_.windowSpec.width, specification_.windowSpec.height, specification_.windowSpec.Title.c_str(), NULL, NULL);
         if (!window_)
         {
             glfwTerminate();
@@ -41,6 +41,9 @@ namespace Core
 
             return;
         }
+
+        // glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED); // Mouse lock for camera rotation
+        glfwSwapInterval(1); // 1 = vsync on, 0 = uncapped
 
         glfwMakeContextCurrent(window_);
 
@@ -64,11 +67,18 @@ namespace Core
 
         while (!glfwWindowShouldClose(window_))
         {
+            GLfloat current_frame_time = glfwGetTime();
+            GLfloat delta_time = current_frame_time - last_frame_time_;
+            last_frame_time_ = current_frame_time;
+            debug_info("delta_time: " << delta_time << " FPS: " << 1.0f / delta_time);
+
+            scenes_[current_scene_]->Update(delta_time);
             renderer_.RenderScene(scenes_[current_scene_]);
             glfwSwapBuffers(window_);
             glfwPollEvents();
         }
     }
+
     void Application::Destroy()
     {
         for (auto scene : scenes_)
@@ -76,6 +86,7 @@ namespace Core
             scene->Destroy();
         }
     }
+
     void Application::AddScene(std::shared_ptr<Core::Scene> scene)
     {
         current_scene_ = 0;
@@ -87,6 +98,7 @@ namespace Core
         // TODO: Replace if with a optional Event Handling function in app so App can handle events if needed
         if (event.GetEventType() == Core::EventType::WindowClose)
         {
+            // I think this is redundant now, maybe edit to close on keys if needed
             glfwSetWindowShouldClose(window_, true);
         }
 

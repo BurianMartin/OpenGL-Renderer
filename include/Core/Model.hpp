@@ -19,7 +19,7 @@ namespace Core
         void Draw() const;
         glm::mat4 getModelMatrix() const;
 
-        Model(std::shared_ptr<Mesh> mesh) : mesh_(mesh) {}
+        Model(std::shared_ptr<Mesh> mesh);
         ~Model() = default;
     };
 }

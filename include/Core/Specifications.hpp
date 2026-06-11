@@ -11,9 +11,9 @@ namespace Core
 {
     struct WindowSpecification
     {
-        std::string Title;
-        uint32_t width;
-        uint32_t height;
+        std::string Title = "OpenGL App";
+        uint32_t width = 1080;
+        uint32_t height = 1080;
         bool isResizable = true;
         bool VSync = true;
 

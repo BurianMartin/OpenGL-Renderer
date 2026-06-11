@@ -157,13 +157,17 @@ namespace Solitare
     {
     }
 
-    void TestLayer::OnRender() const
+    void TestLayer::OnRender(Core::RenderContext &ctx) const
     {
         for (const auto &[shader, models] : shaderModels_)
         {
             shader->Use();
+            shader->SetMat4("uView", ctx.view_);
+            shader->SetMat4("uProjection", ctx.projection_);
+
             for (const auto &model : models)
             {
+                shader->SetMat4("uModel", model->getModelMatrix());
                 model->Draw();
             }
         }

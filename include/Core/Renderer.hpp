@@ -1,6 +1,7 @@
 #pragma once
 #include "Utils.hpp"
-#include "Scene.hpp"
+#include "Core/Scene.hpp"
+#include "Core/RenderContext.hpp"
 
 #include <memory>
 
@@ -9,7 +10,8 @@ namespace Core
     class Renderer
     {
     private:
-        /* data */
+        RenderContext rctx_;
+
     public:
         Renderer() = default;
         ~Renderer() = default;
