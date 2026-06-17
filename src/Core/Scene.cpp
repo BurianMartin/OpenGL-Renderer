@@ -101,18 +101,8 @@ namespace Core
         else if (event.GetEventType() == Core::EventType::MouseMoved)
         {
             auto ev = static_cast<MouseMovedEvent &>(event);
-            if (mouse_captured_) // only rotate when right mouse held
-                cameras_[active_camera_].ProcessMousePosition(ev.GetX(), ev.GetY());
-                }
-        else if (event.GetEventType() == Core::EventType::MouseButtonPressed)
-        {
-            mouse_captured_ = true;
+            cameras_[active_camera_].ProcessMousePosition(ev.GetX(), ev.GetY());
         }
-        else if (event.GetEventType() == Core::EventType::MouseButtonReleased)
-        {
-            mouse_captured_ = false;
-        }
-
         for (std::shared_ptr<Core::Layer> &layer : std::views::reverse(layers_))
         {
             if (!layer->OnEvent(event))

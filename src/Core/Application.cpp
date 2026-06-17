@@ -42,8 +42,11 @@ namespace Core
             return;
         }
 
+        // Capture and hide the mouse
+        glfwSetInputMode(window_, GLFW_CURSOR, cursor_mode_);
+
         // glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED); // Mouse lock for camera rotation
-        glfwSwapInterval(1); // 1 = vsync on, 0 = uncapped
+        glfwSwapInterval(0); // 1 = vsync on, 0 = uncapped
 
         glfwMakeContextCurrent(window_);
 
@@ -96,10 +99,25 @@ namespace Core
     void Application::RaiseEvent(Event &event)
     {
         // TODO: Replace if with a optional Event Handling function in app so App can handle events if needed
-        if (event.GetEventType() == Core::EventType::WindowClose)
+        if (event.GetEventType() == Core::EventType::KeyPressed)
         {
-            // I think this is redundant now, maybe edit to close on keys if needed
-            glfwSetWindowShouldClose(window_, true);
+            auto ev = static_cast<KeyReleasedEvent &>(event);
+            switch (ev.GetKeyCode())
+            {
+            case GLFW_KEY_ESCAPE:
+                glfwSetWindowShouldClose(window_, true); // Close the app with esc key press
+                break;
+            case GLFW_KEY_GRAVE_ACCENT: // Basicalyl a semicolon key, changing the cursor mode from captured to free
+                if (cursor_mode_ == GLFW_CURSOR_NORMAL)
+                    cursor_mode_ = GLFW_CURSOR_DISABLED;
+                else
+                    cursor_mode_ = GLFW_CURSOR_NORMAL;
+                glfwSetInputMode(window_, GLFW_CURSOR, cursor_mode_);
+                return;
+                break;
+            default:
+                break;
+            }
         }
 
         if (current_scene_ == -1)
