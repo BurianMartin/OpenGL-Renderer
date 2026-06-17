@@ -30,7 +30,6 @@ namespace Core
 
     class Scene
     {
-        bool mouse_captured_ = false; // WSL mouse lock issue fix (Temporary, TODO: Remove fast, Fr, get this out)
     private:
         glm::vec4 backgroundColor_ = glm::vec4(0);
         Background_Type backgroundType_ = Background_Type::None;

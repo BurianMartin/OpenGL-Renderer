@@ -37,7 +37,10 @@ namespace Core
         GLint current_scene_ = -1;
         GLfloat last_frame_time_ = 0.0f;
 
-        void Init();
+        GLint cursor_mode_ = GLFW_CURSOR_DISABLED;
+
+        void
+        Init();
 
     public:
         Application(ApplicationSpecification specification = ApplicationSpecification());
