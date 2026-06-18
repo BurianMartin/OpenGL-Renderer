@@ -1,5 +1,4 @@
 #include "Core/Model.hpp"
-#include "Model.hpp"
 
 namespace Core
 {
@@ -12,7 +11,6 @@ namespace Core
 
     void Model::Draw() const
     {
-        mesh_->bind();
         mesh_->draw();
     }
 

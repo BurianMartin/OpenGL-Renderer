@@ -1,107 +1,131 @@
-#include "Mesh.hpp"
+#include "Core/Mesh.hpp"
 
-Core::Mesh::Mesh(const std::string &tag, const std::vector<Vertex> &vertices, const std::vector<unsigned int> &indices, GLenum drawMode)
+namespace Core
 {
-    this->tag = tag;
-    setup(vertices, indices);
-}
-
-Core::Mesh::Mesh(const std::string &tag, const std::vector<GLfloat> &vertices, const std::vector<GLuint> &indices, GLenum drawMode)
-{
-    this->tag = tag;
-
-    std::vector<Core::Vertex> vertexData;
-
-    GLint vertexCount = vertices.size();
-
-    for (int i = 0; i < vertexCount; i += 3)
+    Mesh::Mesh(const std::string &tag, const std::vector<Vertex> &vertices, const std::vector<unsigned int> &indices, GLenum drawMode)
     {
-        Core::Vertex v;
-        v.position = {vertices[i], vertices[i + 1], vertices[i + 2]};
-
-        v.normal = {0.0f, 0.0f, 1.0f};
-        v.texCoords = {0.0f, 0.0f};
-
-        vertexData.push_back(v);
+        this->tag_ = tag;
+        setup(vertices, indices);
     }
-    setup(vertexData, indices);
-}
 
-Core::Mesh::~Mesh()
-{
-}
+    Mesh::Mesh(const std::string &tag, const std::vector<GLfloat> &vertices, const std::vector<GLuint> &indices, GLenum drawMode)
+    {
+        this->tag_ = tag;
 
-void Core::Mesh::bind() const
-{
-    glBindVertexArray(VAO);
-}
+        std::vector<Vertex> vertexData;
+        vertexData.reserve(vertices.size() / 3);
 
-void Core::Mesh::unbind() const
-{
-    glBindVertexArray(0);
-}
+        for (size_t i = 0; i + 2 < vertices.size(); i += 3)
+        {
+            Vertex v;
+            v.position  = {vertices[i], vertices[i + 1], vertices[i + 2]};
+            v.normal    = {0.0f, 0.0f, 0.0f};
+            v.texCoords = {0.0f, 0.0f};
+            vertexData.push_back(v);
+        }
 
-void Core::Mesh::draw() const
-{
-    bind();
+        // Accumulate face normals at each shared vertex (smooth shading)
+        for (size_t i = 0; i + 2 < indices.size(); i += 3)
+        {
+            glm::vec3 p0 = vertexData[indices[i]].position;
+            glm::vec3 p1 = vertexData[indices[i + 1]].position;
+            glm::vec3 p2 = vertexData[indices[i + 2]].position;
+            glm::vec3 n  = glm::cross(p1 - p0, p2 - p0);
+            vertexData[indices[i]].normal     += n;
+            vertexData[indices[i + 1]].normal += n;
+            vertexData[indices[i + 2]].normal += n;
+        }
 
-    if (indexCount > 0)
-        glDrawElements(drawMode, indexCount, GL_UNSIGNED_INT, 0);
-    else
-        glDrawArrays(drawMode, 0, vertexCount);
+        for (auto &v : vertexData)
+        {
+            float len = glm::length(v.normal);
+            if (len > 1e-6f)
+                v.normal /= len;
+        }
 
-    GLenum err = glGetError();
-    if (err != GL_NO_ERROR)
-        debug_error("GL error after draw: " << err);
-}
+        setup(vertexData, indices);
+    }
 
-void Core::Mesh::setup(const std::vector<Vertex> &vertices,
-                       const std::vector<unsigned int> &indices)
-{
-    vertexCount = vertices.size();
-    indexCount = indices.size();
+    Mesh::~Mesh()
+    {
+        destroy();
+    }
 
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
+    void Mesh::bind() const
+    {
+        glBindVertexArray(VAO);
+    }
 
-    glBindVertexArray(VAO);
+    void Mesh::unbind() const
+    {
+        glBindVertexArray(0);
+    }
 
-    // VBO
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER,
-                 vertices.size() * sizeof(Vertex),
-                 vertices.data(),
-                 GL_STATIC_DRAW);
+    void Mesh::draw() const
+    {
+        bind();
 
-    // EBO
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                 indices.size() * sizeof(unsigned int),
-                 indices.data(),
-                 GL_STATIC_DRAW);
+        if (indexCount > 0)
+            glDrawElements(drawMode, indexCount, GL_UNSIGNED_INT, 0);
+        else
+            glDrawArrays(drawMode, 0, vertexCount);
 
-    // position
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
-                          sizeof(Vertex),
-                          (void *)offsetof(Vertex, position));
-    glEnableVertexAttribArray(0);
+        GLenum err = glGetError();
+        if (err != GL_NO_ERROR)
+            debug_error("GL error after draw: " << err);
+    }
 
-    // normal
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,
-                          sizeof(Vertex),
-                          (void *)offsetof(Vertex, normal));
-    glEnableVertexAttribArray(1);
+    void Mesh::setup(const std::vector<Vertex> &vertices,
+                     const std::vector<unsigned int> &indices)
+    {
+        vertexCount = vertices.size();
+        indexCount = indices.size();
 
-    // texCoords
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE,
-                          sizeof(Vertex),
-                          (void *)offsetof(Vertex, texCoords));
-    glEnableVertexAttribArray(2);
+        glGenVertexArrays(1, &VAO);
+        glGenBuffers(1, &VBO);
+        glGenBuffers(1, &EBO);
 
-    glBindVertexArray(0);
-}
+        glBindVertexArray(VAO);
 
-void Core::Mesh::destroy()
-{
-}
+        // VBO
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER,
+                     vertices.size() * sizeof(Vertex),
+                     vertices.data(),
+                     GL_STATIC_DRAW);
+
+        // EBO
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                     indices.size() * sizeof(unsigned int),
+                     indices.data(),
+                     GL_STATIC_DRAW);
+
+        // position
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
+                              sizeof(Vertex),
+                              (void *)offsetof(Vertex, position));
+        glEnableVertexAttribArray(0);
+
+        // normal
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,
+                              sizeof(Vertex),
+                              (void *)offsetof(Vertex, normal));
+        glEnableVertexAttribArray(1);
+
+        // texCoords
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE,
+                              sizeof(Vertex),
+                              (void *)offsetof(Vertex, texCoords));
+        glEnableVertexAttribArray(2);
+
+        glBindVertexArray(0);
+    }
+
+    void Mesh::destroy()
+    {
+        glDeleteVertexArrays(1, &VAO);
+        glDeleteBuffers(1, &VBO);
+        glDeleteBuffers(1, &EBO);
+    }
+} // namespace Core

@@ -7,18 +7,18 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <GLFW/glfw3.h>
 
+enum class CamMove
+{
+    UP,
+    DOWN,
+    LEFT,
+    RIGHT,
+    FORWARD,
+    BACKWARD
+};
+
 namespace Core
 {
-
-    enum CamMove
-    {
-        UP,
-        DOWN,
-        LEFT,
-        RIGHT,
-        FORWARD,
-        BACKWARD
-    };
 
     class Camera
     {

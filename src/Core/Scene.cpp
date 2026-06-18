@@ -1,5 +1,4 @@
 #include "Core/Scene.hpp"
-#include "Scene.hpp"
 
 namespace Core
 {
@@ -13,11 +12,13 @@ namespace Core
     void Scene::DrawSkyboxBackground()
     {
         // TODO: Finish after adding textures to models
+        glClear(GL_DEPTH_BUFFER_BIT); // Backround drawn, clear depth buffer to draw everything over it
     }
 
     void Scene::DrawSkydomeBackground()
     {
         // TODO: Finish after adding textures to models
+        glClear(GL_DEPTH_BUFFER_BIT); // Backround drawn, clear depth buffer to draw everything over it
     }
 
     Scene::Scene(float aspect_ratio)
@@ -72,7 +73,6 @@ namespace Core
         default:
             break;
         }
-        glClear(GL_DEPTH_BUFFER_BIT); // Backround drawn, clear depth buffer to draw everything over it
     }
 
     void Scene::SetBackgroundColor(glm::vec4 color)

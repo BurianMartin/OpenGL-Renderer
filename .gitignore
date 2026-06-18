@@ -1,6 +1,7 @@
 build/
 .vscode
 CMakeUserPresets.json
+CLAUDE.md
 
 # CLion
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can

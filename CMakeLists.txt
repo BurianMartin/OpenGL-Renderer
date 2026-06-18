@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set_source_files_properties(src/glad/gl.c PROPERTIES LANGUAGE C)
 
-find_package(glfw3 3.4 REQUIRED)
+find_package(glfw3 3.3 REQUIRED)
 find_package(glm REQUIRED)
 
 add_executable(OpenGL_App 

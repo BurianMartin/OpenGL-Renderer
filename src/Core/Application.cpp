@@ -101,7 +101,7 @@ namespace Core
         // TODO: Replace if with a optional Event Handling function in app so App can handle events if needed
         if (event.GetEventType() == Core::EventType::KeyPressed)
         {
-            auto ev = static_cast<KeyReleasedEvent &>(event);
+            auto ev = static_cast<KeyPressedEvent &>(event);
             switch (ev.GetKeyCode())
             {
             case GLFW_KEY_ESCAPE:
@@ -123,6 +123,7 @@ namespace Core
         if (current_scene_ == -1)
         {
             debug_warn("No active scene to raise event on");
+            return;
         }
 
         scenes_[current_scene_]->HandleEvent(event);

@@ -1,5 +1,4 @@
 #include "Core/Camera.hpp"
-#include "Camera.hpp"
 
 namespace Core
 {

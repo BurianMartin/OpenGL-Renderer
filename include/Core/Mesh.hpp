@@ -22,7 +22,7 @@ namespace Core
     class Mesh
     {
     public:
-        std::string tag;
+        std::string tag_;
 
         // --- Construction / Destruction ---
         Mesh(const std::string &tag, const std::vector<Vertex> &vertices, const std::vector<unsigned int> &indices, GLenum drawMode = GL_TRIANGLES);
@@ -40,7 +40,7 @@ namespace Core
         // --- Rendering ---
         void bind() const;
         void unbind() const;
-        void draw() const; // binds, draws, unbinds
+        void draw() const; // binds, draws
 
         // --- Accessors ---
         unsigned int getVertexCount() const { return vertexCount; }
