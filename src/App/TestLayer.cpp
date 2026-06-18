@@ -86,9 +86,9 @@ namespace Solitare
             "Solid");
 
         shaders_.push_back(solidColorShader);
-        glUseProgram(solidColorShader->ID);
+        glUseProgram(solidColorShader->ID); // remove these or move these two
 
-        solidColorShader->SetVec4("triangle_color", Color_A1::Magenta);
+        solidColorShader->SetVec4("triangle_color", Color_A1::Magenta); // remove these or move these two
 
         shaderModels_[solidColorShader].push_back(model);
         shaderModels_[solidColorShader].push_back(model2);
@@ -121,6 +121,7 @@ namespace Solitare
                 }
             }
             default:
+                return true;
                 break;
             }
         }
