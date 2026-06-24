@@ -30,6 +30,10 @@ namespace Core
     void Scene::Update(GLfloat delta_time)
     {
         cameras_[active_camera_].Update(delta_time);
+        for (auto layer : layers_)
+        {
+            layer->OnUpdate();
+        }
     }
 
     void Scene::AddLayer(std::shared_ptr<Layer> layer)

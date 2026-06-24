@@ -7,6 +7,7 @@
  */
 
 #define DEBUG
+// #define SHOW_FPS
 
 #ifdef DEBUG
 #define debug_info(x)                                                  \
