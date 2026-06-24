@@ -8,6 +8,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <fstream>
+#include <memory>
 #include <sstream>
 
 namespace Core
@@ -18,9 +19,10 @@ namespace Core
     public:
         std::string Tag_;
 
-        GLuint ID;
+        GLuint ID = 0;
 
-        Shader(const char *vertexPath, const char *fragmentPath, const std::string &tag);
+        static std::shared_ptr<Shader> Create(const char *vertexPath, const char *fragmentPath, const std::string &tag);
+
         ~Shader();
 
         void Use();
@@ -40,6 +42,8 @@ namespace Core
         void SetMat4(const std::string &name, const glm::mat4 &value);
 
     private:
+        Shader(const char *vertexPath, const char *fragmentPath, const std::string &tag);
+
         void CheckCompileErrors(GLuint shader, const std::string &type);
 
         std::string LoadFile(const char *path);

@@ -2,13 +2,41 @@
 
 namespace Core
 {
+    std::shared_ptr<Mesh> Mesh::Create(const std::string &tag, const std::vector<Vertex> &vertices, const std::vector<unsigned int> &indices, GLenum drawMode)
+    {
+        try
+        {
+            return std::shared_ptr<Mesh>(new Mesh(tag, vertices, indices, drawMode));
+        }
+        catch (const std::exception &e)
+        {
+            debug_warn("Mesh creation failed: " << e.what());
+            return nullptr;
+        }
+    }
+
+    std::shared_ptr<Mesh> Mesh::Create(const std::string &tag, const std::vector<GLfloat> &vertices, const std::vector<GLuint> &indices, GLenum drawMode)
+    {
+        try
+        {
+            return std::shared_ptr<Mesh>(new Mesh(tag, vertices, indices, drawMode));
+        }
+        catch (const std::exception &e)
+        {
+            debug_warn("Mesh creation failed: " << e.what());
+            return nullptr;
+        }
+    }
+
     Mesh::Mesh(const std::string &tag, const std::vector<Vertex> &vertices, const std::vector<unsigned int> &indices, GLenum drawMode)
+        : drawMode(drawMode)
     {
         this->tag_ = tag;
         setup(vertices, indices);
     }
 
     Mesh::Mesh(const std::string &tag, const std::vector<GLfloat> &vertices, const std::vector<GLuint> &indices, GLenum drawMode)
+        : drawMode(drawMode)
     {
         this->tag_ = tag;
 

@@ -7,6 +7,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <memory>
 #include <vector>
 
 namespace Core
@@ -24,9 +25,10 @@ namespace Core
     public:
         std::string tag_;
 
-        // --- Construction / Destruction ---
-        Mesh(const std::string &tag, const std::vector<Vertex> &vertices, const std::vector<unsigned int> &indices, GLenum drawMode = GL_TRIANGLES);
-        Mesh(const std::string &tag, const std::vector<GLfloat> &vertices, const std::vector<GLuint> &indices, GLenum drawMode = GL_TRIANGLES);
+        // --- Factory ---
+        static std::shared_ptr<Mesh> Create(const std::string &tag, const std::vector<Vertex> &vertices, const std::vector<unsigned int> &indices, GLenum drawMode = GL_TRIANGLES);
+        static std::shared_ptr<Mesh> Create(const std::string &tag, const std::vector<GLfloat> &vertices, const std::vector<GLuint> &indices, GLenum drawMode = GL_TRIANGLES);
+
         ~Mesh();
 
         // Non-copyable (owns GPU resources)
@@ -48,6 +50,9 @@ namespace Core
         GLenum getDrawMode() const { return drawMode; }
 
     private:
+        Mesh(const std::string &tag, const std::vector<Vertex> &vertices, const std::vector<unsigned int> &indices, GLenum drawMode);
+        Mesh(const std::string &tag, const std::vector<GLfloat> &vertices, const std::vector<GLuint> &indices, GLenum drawMode);
+
         void setup(const std::vector<Vertex> &vertices, const std::vector<unsigned int> &indices);
         void destroy();
 

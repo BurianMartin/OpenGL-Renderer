@@ -19,12 +19,12 @@ namespace Core
         far_plane = 100.0f;
     }
 
-    glm::mat4 Camera::GetViewMatrix()
+    glm::mat4 Camera::GetViewMatrix() const
     {
         return glm::lookAt(position, position + front, up);
     }
 
-    glm::mat4 Camera::GetProjectionMatrix()
+    glm::mat4 Camera::GetProjectionMatrix() const
     {
         return glm::perspective(glm::radians(fov), aspect_ratio, near_plane, far_plane);
     }
@@ -47,7 +47,6 @@ namespace Core
     void Camera::MoveUp(GLfloat delta_time)
     {
         position += up * speed * delta_time;
-        debug_info("CameraMove: UP true");
     }
 
     void Camera::ProcessMousePosition(float xpos, float ypos)
