@@ -39,8 +39,8 @@ namespace Core
 
         GLint cursor_mode_ = GLFW_CURSOR_DISABLED;
 
-        void
-        Init();
+        void Init();
+        GLfloat ComputeDeltaTime();
 
     public:
         Application(ApplicationSpecification specification = ApplicationSpecification());

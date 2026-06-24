@@ -115,7 +115,14 @@ namespace Solitare
                 if (!ev.IsRepeat())
                 {
                     debug_info("Change triangle color");
-                    auto shader = *std::ranges::find(shaders_, "Solid", &Core::Shader::Tag_); // Get shader by name/tag
+                    auto shader_find = std::ranges::find(shaders_, "Solid", &Core::Shader::Tag_); // Get shader by name/tag
+                    if (shader_find == shaders_.end())
+                    {
+                        debug_info("Failed to find Solid shader");
+                        return true;
+                    }
+
+                    auto shader = *shader_find;
                     glUseProgram(shader->ID);
                     shader->SetVec4("triangle_color", Color_A1::RandomColor());
                     return true;
@@ -130,6 +137,7 @@ namespace Solitare
                 return true;
                 break;
             }
+            break;
         }
 
         case Core::EventType::MouseButtonPressed:

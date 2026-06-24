@@ -31,8 +31,6 @@ namespace Core
     class Event
     {
     public:
-        bool handled_ = false;
-
         Event() = default;
         virtual ~Event() = default;
 

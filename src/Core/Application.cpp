@@ -49,7 +49,6 @@ namespace Core
         glfwSwapInterval(0); // 1 = vsync on, 0 = uncapped
 
         glfwMakeContextCurrent(window_);
-        glEnable(GL_DEPTH_TEST);
 
         EventHandler_ = std::make_shared<Core::EventHandler>(window_, specification_.windowSpec);
 
@@ -57,6 +56,8 @@ namespace Core
         {
             debug_error("Erorr while initializing GLAD");
         }
+
+        glEnable(GL_DEPTH_TEST);
 
         debug_info("App init complete");
     }
@@ -71,10 +72,10 @@ namespace Core
 
         while (!glfwWindowShouldClose(window_))
         {
-            GLfloat current_frame_time = glfwGetTime();
-            GLfloat delta_time = current_frame_time - last_frame_time_;
-            last_frame_time_ = current_frame_time;
-            debug_info("delta_time: " << delta_time << " FPS: " << 1.0f / delta_time);
+            GLfloat delta_time = ComputeDeltaTime();
+#ifdef SHOW_FPS
+            debug_info("FPS: " << 1.0f / delta_time);
+#endif
 
             scenes_[current_scene_]->Update(delta_time);
             renderer_.RenderScene(scenes_[current_scene_]);
@@ -83,17 +84,29 @@ namespace Core
         }
     }
 
+    GLfloat Application::ComputeDeltaTime()
+    {
+        GLfloat now = glfwGetTime();
+        GLfloat dt = now - last_frame_time_;
+        last_frame_time_ = now;
+        return dt;
+    }
+
     void Application::Destroy()
     {
         for (auto scene : scenes_)
-        {
             scene->Destroy();
-        }
+
+        scenes_.clear();  // Release all GL resources while context is still alive
+        glfwTerminate();
     }
 
     void Application::AddScene(std::shared_ptr<Core::Scene> scene)
     {
-        current_scene_ = 0;
+        if (scenes_.empty())
+        {
+            current_scene_ = 0;
+        }
         scenes_.push_back(scene);
     }
 
