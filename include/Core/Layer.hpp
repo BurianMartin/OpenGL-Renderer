@@ -5,14 +5,14 @@
 #include "Core/InputEvents.hpp"
 #include "Core/RenderContext.hpp"
 
-#include <map>
+#include <unordered_map>
 
 namespace Core
 {
     class Layer
     {
     protected:
-        std::map<std::shared_ptr<Shader>, std::vector<std::shared_ptr<Model>>> shaderModels_;
+        std::unordered_map<std::shared_ptr<Shader>, std::vector<std::shared_ptr<Model>>> shaderModels_;
         std::vector<std::shared_ptr<Shader>> shaders_;
 
     public:

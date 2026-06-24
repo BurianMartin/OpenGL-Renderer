@@ -75,15 +75,19 @@ namespace Solitare
             2, 1, 10,
             1, 11, 10};
 
-        auto mesh = std::make_shared<Core::Mesh>("TestMesh", vertices, indices);
-        auto model = std::make_shared<Core::Model>(mesh);
+        auto mesh = Core::Mesh::Create("TestMesh", vertices, indices);
+        if (!mesh)
+            debug_error("Failed to create TestMesh");
 
+        auto model = std::make_shared<Core::Model>(mesh);
         auto model2 = std::make_shared<Core::Model>(mesh);
 
-        auto solidColorShader = std::make_shared<Core::Shader>(
+        auto solidColorShader = Core::Shader::Create(
             "shaders/vertex.glsl",
             "shaders/solid_color.glsl",
             "Solid");
+        if (!solidColorShader)
+            debug_error("Failed to create Solid shader");
 
         shaders_.push_back(solidColorShader);
         glUseProgram(solidColorShader->ID); // remove these or move these two
@@ -92,6 +96,8 @@ namespace Solitare
 
         shaderModels_[solidColorShader].push_back(model);
         shaderModels_[solidColorShader].push_back(model2);
+
+        srand(time(NULL));
     }
 
     bool TestLayer::OnEvent(Core::Event &event)
