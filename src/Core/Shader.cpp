@@ -2,6 +2,19 @@
 
 namespace Core
 {
+    std::shared_ptr<Shader> Shader::Create(const char *vertexPath, const char *fragmentPath, const std::string &tag)
+    {
+        try
+        {
+            return std::shared_ptr<Shader>(new Shader(vertexPath, fragmentPath, tag));
+        }
+        catch (const std::exception &e)
+        {
+            debug_warn("Shader creation failed: " << e.what());
+            return nullptr;
+        }
+    }
+
     Shader::Shader(const char *vertexPath, const char *fragmentPath, const std::string &tag)
         : Tag_(tag)
     {
@@ -101,7 +114,7 @@ namespace Core
             if (!success)
             {
                 glGetProgramInfoLog(shader, 512, NULL, infoLog);
-                debug_warn("Program linking error: " << infoLog);
+                debug_error("Program linking error: " << infoLog);
             }
         }
         else
@@ -110,7 +123,7 @@ namespace Core
             if (!success)
             {
                 glGetShaderInfoLog(shader, 512, NULL, infoLog);
-                debug_warn("Shader compile error (" << type << "): " << infoLog);
+                debug_error("Shader compile error (" << type << "): " << infoLog);
             }
         }
     }

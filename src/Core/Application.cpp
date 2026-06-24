@@ -49,6 +49,7 @@ namespace Core
         glfwSwapInterval(0); // 1 = vsync on, 0 = uncapped
 
         glfwMakeContextCurrent(window_);
+        glEnable(GL_DEPTH_TEST);
 
         EventHandler_ = std::make_shared<Core::EventHandler>(window_, specification_.windowSpec);
 
