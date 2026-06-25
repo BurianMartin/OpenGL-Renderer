@@ -39,6 +39,7 @@ namespace Core
         rctx_ = rctx;
 
         cameras_.emplace_back(rctx_->aspect_ratio_); // Base camera
+        debug_info("Aspect ratio: " << rctx->aspect_ratio_);
         active_camera_ = 0;
     }
 
@@ -86,7 +87,6 @@ namespace Core
             break;
 
         case Background_Type::None:
-            debug_info("No background set");
             break;
 
         default:

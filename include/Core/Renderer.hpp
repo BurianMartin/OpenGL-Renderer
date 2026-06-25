@@ -13,7 +13,7 @@ namespace Core
         std::shared_ptr<RenderContext> rctx_;
 
     public:
-        Renderer(float aspect_ratio);
+        Renderer(GLfloat aspect_ratio);
         ~Renderer() = default;
 
         void RenderScene(std::shared_ptr<Scene> scene, GLfloat delta_time);

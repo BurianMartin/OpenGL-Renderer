@@ -153,6 +153,10 @@ namespace Core
             return;
         }
 
+        // Only rotate camera when cursor is captured
+        if (event.GetEventType() == Core::EventType::MouseMoved && cursor_mode_ == GLFW_CURSOR_NORMAL)
+            return;
+
         scenes_[current_scene_]->HandleEvent(event);
     }
 
