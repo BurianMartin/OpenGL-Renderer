@@ -1,4 +1,5 @@
 #include "Core/Scene.hpp"
+#include "Scene.hpp"
 
 namespace Core
 {
@@ -29,9 +30,15 @@ namespace Core
         glClear(GL_DEPTH_BUFFER_BIT); // Backround drawn, clear depth buffer to draw everything over it
     }
 
-    Scene::Scene(float aspect_ratio)
+    Scene::Scene(std::shared_ptr<ResourceManager> rmanager) : rmanager_(rmanager)
     {
-        cameras_.emplace_back(aspect_ratio); // Base camera
+    }
+
+    void Scene::OnLoad(std::shared_ptr<RenderContext> rctx)
+    {
+        rctx_ = rctx;
+
+        cameras_.emplace_back(rctx_->aspect_ratio_); // Base camera
         active_camera_ = 0;
     }
 
@@ -79,6 +86,7 @@ namespace Core
             break;
 
         case Background_Type::None:
+            debug_info("No background set");
             break;
 
         default:
@@ -130,11 +138,11 @@ namespace Core
         }
     }
 
-    void Scene::FillRenderContext(Core::RenderContext &ctx)
+    void Scene::UpdateRenderContext()
     {
-        ctx.camera_position_ = cameras_[active_camera_].GetPosition();
-        ctx.view_ = cameras_[active_camera_].GetViewMatrix();
-        ctx.projection_ = cameras_[active_camera_].GetProjectionMatrix();
+        rctx_->camera_position_ = cameras_[active_camera_].GetPosition();
+        rctx_->view_ = cameras_[active_camera_].GetViewMatrix();
+        rctx_->projection_ = cameras_[active_camera_].GetProjectionMatrix();
     }
 
 } // namespace Core

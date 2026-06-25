@@ -2,18 +2,17 @@
 
 namespace Core
 {
-    Application::Application(ApplicationSpecification specification) : specification_(specification)
+    Application::Application(ApplicationSpecification specification)
+        : specification_(specification), renderer_((float)specification_.windowSpec.width / (float)specification_.windowSpec.height),
+          rmanager_(std::make_shared<Core::ResourceManager>())
     {
+
         Init();
 
-        auto testScene = std::make_shared<Core::Scene>((float)specification_.windowSpec.width / (float)specification_.windowSpec.height);
-        auto testLayer = std::make_shared<Solitare::TestLayer>();
-
-        testScene->AddLayer(testLayer);
-
-        testScene->SetBackgroundColor(Solitare::Color_A1::Lime);
-
+        auto testScene = std::make_shared<Test::TestScene>(rmanager_);
         AddScene(testScene);
+
+        debug_info("After adding test scene");
     }
 
     void Application::Init()
@@ -106,7 +105,7 @@ namespace Core
             scene->Destroy();
 
         scenes_.clear(); // Release all GL resources while context is still alive
-        glfwTerminate();  // Must run before EventHandler_ is released — prevents callbacks firing on a dead pointer
+        glfwTerminate(); // Must run before EventHandler_ is released — prevents callbacks firing on a dead pointer
         window_ = nullptr;
     }
 
@@ -117,6 +116,7 @@ namespace Core
             current_scene_ = 0;
         }
         scenes_.push_back(scene);
+        scene->OnLoad(renderer_.GetRenderContext());
     }
 
     void Application::RaiseEvent(Event &event)

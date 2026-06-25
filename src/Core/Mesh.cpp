@@ -28,6 +28,134 @@ namespace Core
         }
     }
 
+    std::shared_ptr<Mesh> Mesh::Create(const std::string filename, GLenum drawMode)
+    {
+        std::ifstream file(filename);
+        if (!file.is_open())
+            throw std::runtime_error("Failed to open OBJ file: " + filename);
+
+        std::vector<glm::vec3> positions;
+        std::vector<glm::vec3> normals;
+        std::vector<glm::vec2> texCoords;
+
+        std::vector<Vertex> vertices;
+        std::vector<unsigned int> indices;
+        std::unordered_map<std::string, unsigned int> uniqueVertices;
+
+        std::string line;
+        while (std::getline(file, line))
+        {
+            if (line.empty() || line[0] == '#')
+                continue;
+
+            std::istringstream ss(line);
+            std::string token;
+            ss >> token;
+
+            if (token == "v")
+            {
+                glm::vec3 pos;
+                ss >> pos.x >> pos.y >> pos.z;
+                positions.push_back(pos);
+            }
+            else if (token == "vn")
+            {
+                glm::vec3 normal;
+                ss >> normal.x >> normal.y >> normal.z;
+                normals.push_back(normal);
+            }
+            else if (token == "vt")
+            {
+                glm::vec2 uv;
+                ss >> uv.x >> uv.y;
+                uv.y = 1.0f - uv.y; // flip Y for OpenGL
+                texCoords.push_back(uv);
+            }
+            else if (token == "f")
+            {
+                std::vector<std::string> faceTokens;
+                std::string ft;
+                while (ss >> ft)
+                    faceTokens.push_back(ft);
+
+                if (faceTokens.size() != 3)
+                {
+                    debug_warn("Non-triangle face encountered in " << filename << ", skipping");
+                    continue;
+                }
+
+                for (const auto &ft : faceTokens)
+                {
+                    // deduplicate by raw token string e.g. "1/2/3"
+                    if (uniqueVertices.count(ft) == 0)
+                    {
+                        uniqueVertices[ft] = static_cast<unsigned int>(vertices.size());
+
+                        Vertex v{};
+                        int vIdx = 0, vtIdx = -1, vnIdx = -1;
+
+                        if (ft.find("//") != std::string::npos)
+                        {
+                            // v//vn
+                            sscanf(ft.c_str(), "%d//%d", &vIdx, &vnIdx);
+                        }
+                        else
+                        {
+                            int matched = sscanf(ft.c_str(), "%d/%d/%d", &vIdx, &vtIdx, &vnIdx);
+                            if (matched == 1)
+                            { /* v only */
+                            }
+                            // matched == 2 → v/vt, matched == 3 → v/vt/vn
+                        }
+
+                        // OBJ is 1-based
+                        if (vIdx > 0 && vIdx <= (int)positions.size())
+                            v.position = positions[vIdx - 1];
+                        else
+                            debug_warn("OBJ vertex index out of range in " << filename);
+
+                        if (vtIdx > 0 && vtIdx <= (int)texCoords.size())
+                            v.texCoords = texCoords[vtIdx - 1];
+
+                        if (vnIdx > 0 && vnIdx <= (int)normals.size())
+                            v.normal = normals[vnIdx - 1];
+
+                        vertices.push_back(v);
+                    }
+
+                    indices.push_back(uniqueVertices[ft]);
+                }
+            }
+        }
+
+        if (vertices.empty())
+            throw std::runtime_error("OBJ file produced no vertices: " + filename);
+
+        if (normals.empty())
+        {
+            debug_info("No normals found in " << filename << " — generating flat normals");
+
+            for (size_t i = 0; i < indices.size(); i += 3)
+            {
+                Vertex &v0 = vertices[indices[i]];
+                Vertex &v1 = vertices[indices[i + 1]];
+                Vertex &v2 = vertices[indices[i + 2]];
+
+                glm::vec3 edge1 = v1.position - v0.position;
+                glm::vec3 edge2 = v2.position - v0.position;
+                glm::vec3 normal = glm::normalize(glm::cross(edge1, edge2));
+
+                v0.normal = normal;
+                v1.normal = normal;
+                v2.normal = normal;
+            }
+        }
+
+        debug_info("Loaded OBJ: " << filename << " — " << vertices.size() << " vertices, " << indices.size() / 3 << " triangles");
+
+        return std::shared_ptr<Mesh>(new Mesh(filename, vertices, indices, drawMode));
+    }
+
     Mesh::Mesh(const std::string &tag, const std::vector<Vertex> &vertices, const std::vector<unsigned int> &indices, GLenum drawMode)
         : drawMode(drawMode)
     {
@@ -46,8 +174,8 @@ namespace Core
         for (size_t i = 0; i + 2 < vertices.size(); i += 3)
         {
             Vertex v;
-            v.position  = {vertices[i], vertices[i + 1], vertices[i + 2]};
-            v.normal    = {0.0f, 0.0f, 0.0f};
+            v.position = {vertices[i], vertices[i + 1], vertices[i + 2]};
+            v.normal = {0.0f, 0.0f, 0.0f};
             v.texCoords = {0.0f, 0.0f};
             vertexData.push_back(v);
         }
@@ -58,8 +186,8 @@ namespace Core
             glm::vec3 p0 = vertexData[indices[i]].position;
             glm::vec3 p1 = vertexData[indices[i + 1]].position;
             glm::vec3 p2 = vertexData[indices[i + 2]].position;
-            glm::vec3 n  = glm::cross(p1 - p0, p2 - p0);
-            vertexData[indices[i]].normal     += n;
+            glm::vec3 n = glm::cross(p1 - p0, p2 - p0);
+            vertexData[indices[i]].normal += n;
             vertexData[indices[i + 1]].normal += n;
             vertexData[indices[i + 2]].normal += n;
         }

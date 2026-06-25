@@ -1,12 +1,22 @@
 #include <glad/gl.h>
 
-#include "TestLayer.hpp"
+#include "App/TestLayer.hpp"
 #include "Core/Scene.hpp"
 
-class TestScene : public Core::Scene
+namespace Test
 {
-private:
-public:
-    TestScene(/* args */) {}
-    ~TestScene() {}
-};
+    class TestScene : public Core::Scene
+    {
+    private:
+    public:
+        TestScene(std::shared_ptr<Core::ResourceManager> rmanager) : Core::Scene(rmanager)
+        {
+            auto testLayer = std::make_shared<Solitare::TestLayer>(rmanager_);
+
+            AddLayer(testLayer);
+
+            SetBackgroundColor(Solitare::Color_A1::Lime);
+        }
+        ~TestScene() = default;
+    };
+} // namespace Test

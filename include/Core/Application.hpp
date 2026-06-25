@@ -6,8 +6,10 @@
 #include "Core/Renderer.hpp"
 #include "Core/EventHandler.hpp"
 #include "Core/Specifications.hpp"
+#include "Core/ResourceManager.hpp"
 
 #include "App/TestLayer.hpp"
+#include "App/TestScene.hpp"
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
@@ -20,15 +22,13 @@
 
 namespace Core
 {
-    // TODO: Moved the Application class from App to Core, make it more generic
-    // TODO: Add Camera class and controlls
-
     class Application
     {
     private:
         Renderer renderer_;
         GLFWwindow *window_;
-        std::shared_ptr<Core::EventHandler> EventHandler_;
+        std::shared_ptr<EventHandler> EventHandler_;
+        std::shared_ptr<ResourceManager> rmanager_;
 
         ApplicationSpecification specification_;
 

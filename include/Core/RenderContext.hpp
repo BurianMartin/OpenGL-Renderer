@@ -11,6 +11,10 @@ namespace Core
         glm::vec3 camera_position_; // needed for lighting
         float delta_time_;
         float time_ = 0.0f; // for animated shaders
+
+        GLfloat aspect_ratio_;
+        bool multicam_mode_ = false;
+
         // later:
         // std::vector<LightData> lights;
         // ShadowMap* shadow_map;

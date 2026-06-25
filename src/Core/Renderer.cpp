@@ -1,7 +1,14 @@
+#include "Core/Renderer.hpp"
 #include "Renderer.hpp"
 
 namespace Core
 {
+	Renderer::Renderer(float aspect_ratio)
+	{
+		rctx_ = std::make_shared<RenderContext>();
+		rctx_->aspect_ratio_ = aspect_ratio;
+	}
+
 	void Renderer::RenderScene(std::shared_ptr<Scene> scene, GLfloat delta_time)
 	{
 		if (!scene)
@@ -12,9 +19,9 @@ namespace Core
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Reset color and depth for the next frame draw
 
-		scene->FillRenderContext(rctx_);
-		rctx_.delta_time_ = delta_time;
-		rctx_.time_ += delta_time; // accumulated elapsed time for animated shaders
+		scene->UpdateRenderContext();
+		rctx_->delta_time_ = delta_time;
+		rctx_->time_ += delta_time; // accumulated elapsed time for animated shaders
 
 		scene->DrawBackground();
 
@@ -24,4 +31,8 @@ namespace Core
 		}
 	}
 
+	std::shared_ptr<RenderContext> Renderer::GetRenderContext()
+	{
+		return rctx_;
+	}
 } // namespace Core

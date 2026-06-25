@@ -6,6 +6,9 @@
 #include "App/Colors.hpp"
 #include "Core/InputEvents.hpp"
 #include "Core/RenderContext.hpp"
+#include "Core/ResourceManager.hpp"
+
+#include <memory>
 
 #include <glad/gl.h>
 
@@ -14,14 +17,14 @@ namespace Solitare
     class TestLayer : public Core::Layer
     {
     public:
-        TestLayer();
+        TestLayer(std::shared_ptr<Core::ResourceManager> resourceManager);
         ~TestLayer() = default;
 
         bool OnEvent(Core::Event &e) override;
         void OnUpdate() override;
         void Transition() override;
         void Suspend() const override;
-        void OnRender(Core::RenderContext &ctx) const override;
+        void OnRender(std::shared_ptr<Core::RenderContext> ctx) const override;
         void Destroy() override;
     };
 
