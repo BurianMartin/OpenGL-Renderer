@@ -79,6 +79,40 @@ namespace Core
         destroy();
     }
 
+    Mesh::Mesh(Mesh &&other) noexcept
+        : tag_(std::move(other.tag_)),
+          VAO(other.VAO), VBO(other.VBO), EBO(other.EBO),
+          vertexCount(other.vertexCount), indexCount(other.indexCount),
+          drawMode(other.drawMode)
+    {
+        other.VAO = 0;
+        other.VBO = 0;
+        other.EBO = 0;
+        other.vertexCount = 0;
+        other.indexCount = 0;
+    }
+
+    Mesh &Mesh::operator=(Mesh &&other) noexcept
+    {
+        if (this != &other)
+        {
+            destroy();
+            tag_ = std::move(other.tag_);
+            VAO = other.VAO;
+            VBO = other.VBO;
+            EBO = other.EBO;
+            vertexCount = other.vertexCount;
+            indexCount = other.indexCount;
+            drawMode = other.drawMode;
+            other.VAO = 0;
+            other.VBO = 0;
+            other.EBO = 0;
+            other.vertexCount = 0;
+            other.indexCount = 0;
+        }
+        return *this;
+    }
+
     void Mesh::bind() const
     {
         glBindVertexArray(VAO);

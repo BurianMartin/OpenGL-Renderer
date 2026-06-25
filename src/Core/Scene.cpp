@@ -3,6 +3,14 @@
 namespace Core
 {
 
+    static const std::unordered_map<int, CamMove> key_map = {
+        {GLFW_KEY_W, CamMove::FORWARD},
+        {GLFW_KEY_S, CamMove::BACKWARD},
+        {GLFW_KEY_A, CamMove::LEFT},
+        {GLFW_KEY_D, CamMove::RIGHT},
+        {GLFW_KEY_SPACE, CamMove::UP},
+        {GLFW_KEY_LEFT_SHIFT, CamMove::DOWN}};
+
     void Scene::DrawSolidBackground()
     {
         glClearColor(backgroundColor_.r, backgroundColor_.g, backgroundColor_.b, backgroundColor_.a);
@@ -71,7 +79,6 @@ namespace Core
             break;
 
         case Background_Type::None:
-            debug_warn("No background set.");
             break;
 
         default:
@@ -107,6 +114,12 @@ namespace Core
             auto ev = static_cast<MouseMovedEvent &>(event);
             cameras_[active_camera_].ProcessMousePosition(ev.GetX(), ev.GetY());
         }
+        else if (event.GetEventType() == Core::EventType::MouseScrolled)
+        {
+            auto ev = static_cast<MouseScrolledEvent &>(event);
+            cameras_[active_camera_].Zoom(ev.GetYOffset());
+        }
+
         for (std::shared_ptr<Core::Layer> &layer : std::views::reverse(layers_))
         {
             if (!layer->OnEvent(event))

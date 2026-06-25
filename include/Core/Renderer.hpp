@@ -16,7 +16,7 @@ namespace Core
         Renderer() = default;
         ~Renderer() = default;
 
-        void RenderScene(std::shared_ptr<Scene> scene);
+        void RenderScene(std::shared_ptr<Scene> scene, GLfloat delta_time);
     };
 
 } // namespace Core

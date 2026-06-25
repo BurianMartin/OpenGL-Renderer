@@ -44,7 +44,7 @@ namespace Core
 
     public:
         Application(ApplicationSpecification specification = ApplicationSpecification());
-        ~Application() = default;
+        ~Application();
 
         void Run();
 

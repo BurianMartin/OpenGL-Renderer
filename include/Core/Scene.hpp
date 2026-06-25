@@ -11,15 +11,6 @@
 
 namespace Core
 {
-
-    static const std::unordered_map<int, CamMove> key_map = {
-        {GLFW_KEY_W, CamMove::FORWARD},
-        {GLFW_KEY_S, CamMove::BACKWARD},
-        {GLFW_KEY_A, CamMove::LEFT},
-        {GLFW_KEY_D, CamMove::RIGHT},
-        {GLFW_KEY_SPACE, CamMove::UP},
-        {GLFW_KEY_LEFT_SHIFT, CamMove::DOWN}};
-
     enum class Background_Type
     {
         Solid,
@@ -30,7 +21,7 @@ namespace Core
 
     class Scene
     {
-    private:
+    protected:
         glm::vec4 backgroundColor_ = glm::vec4(0);
         Background_Type backgroundType_ = Background_Type::None;
         std::vector<std::shared_ptr<Layer>> layers_;

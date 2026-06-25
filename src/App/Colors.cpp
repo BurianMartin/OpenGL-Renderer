@@ -2,7 +2,7 @@
 
 const glm::vec4 Solitare::Color_A1::RandomColor()
 {
-    int color = rand() % 12;
+    int color = rand() % 15;
     switch (color)
     {
     case 0:
@@ -29,6 +29,12 @@ const glm::vec4 Solitare::Color_A1::RandomColor()
         return Purple;
     case 11:
         return Pink;
+    case 12:
+        return Lime;
+    case 13:
+        return SkyBlue;
+    case 14:
+        return Brown;
     default:
         return White;
     }
