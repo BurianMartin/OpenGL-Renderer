@@ -9,6 +9,9 @@
 
 #include <memory>
 #include <vector>
+#include <fstream>
+#include <sstream>
+#include <unordered_map>
 
 namespace Core
 {
@@ -28,6 +31,7 @@ namespace Core
         // --- Factory ---
         static std::shared_ptr<Mesh> Create(const std::string &tag, const std::vector<Vertex> &vertices, const std::vector<unsigned int> &indices, GLenum drawMode = GL_TRIANGLES);
         static std::shared_ptr<Mesh> Create(const std::string &tag, const std::vector<GLfloat> &vertices, const std::vector<GLuint> &indices, GLenum drawMode = GL_TRIANGLES);
+        static std::shared_ptr<Mesh> Create(const std::string filename, GLenum drawMode = GL_TRIANGLES);
 
         ~Mesh();
 

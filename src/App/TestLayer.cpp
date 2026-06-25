@@ -2,90 +2,17 @@
 
 namespace Solitare
 {
-    TestLayer::TestLayer()
+    TestLayer::TestLayer(std::shared_ptr<Core::ResourceManager> resourceManager)
     {
-        /*std::vector<GLfloat> vertices = {
-            -0.5f, 0.5f, 0.0f,  // Bottom-left
-            -0.5f, -0.5f, 0.0f, // Top-left
-            0.5f, 0.5f, 0.0f,   // Bottom-right
-            -0.5f, -0.5f, 0.0f, // Top-left
-            0.5f, 0.5f, 0.0f,   // Bottom-right
-            0.5f, -0.5f, 0.0f}; // Top-right*/
+        auto testMesh = resourceManager->LoadMesh("models/star.obj");
 
-        std::vector<GLfloat> vertices = {
-            -0.1682f, 0.2356f, 0.0f,
-            0.2398f, 0.0343f, 0.0f,
-            -0.1682f, -0.1672f, 0.0f,
-            -0.5514f, 0.3601f, 0.0f,
-            -0.2337f, 0.6859f, 0.0f,
-            -0.7883f, 0.0343f, 0.0f,
-            -1.0000f, 0.4370f, 0.0f,
-            -0.5514f, -0.2916f, 0.0f,
-            -1.0000f, -0.3685f, 0.0f,
-            -0.2337f, -0.6173f, 0.0f,
-
-            -0.1682f, -0.1672f, 0.3426f,
-            0.2398f, 0.0343f, 0.3426f,
-            -0.1682f, 0.2356f, 0.3426f,
-            -0.2337f, 0.6859f, 0.3426f,
-            -0.5514f, 0.3601f, 0.3426f,
-            -1.0000f, 0.4370f, 0.3426f,
-            -0.7883f, 0.0343f, 0.3426f,
-            -1.0000f, -0.3685f, 0.3426f,
-            -0.5514f, -0.2916f, 0.3426f,
-            -0.2337f, -0.6173f, 0.3426f};
-
-        std::vector<GLuint> indices = {
-            0, 1, 2,
-            3, 4, 0,
-            5, 6, 3,
-            7, 8, 5,
-            2, 9, 7,
-            3, 0, 2,
-            7, 5, 3,
-            3, 2, 7,
-
-            10, 11, 12,
-            12, 13, 14,
-            14, 15, 16,
-            16, 17, 18,
-            18, 19, 10,
-            10, 12, 14,
-            14, 16, 18,
-            18, 10, 14,
-
-            1, 0, 11,
-            0, 12, 11,
-            0, 4, 12,
-            4, 13, 12,
-            4, 3, 13,
-            3, 14, 13,
-            3, 6, 14,
-            6, 15, 14,
-            6, 5, 15,
-            5, 16, 15,
-            5, 8, 16,
-            8, 17, 16,
-            8, 7, 17,
-            7, 18, 17,
-            7, 9, 18,
-            9, 19, 18,
-            9, 2, 19,
-            2, 10, 19,
-            2, 1, 10,
-            1, 11, 10};
-
-        auto mesh = Core::Mesh::Create("TestMesh", vertices, indices);
-        if (!mesh)
+        if (!testMesh)
             debug_error("Failed to create TestMesh");
 
-        auto model = std::make_shared<Core::Model>(mesh);
-        auto model2 = std::make_shared<Core::Model>(mesh);
+        auto model = std::make_shared<Core::Model>(testMesh);
+        auto model2 = std::make_shared<Core::Model>(testMesh);
 
-        auto solidColorShader = Core::Shader::Create(
-            "shaders/vertex.glsl",
-            "shaders/solid_color.glsl",
-            "Solid");
+        auto solidColorShader = resourceManager->LoadShader("shaders/vertex.glsl", "shaders/solid_color.glsl", "Solid");
         if (!solidColorShader)
             debug_error("Failed to create Solid shader");
 
@@ -172,13 +99,13 @@ namespace Solitare
     {
     }
 
-    void TestLayer::OnRender(Core::RenderContext &ctx) const
+    void TestLayer::OnRender(std::shared_ptr<Core::RenderContext> ctx) const
     {
         for (const auto &[shader, models] : shaderModels_)
         {
             shader->Use();
-            shader->SetMat4("uView", ctx.view_);
-            shader->SetMat4("uProjection", ctx.projection_);
+            shader->SetMat4("uView", ctx->view_);
+            shader->SetMat4("uProjection", ctx->projection_);
 
             for (const auto &model : models)
             {

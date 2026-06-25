@@ -10,13 +10,15 @@ namespace Core
     class Renderer
     {
     private:
-        RenderContext rctx_;
+        std::shared_ptr<RenderContext> rctx_;
 
     public:
-        Renderer() = default;
+        Renderer(float aspect_ratio);
         ~Renderer() = default;
 
         void RenderScene(std::shared_ptr<Scene> scene, GLfloat delta_time);
+
+        std::shared_ptr<RenderContext> GetRenderContext();
     };
 
 } // namespace Core

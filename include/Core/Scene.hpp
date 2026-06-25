@@ -3,11 +3,11 @@
 #include "Core/Layer.hpp"
 #include "Core/Camera.hpp"
 #include "Core/InputEvents.hpp"
+#include "Core/ResourceManager.hpp"
 
-#include <unordered_map>
-
-#include <vector>
 #include <ranges>
+#include <vector>
+#include <unordered_map>
 
 namespace Core
 {
@@ -28,13 +28,18 @@ namespace Core
         std::vector<Camera> cameras_;
         GLint active_camera_ = 0; // index in the cameras vector
 
+        std::shared_ptr<RenderContext> rctx_;
+        std::shared_ptr<ResourceManager> rmanager_;
+
         void DrawSolidBackground();
         void DrawSkyboxBackground();
         void DrawSkydomeBackground();
 
     public:
-        Scene(float aspect_ratio);
+        Scene(std::shared_ptr<ResourceManager> rmanager);
         ~Scene() = default;
+
+        void OnLoad(std::shared_ptr<RenderContext> rctx);
 
         void Update(GLfloat delta_time);
 
@@ -50,6 +55,6 @@ namespace Core
 
         void HandleEvent(Event &event);
 
-        void FillRenderContext(Core::RenderContext &ctx);
+        void UpdateRenderContext();
     };
 }

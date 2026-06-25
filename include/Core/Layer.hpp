@@ -5,6 +5,7 @@
 #include "Core/InputEvents.hpp"
 #include "Core/RenderContext.hpp"
 
+#include <memory>
 #include <unordered_map>
 
 namespace Core
@@ -12,8 +13,8 @@ namespace Core
     class Layer
     {
     protected:
-        std::unordered_map<std::shared_ptr<Shader>, std::vector<std::shared_ptr<Model>>> shaderModels_;
         std::vector<std::shared_ptr<Shader>> shaders_;
+        std::unordered_map<std::shared_ptr<Shader>, std::vector<std::shared_ptr<Model>>> shaderModels_;
 
     public:
         Layer() = default;
@@ -24,7 +25,7 @@ namespace Core
         virtual void OnUpdate() = 0;
         virtual void Transition() = 0;
         virtual void Suspend() const = 0;
-        virtual void OnRender(RenderContext &ctx) const = 0;
+        virtual void OnRender(std::shared_ptr<RenderContext> ctx) const = 0;
 
         // ------------ Base methods end ------------
 

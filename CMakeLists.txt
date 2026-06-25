@@ -25,6 +25,7 @@ add_executable(OpenGL_App
         src/Core/Renderer.cpp
         src/Core/Application.cpp
         src/Core/EventHandler.cpp
+        src/Core/ResourceManager.cpp
     ) 
 
 target_include_directories(OpenGL_App
