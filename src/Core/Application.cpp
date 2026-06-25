@@ -78,7 +78,7 @@ namespace Core
 #endif
 
             scenes_[current_scene_]->Update(delta_time);
-            renderer_.RenderScene(scenes_[current_scene_]);
+            renderer_.RenderScene(scenes_[current_scene_], delta_time);
             glfwSwapBuffers(window_);
             glfwPollEvents();
         }
@@ -92,13 +92,22 @@ namespace Core
         return dt;
     }
 
+    Application::~Application()
+    {
+        Destroy();
+    }
+
     void Application::Destroy()
     {
+        if (!window_)
+            return;
+
         for (auto scene : scenes_)
             scene->Destroy();
 
-        scenes_.clear();  // Release all GL resources while context is still alive
-        glfwTerminate();
+        scenes_.clear(); // Release all GL resources while context is still alive
+        glfwTerminate();  // Must run before EventHandler_ is released — prevents callbacks firing on a dead pointer
+        window_ = nullptr;
     }
 
     void Application::AddScene(std::shared_ptr<Core::Scene> scene)
@@ -132,6 +141,10 @@ namespace Core
             default:
                 break;
             }
+        }
+        else if (event.GetEventType() == Core::EventType::WindowClose)
+        {
+            glfwSetWindowShouldClose(window_, true);
         }
 
         if (current_scene_ == -1)

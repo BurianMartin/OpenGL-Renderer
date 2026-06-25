@@ -22,6 +22,12 @@ namespace Core
         void Draw() const;
         glm::mat4 getModelMatrix() const;
 
+        void SetPosition(const glm::vec3 &pos);
+        void SetScale(const glm::vec3 &scale);
+        void SetScale(float uniform_scale);
+        void SetRotation(const glm::quat &rot);
+        void SetRotation(float angle_radians, const glm::vec3 &axis);
+
         Model(std::shared_ptr<Mesh> mesh);
         ~Model() = default;
     };
