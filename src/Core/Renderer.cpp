@@ -3,7 +3,7 @@
 
 namespace Core
 {
-	Renderer::Renderer(float aspect_ratio)
+	Renderer::Renderer(GLfloat aspect_ratio)
 	{
 		rctx_ = std::make_shared<RenderContext>();
 		rctx_->aspect_ratio_ = aspect_ratio;
@@ -17,7 +17,7 @@ namespace Core
 			return;
 		}
 
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Reset color and depth for the next frame draw
+		glClear(GL_DEPTH_BUFFER_BIT);
 
 		scene->UpdateRenderContext();
 		rctx_->delta_time_ = delta_time;

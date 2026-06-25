@@ -25,12 +25,13 @@ namespace Core
     class Application
     {
     private:
+        ApplicationSpecification specification_;
+
         Renderer renderer_;
+
         GLFWwindow *window_;
         std::shared_ptr<EventHandler> EventHandler_;
         std::shared_ptr<ResourceManager> rmanager_;
-
-        ApplicationSpecification specification_;
 
         std::vector<std::shared_ptr<Scene>> scenes_;
 

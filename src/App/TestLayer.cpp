@@ -10,19 +10,23 @@ namespace Solitare
             debug_error("Failed to create TestMesh");
 
         auto model = std::make_shared<Core::Model>(testMesh);
-        auto model2 = std::make_shared<Core::Model>(testMesh);
+
+        // The OBJ is in raw Tinkercad units: bounding box center ≈ (-11.09, 1.0, 5.0),
+        // width ≈ 36 units. Scale to 0.05 first, then translate to bring the scaled
+        // center to the desired world position.;
+        // Centering offset = -scale * OBJ_center = -0.05 * (-11.09, 1.0, 5.0) = (0.55, -0.05, -0.25)
+        model->SetScale(0.05f);
+        model->SetPosition(glm::vec3(0.55f, -0.05f, -0.25f)); // star centered at world (0, 0, 0)
 
         auto solidColorShader = resourceManager->LoadShader("shaders/vertex.glsl", "shaders/solid_color.glsl", "Solid");
         if (!solidColorShader)
             debug_error("Failed to create Solid shader");
 
         shaders_.push_back(solidColorShader);
-        glUseProgram(solidColorShader->ID); // remove these or move these two
-
-        solidColorShader->SetVec4("triangle_color", Color_A1::Magenta); // remove these or move these two
+        solidColorShader->Use();
+        solidColorShader->SetVec4("triangle_color", Color_A1::Magenta);
 
         shaderModels_[solidColorShader].push_back(model);
-        shaderModels_[solidColorShader].push_back(model2);
 
         srand(time(NULL));
     }
