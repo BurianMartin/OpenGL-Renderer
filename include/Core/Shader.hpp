@@ -18,10 +18,6 @@ namespace Core
     class Shader
     {
     public:
-        std::string Tag_;
-
-        GLuint ID = 0;
-
         static std::shared_ptr<Shader> Create(const char *vertexPath, const char *fragmentPath, const std::string &tag);
 
         ~Shader();
@@ -42,6 +38,8 @@ namespace Core
         void SetMat3(const std::string &name, const glm::mat3 &value);
         void SetMat4(const std::string &name, const glm::mat4 &value);
 
+        std::string GetTag() const;
+
     private:
         mutable std::unordered_map<std::string, GLint> uniform_cache_;
 
@@ -51,5 +49,9 @@ namespace Core
         void CheckCompileErrors(GLuint shader, const std::string &type);
 
         std::string LoadFile(const char *path);
+
+        std::string Tag_;
+
+        GLuint ID = 0;
     };
 } // namespace Core

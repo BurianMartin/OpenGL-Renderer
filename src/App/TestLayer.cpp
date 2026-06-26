@@ -46,7 +46,7 @@ namespace Test
                 if (!ev.IsRepeat())
                 {
                     debug_info("Change triangle color");
-                    auto shader_find = std::ranges::find(shaders_, "Solid", &Core::Shader::Tag_); // Get shader by name/tag
+                    auto shader_find = std::ranges::find(shaders_, "Solid", &Core::Shader::GetTag); // Get shader by name/tag
                     if (shader_find == shaders_.end())
                     {
                         debug_info("Failed to find Solid shader");
@@ -88,14 +88,6 @@ namespace Test
     }
 
     void TestLayer::OnUpdate()
-    {
-    }
-
-    void TestLayer::Transition()
-    {
-    }
-
-    void TestLayer::Suspend() const
     {
     }
 

@@ -8,10 +8,19 @@ namespace Core
         auto &weak = meshes_[filename];
 
         if (auto existing = weak.lock())
-            return existing;                 // still alive
-        auto fresh = Mesh::Create(filename); // load from disk
-        weak = fresh;                        // cache weak ref
-        return fresh;                        // scene gets owning ptr
+            return existing; // still alive
+
+        try
+        {
+            auto fresh = Mesh::Create(filename); // load from disk
+            weak = fresh;                        // cache weak ref
+            return fresh;                        // scene gets owning ptr
+        }
+        catch (const std::exception &e)
+        {
+            debug_warn("Error loading mesh from filename: " + filename + " - " + e.what());
+            return nullptr;
+        }
     }
 
     std::shared_ptr<Shader> ResourceManager::LoadShader(const std::string &vertex_filename, const std::string &fragment_filename, const std::string &tag)

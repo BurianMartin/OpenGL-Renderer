@@ -12,8 +12,6 @@ namespace Core
             debug_error("Failed to initialize application");
             return;
         }
-
-        debug_info("After adding test scene");
     }
 
     bool Application::Init()
@@ -71,6 +69,7 @@ namespace Core
             return;
         }
 
+        last_frame_time_ = glfwGetTime();
         while (!glfwWindowShouldClose(window_))
         {
             GLfloat delta_time = ComputeDeltaTime();
@@ -135,7 +134,11 @@ namespace Core
                 if (cursor_mode_ == GLFW_CURSOR_NORMAL)
                 {
                     cursor_mode_ = GLFW_CURSOR_DISABLED;
-                    scenes_[current_scene_]->OnMouseCapture();
+
+                    if (current_scene_ != -1)
+                    {
+                        scenes_[current_scene_]->OnMouseCapture();
+                    }
                 }
                 else
                 {
@@ -173,7 +176,7 @@ namespace Core
         }
 
         // Only rotate camera when cursor is captured
-        if (event.GetEventType() == Core::EventType::MouseMoved && cursor_mode_ == GLFW_CURSOR_NORMAL)
+        if (event.GetEventType() == Core::EventType::MouseMoved && cursor_mode_ != GLFW_CURSOR_DISABLED)
             return;
 
         scenes_[current_scene_]->OnEvent(event);

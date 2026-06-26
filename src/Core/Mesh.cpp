@@ -28,7 +28,7 @@ namespace Core
         }
     }
 
-    std::shared_ptr<Mesh> Mesh::Create(const std::string filename, GLenum drawMode)
+    std::shared_ptr<Mesh> Mesh::Create(const std::string &filename, GLenum drawMode)
     {
         std::ifstream file(filename);
         if (!file.is_open())
@@ -260,9 +260,9 @@ namespace Core
         else
             glDrawArrays(drawMode, 0, vertexCount);
 
-        GLenum err = glGetError();
+        /*GLenum err = glGetError();
         if (err != GL_NO_ERROR)
-            debug_error("GL error after draw: " << err);
+            debug_error("GL error after draw: " << err);*/
     }
 
     void Mesh::setup(const std::vector<Vertex> &vertices,

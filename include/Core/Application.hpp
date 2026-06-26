@@ -1,6 +1,5 @@
 #pragma once
 #include "Utils.hpp"
-#include "Colors.hpp"
 
 #include "Core/Scene.hpp"
 #include "Core/Renderer.hpp"

@@ -7,6 +7,7 @@
 #include "Core/ResourceManager.hpp"
 
 #include "App/TestLayer.hpp"
+#include "App/InputConfig.hpp"
 
 #include <ranges>
 #include <vector>
@@ -14,6 +15,7 @@
 
 namespace Test
 {
+
     class TestScene : public Core::Scene
     {
     public:

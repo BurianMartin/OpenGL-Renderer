@@ -7,18 +7,18 @@
  */
 
 #ifndef NDEBUG
-#define debug_info(x)                                                    \
-    {                                                                    \
+#define debug_info(x)                                                  \
+    {                                                                  \
         std::cout << "\x1B[33m" << "Dbg - Info: " << x << "\033[0m\n"; \
     }
-#define debug_warn(x)                                                      \
-    {                                                                      \
+#define debug_warn(x)                                                     \
+    {                                                                     \
         std::cout << "\x1B[35m" << "Dbg - Warning: " << x << "\033[0m\n"; \
     }
-#define debug_error(x)                                                   \
-    {                                                                    \
+#define debug_error(x)                                                  \
+    {                                                                   \
         std::cout << "\x1B[31m" << "Dbg - Error: " << x << "\033[0m\n"; \
-        throw std::runtime_error("");                                    \
+        throw std::runtime_error("");                                   \
     }
 #else
 #define debug_info(x)
@@ -27,9 +27,9 @@
 #endif
 
 #ifdef LOG_EVENTS
-#define debug_event(x)                                                     \
-    {                                                                      \
-        std::cout << "\x1B[36m" << "Dbg - Event: " << x << "\033[0m\n";  \
+#define debug_event(x)                                                  \
+    {                                                                   \
+        std::cout << "\x1B[36m" << "Dbg - Event: " << x << "\033[0m\n"; \
     }
 #else
 #define debug_event(x)

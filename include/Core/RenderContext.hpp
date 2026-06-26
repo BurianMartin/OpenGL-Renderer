@@ -14,7 +14,7 @@ namespace Core
         float time_ = 0.0f; // for animated shaders
 
         GLfloat aspect_ratio_;
-        bool multicam_mode_ = false;
+        // bool multicam_mode_ = false;
 
         // later:
         // std::vector<LightData> lights;

@@ -114,17 +114,24 @@ namespace Core
         glUniformMatrix4fv(GetUniformLocation(name), 1, GL_FALSE, glm::value_ptr(value));
     }
 
+    std::string Shader::GetTag() const
+    {
+        return Tag_;
+    }
+
     void Shader::CheckCompileErrors(GLuint shader, const std::string &type)
     {
         int success;
-        char infoLog[512];
 
         if (type == "PROGRAM")
         {
             glGetProgramiv(shader, GL_LINK_STATUS, &success);
             if (!success)
             {
-                glGetProgramInfoLog(shader, 512, NULL, infoLog);
+                GLint len = 0;
+                glGetProgramiv(shader, GL_INFO_LOG_LENGTH, &len);
+                std::string infoLog(len, '\0');
+                glGetProgramInfoLog(shader, len, nullptr, infoLog.data());
                 debug_error("Program linking error: " << infoLog);
             }
         }
@@ -133,7 +140,10 @@ namespace Core
             glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
             if (!success)
             {
-                glGetShaderInfoLog(shader, 512, NULL, infoLog);
+                GLint len = 0;
+                glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &len);
+                std::string infoLog(len, '\0');
+                glGetShaderInfoLog(shader, len, nullptr, infoLog.data());
                 debug_error("Shader compile error (" << type << "): " << infoLog);
             }
         }

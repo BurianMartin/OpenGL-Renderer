@@ -23,8 +23,8 @@ namespace Core
         // ------------ Base methods start ----------
         virtual bool OnEvent(Core::Event &e) = 0;
         virtual void OnUpdate() = 0;
-        virtual void Transition() = 0;
-        virtual void Suspend() const = 0;
+        // virtual void Transition() = 0;
+        // virtual void Suspend() const = 0;
         virtual void OnRender(std::shared_ptr<RenderContext> ctx) const = 0;
 
         // ------------ Base methods end ------------
