@@ -39,32 +39,36 @@ namespace Core
 
         void CameraMove(CamMove direction, bool state);
 
+        void UpdateAspectRatio(float aspect_ratio);
+
+        void ResetMouseTracking();
+
     private:
-        bool move_up = false;
-        bool move_down = false;
-        bool move_left = false;
-        bool move_right = false;
-        bool move_forward = false;
-        bool move_backward = false;
+        bool move_up_ = false;
+        bool move_down_ = false;
+        bool move_left_ = false;
+        bool move_right_ = false;
+        bool move_forward_ = false;
+        bool move_backward_ = false;
 
         float last_x_ = 0.0f;
         float last_y_ = 0.0f;
         bool first_mouse_ = true;
 
-        glm::vec3 position;
-        glm::vec3 front;
-        glm::vec3 up;
+        glm::vec3 position_;
+        glm::vec3 front_;
+        glm::vec3 up_;
 
-        GLfloat yaw;
-        GLfloat pitch;
-        GLfloat fov;
+        GLfloat yaw_;
+        GLfloat pitch_;
+        GLfloat fov_;
 
-        GLfloat speed;
-        GLfloat sensitivity;
+        GLfloat speed_;
+        GLfloat sensitivity_;
 
-        GLfloat aspect_ratio;
-        GLfloat near_plane;
-        GLfloat far_plane;
+        GLfloat aspect_ratio_;
+        GLfloat near_plane_;
+        GLfloat far_plane_;
 
         void UpdateFront(); // rebuilds front vector from yaw and pitch
 

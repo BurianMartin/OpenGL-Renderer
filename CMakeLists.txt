@@ -3,6 +3,10 @@ project(OpenGL_App LANGUAGES CXX)
 
 enable_language(C)
 
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug)
+endif()
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set_source_files_properties(src/glad/gl.c PROPERTIES LANGUAGE C)
@@ -39,3 +43,14 @@ target_include_directories(OpenGL_App
 )
 
 target_link_libraries(OpenGL_App PRIVATE glfw GL glm::glm)
+
+option(SHOW_FPS "Show FPS counter in console" OFF)
+if(SHOW_FPS)
+    target_compile_definitions(OpenGL_App PRIVATE SHOW_FPS)
+endif()
+
+option(LOG_EVENTS "Log all input events to console" OFF)
+if(LOG_EVENTS)
+    target_compile_definitions(OpenGL_App PRIVATE LOG_EVENTS)
+endif()
+ 
