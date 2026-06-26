@@ -19,7 +19,6 @@ namespace Core
         const WindowSpecification spec_;
 
     public:
-        EventHandler() = default;
         EventHandler(GLFWwindow *window, const WindowSpecification spec);
         ~EventHandler() = default;
 

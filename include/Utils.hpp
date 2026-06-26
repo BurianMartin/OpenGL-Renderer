@@ -6,27 +6,33 @@
  * This is an include for general purpouse macros, constants and defines
  */
 
-#define DEBUG
-// #define SHOW_FPS
-
-#ifdef DEBUG
-#define debug_info(x)                                                  \
-    {                                                                  \
+#ifndef NDEBUG
+#define debug_info(x)                                                    \
+    {                                                                    \
         std::cout << "\x1B[33m" << "Dbg - Info: " << x << "\033[0m\n"; \
     }
-#define debug_warn(x)                                                     \
-    {                                                                     \
+#define debug_warn(x)                                                      \
+    {                                                                      \
         std::cout << "\x1B[35m" << "Dbg - Warning: " << x << "\033[0m\n"; \
     }
-#define debug_error(x)                                                  \
-    {                                                                   \
+#define debug_error(x)                                                   \
+    {                                                                    \
         std::cout << "\x1B[31m" << "Dbg - Error: " << x << "\033[0m\n"; \
-        throw std::runtime_error("");                                   \
+        throw std::runtime_error("");                                    \
     }
 #else
 #define debug_info(x)
 #define debug_warn(x)
 #define debug_error(x)
+#endif
+
+#ifdef LOG_EVENTS
+#define debug_event(x)                                                     \
+    {                                                                      \
+        std::cout << "\x1B[36m" << "Dbg - Event: " << x << "\033[0m\n";  \
+    }
+#else
+#define debug_event(x)
 #endif
 
 #define n_rgb(x) (static_cast<float>(x) / 255.0f)

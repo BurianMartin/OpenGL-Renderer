@@ -127,4 +127,24 @@ namespace Core
         EVENT_CLASS_TYPE(WindowClose);
     };
 
+    class WindowResizeEvent : public Event
+    {
+    private:
+        int Width_, Height_;
+
+    public:
+        WindowResizeEvent(int width, int height) : Width_(width), Height_(height) {}
+
+        inline int
+        GetWidth() const
+        {
+            return Width_;
+        }
+        inline int GetHeight() const { return Height_; }
+
+        std::string ToString() const { return std::format("WindowResizeEvent: {}, {}", Width_, Height_); }
+
+        EVENT_CLASS_TYPE(WindowResize);
+    };
+
 } // namespace Core

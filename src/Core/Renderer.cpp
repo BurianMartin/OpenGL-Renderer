@@ -1,5 +1,4 @@
 #include "Core/Renderer.hpp"
-#include "Renderer.hpp"
 
 namespace Core
 {

@@ -10,6 +10,7 @@
 #include <fstream>
 #include <memory>
 #include <sstream>
+#include <unordered_map>
 
 namespace Core
 {
@@ -42,8 +43,11 @@ namespace Core
         void SetMat4(const std::string &name, const glm::mat4 &value);
 
     private:
+        mutable std::unordered_map<std::string, GLint> uniform_cache_;
+
         Shader(const char *vertexPath, const char *fragmentPath, const std::string &tag);
 
+        GLint GetUniformLocation(const std::string &name) const;
         void CheckCompileErrors(GLuint shader, const std::string &type);
 
         std::string LoadFile(const char *path);

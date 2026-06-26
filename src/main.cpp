@@ -6,7 +6,5 @@ int main(void)
 
     App.Run();
 
-    App.Destroy();
-
     return 0;
 }

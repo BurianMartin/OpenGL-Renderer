@@ -38,10 +38,8 @@ namespace Core
         glfwSetWindowSizeCallback(window_, [](GLFWwindow *win, int width, int height)
                                   {
                                       EventHandler *EventHandler = static_cast<Core::EventHandler *>(glfwGetWindowUserPointer(win));
-                                      // TODO: Add window resize event creation here
-                                      // WindowResizeEvent event(width, height);
-                                      // EventHandler->RaiseEvent(event);
-                                  });
+                                      WindowResizeEvent event(width, height);
+                                      EventHandler->RaiseEvent(event); });
 
         glfwSetMouseButtonCallback(window_, [](GLFWwindow *win, int button, int action, int mods)
                                    {
@@ -87,7 +85,7 @@ namespace Core
 
     void EventHandler::RaiseEvent(Event &e)
     {
-        debug_info(e.ToString());
+        debug_event(e.ToString());
         if (spec_.EventCallback)
         {
             spec_.EventCallback(e);
