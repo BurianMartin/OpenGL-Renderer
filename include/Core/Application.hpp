@@ -40,7 +40,7 @@ namespace Core
 
         GLint cursor_mode_ = GLFW_CURSOR_DISABLED;
 
-        void Init();
+        bool Init();
         GLfloat ComputeDeltaTime();
 
     public:
@@ -49,11 +49,9 @@ namespace Core
 
         void Run();
 
-        void Destroy();
-
-        void AddScene(std::shared_ptr<Scene> scene); // Returns the scene ID in the vector of scenes
-
         void RaiseEvent(Event &event);
+
+        int AddScene(std::shared_ptr<Scene> scene); // Returns the scene ID in the vector of scenes
     };
 
 } // namespace Core

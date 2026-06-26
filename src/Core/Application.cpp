@@ -7,7 +7,11 @@ namespace Core
           rmanager_(std::make_shared<Core::ResourceManager>())
     {
 
-        Init();
+        if (!Init())
+        {
+            debug_error("Failed to initialize application");
+            return;
+        }
 
         auto testScene = std::make_shared<Test::TestScene>(rmanager_);
         AddScene(testScene);
@@ -15,12 +19,12 @@ namespace Core
         debug_info("After adding test scene");
     }
 
-    void Application::Init()
+    bool Application::Init()
     {
         if (!glfwInit())
         {
             debug_error("GLFW init error");
-            return;
+            return false;
         }
 
         if (specification_.windowSpec.Title.empty())
@@ -38,27 +42,28 @@ namespace Core
 
             debug_error("GLFW window creation error");
 
-            return;
+            return false;
         }
 
         // Capture and hide the mouse
         glfwSetInputMode(window_, GLFW_CURSOR, cursor_mode_);
 
-        // glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED); // Mouse lock for camera rotation
-        glfwSwapInterval(0); // 1 = vsync on, 0 = uncapped
-
         glfwMakeContextCurrent(window_);
+
+        specification_.windowSpec.VSync ? glfwSwapInterval(1) : glfwSwapInterval(0); // 1 = vsync on, 0 = uncapped
 
         EventHandler_ = std::make_shared<Core::EventHandler>(window_, specification_.windowSpec);
 
         if (!gladLoadGL(glfwGetProcAddress))
         {
             debug_error("Erorr while initializing GLAD");
+            return false;
         }
 
         glEnable(GL_DEPTH_TEST);
 
         debug_info("App init complete");
+        return true;
     }
 
     void Application::Run()
@@ -93,11 +98,6 @@ namespace Core
 
     Application::~Application()
     {
-        Destroy();
-    }
-
-    void Application::Destroy()
-    {
         if (!window_)
             return;
 
@@ -109,7 +109,7 @@ namespace Core
         window_ = nullptr;
     }
 
-    void Application::AddScene(std::shared_ptr<Core::Scene> scene)
+    int Application::AddScene(std::shared_ptr<Core::Scene> scene)
     {
         if (scenes_.empty())
         {
@@ -117,34 +117,56 @@ namespace Core
         }
         scenes_.push_back(scene);
         scene->OnLoad(renderer_.GetRenderContext());
+        return scenes_.size() - 1;
     }
 
     void Application::RaiseEvent(Event &event)
     {
-        // TODO: Replace if with a optional Event Handling function in app so App can handle events if needed
-        if (event.GetEventType() == Core::EventType::KeyPressed)
+
+        switch (event.GetEventType())
+        {
+        case Core::EventType::KeyPressed:
         {
             auto ev = static_cast<KeyPressedEvent &>(event);
             switch (ev.GetKeyCode())
             {
             case GLFW_KEY_ESCAPE:
                 glfwSetWindowShouldClose(window_, true); // Close the app with esc key press
+                return;
                 break;
             case GLFW_KEY_GRAVE_ACCENT: // Basicalyl a semicolon key, changing the cursor mode from captured to free
                 if (cursor_mode_ == GLFW_CURSOR_NORMAL)
+                {
                     cursor_mode_ = GLFW_CURSOR_DISABLED;
+                    scenes_[current_scene_]->OnMouseCapture();
+                }
                 else
+                {
                     cursor_mode_ = GLFW_CURSOR_NORMAL;
+                }
                 glfwSetInputMode(window_, GLFW_CURSOR, cursor_mode_);
-                return;
+
                 break;
             default:
                 break;
             }
+            break;
         }
-        else if (event.GetEventType() == Core::EventType::WindowClose)
+        case Core::EventType::WindowClose:
         {
             glfwSetWindowShouldClose(window_, true);
+            return;
+            break;
+        }
+        case Core::EventType::WindowResize:
+        {
+            auto ev = static_cast<WindowResizeEvent &>(event);
+            glViewport(0, 0, ev.GetWidth(), ev.GetHeight());
+            break; // forward to scene so it can update aspect ratio
+        }
+
+        default:
+            break;
         }
 
         if (current_scene_ == -1)

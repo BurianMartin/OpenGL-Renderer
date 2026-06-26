@@ -15,7 +15,7 @@ namespace Core
         uint32_t width = 1080;
         uint32_t height = 1080;
         bool isResizable = true;
-        bool VSync = true;
+        bool VSync = false;
 
         using EventCallbackFn = std::function<void(Event &)>;
         EventCallbackFn EventCallback;

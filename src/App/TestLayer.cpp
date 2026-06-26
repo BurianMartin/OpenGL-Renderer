@@ -38,7 +38,7 @@ namespace Solitare
         case Core::EventType::KeyPressed:
         {
             Core::KeyPressedEvent ev = static_cast<Core::KeyPressedEvent &>(event);
-
+            debug_info("Key pressed");
             switch (ev.GetKeyCode())
             {
             case GLFW_KEY_TAB:
@@ -54,7 +54,7 @@ namespace Solitare
                     }
 
                     auto shader = *shader_find;
-                    glUseProgram(shader->ID);
+                    shader->Use();
                     shader->SetVec4("triangle_color", Color_A1::RandomColor());
                     return true;
                 }

@@ -41,6 +41,8 @@ namespace Core
 
         void OnLoad(std::shared_ptr<RenderContext> rctx);
 
+        void OnMouseCapture();
+
         void Update(GLfloat delta_time);
 
         void AddLayer(std::shared_ptr<Layer> layer);

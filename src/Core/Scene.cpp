@@ -43,6 +43,11 @@ namespace Core
         active_camera_ = 0;
     }
 
+    void Scene::OnMouseCapture()
+    {
+        cameras_[active_camera_].ResetMouseTracking();
+    }
+
     void Scene::Update(GLfloat delta_time)
     {
         cameras_[active_camera_].Update(delta_time);
@@ -103,29 +108,53 @@ namespace Core
     void Scene::HandleEvent(Event &event)
     {
         // Optional Scene event consumption example:
-        if (event.GetEventType() == Core::EventType::KeyPressed)
+
+        switch (event.GetEventType())
+        {
+        case Core::EventType::KeyPressed:
         {
             auto ev = static_cast<KeyPressedEvent &>(event);
             auto it = Core::key_map.find(ev.GetKeyCode());
             if (it != Core::key_map.end())
+            {
                 cameras_[active_camera_].CameraMove(it->second, true);
+                return;
+            }
+            break;
         }
-        else if (event.GetEventType() == Core::EventType::KeyReleased)
+        case Core::EventType::KeyReleased:
         {
             auto ev = static_cast<KeyReleasedEvent &>(event);
             auto it = Core::key_map.find(ev.GetKeyCode());
             if (it != Core::key_map.end())
+            {
                 cameras_[active_camera_].CameraMove(it->second, false);
+                return;
+            }
+            break;
         }
-        else if (event.GetEventType() == Core::EventType::MouseMoved)
+        case Core::EventType::MouseMoved:
         {
             auto ev = static_cast<MouseMovedEvent &>(event);
             cameras_[active_camera_].ProcessMousePosition(ev.GetX(), ev.GetY());
+            return;
         }
-        else if (event.GetEventType() == Core::EventType::MouseScrolled)
+        case Core::EventType::MouseScrolled:
         {
             auto ev = static_cast<MouseScrolledEvent &>(event);
             cameras_[active_camera_].Zoom(ev.GetYOffset());
+            return;
+        }
+        case Core::EventType::WindowResize:
+        {
+            auto ev = static_cast<WindowResizeEvent &>(event);
+            rctx_->aspect_ratio_ = static_cast<float>(ev.GetWidth()) / static_cast<float>(ev.GetHeight());
+            cameras_[active_camera_].UpdateAspectRatio(rctx_->aspect_ratio_);
+            return;
+        }
+
+        default:
+            break;
         }
 
         for (std::shared_ptr<Core::Layer> &layer : std::views::reverse(layers_))
