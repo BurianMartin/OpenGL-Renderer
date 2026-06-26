@@ -1,22 +1,31 @@
-#include <glad/gl.h>
+#pragma once
+#include "Utils.hpp"
+#include "Core/Scene.hpp"
+#include "Core/Layer.hpp"
+#include "Core/Camera.hpp"
+#include "Core/InputEvents.hpp"
+#include "Core/ResourceManager.hpp"
 
 #include "App/TestLayer.hpp"
-#include "Core/Scene.hpp"
+
+#include <ranges>
+#include <vector>
+#include <unordered_map>
 
 namespace Test
 {
     class TestScene : public Core::Scene
     {
-    private:
     public:
-        TestScene(std::shared_ptr<Core::ResourceManager> rmanager) : Core::Scene(rmanager)
-        {
-            auto testLayer = std::make_shared<Solitare::TestLayer>(rmanager_);
-
-            AddLayer(testLayer);
-
-            SetBackgroundColor(Solitare::Color_A1::Lime);
-        }
+        TestScene() = default;
         ~TestScene() = default;
+
+        virtual void OnMouseCapture() override;
+
+        virtual void OnUpdate(float delta_time) override;
+
+        virtual void OnEvent(Core::Event &event) override;
+
+        virtual void OnSceneBoot() override;
     };
-} // namespace Test
+}

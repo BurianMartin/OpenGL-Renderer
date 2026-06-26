@@ -18,9 +18,9 @@
 
 ## Design / Architecture Issues
 
-- [ ] **`Application` constructor hardcodes scene setup** — `Application.cpp:12-13` directly constructs `TestScene` inside the engine constructor. Scenes should be built outside and passed in, or the engine should expose an `OnInit()` virtual/callback for subclasses.
+- [x] **`Application` constructor hardcodes scene setup** — fixed: scene construction moved to `main.cpp`; `Application` no longer depends on any app-layer type.
 
-- [ ] **`Application.hpp` includes app-layer headers** — `Application.hpp:11-12` includes `App/TestLayer.hpp` and `App/TestScene.hpp`, creating a compile-time dependency from the engine core on app-specific code. These should be removed once the hardcoded scene setup is extracted.
+- [x] **`Application.hpp` includes app-layer headers** — fixed: `App/TestLayer.hpp` and `App/TestScene.hpp` removed from `Application.hpp`.
 
 - [x] **`rctx_->aspect_ratio_` was garbage on startup** — fixed: `specification_` was declared after `renderer_` in `Application`, so `renderer_` was constructed from uninitialized width/height. Fixed by reordering member declarations so `specification_` initializes first.
 
@@ -52,22 +52,32 @@
 
 ---
 
+## Bugs introduced in the Core/App Scene refactor (current)
+
+- [x] **`OnSceneBoot()` is never called — segfault** — Fixed: `Core::Scene::OnLoad` now calls `OnSceneBoot()` after storing the shared_ptrs.
+
+- [x] **No camera is ever created — segfault** — Fixed: `TestScene::OnSceneBoot` calls `cameras_.emplace_back(rctx_->aspect_ratio_)` before adding layers.
+
+- [x] **`key_map` declared `static const` in a header** — fixed: changed to `inline const` in `include/Core/Camera.hpp`.
+
+- [x] **Duplicate `Background_Type` enum in `TestScene.hpp`** — fixed: removed from `include/App/TestScene.hpp`.
+
+- [x] **Wrong namespace closing comment in `TestScene.cpp`** — fixed: now correctly says `// namespace Test`.
+
+---
+
 ## Next Additions (planned, not yet started)
 
-- [ ] **`AppContext` / `AcceptScene` / `OnAddedToApp`** — replace the current `Scene(ResourceManager)` + `AddScene` pattern so `Application` is the single source of truth for window data.
+- [x] **`AppContext` / `AcceptScene` / `OnAddedToApp`** — superseded: the refactor went a different direction. `Application::AddScene` now passes `rmanager` and `rctx` directly into `Scene::OnLoad(rmanager, rctx)`, which then calls `OnSceneBoot()`. The scene owns its own initialization sequence.
 
-  **Steps:**
-  1. Add `AppContext` struct to `include/Core/Specifications.hpp`:
-     ```cpp
-     struct AppContext {
-         float aspect_ratio;
-         std::shared_ptr<ResourceManager> resources;
-     };
-     ```
-  2. Replace `AddScene` → `AcceptScene` in `Application`: build an `AppContext`, call `scene->OnAddedToApp(ctx)`, then push to `scenes_`.
-  3. Add `Scene::OnAddedToApp(const AppContext&)` — sets aspect ratio on all owned cameras. Remove `ResourceManager` from the `Scene` constructor (pass via context instead).
-  4. Live resize: wire `WindowResizeEvent` in `EventHandler`, handle it in `Scene::HandleEvent` → call `camera.SetAspectRatio(new_ratio)` on all cameras. Requires adding `Camera::SetAspectRatio(float)`.
+- [x] **Make `Scene` abstract** — done: `OnEvent`, `OnUpdate`, `OnMouseCapture`, and `OnSceneBoot` are all pure virtual.
 
-- [ ] **Make `Scene` abstract** — enforce subclassing so users can't accidentally instantiate the base class directly. Pairs with the `AppContext`/`AcceptScene` refactor and the plan to make this a proper engine API.
+- [ ] **Wire normals / texCoords in vertex shader** — add `layout(location = 1) in vec3 aNormal` and `layout(location = 2) in vec2 aTexCoords` to `vertex.glsl`, pass them through to fragment shaders as `out` varyings. **Prerequisite for everything below.**
 
-- [ ] **Wire normals / texCoords in vertex shader** — add `layout(location = 1) in vec3 aNormal` and `layout(location = 2) in vec2 aTexCoords` to `vertex.glsl`, pass them through to fragment shaders as `out` varyings. Required before lighting or texture work can begin.
+- [ ] **`Texture` class** — load image data via stb_image, upload to GPU (`glTexImage2D`), expose `Bind(slot)` / `Unbind()`. Factory pattern `Texture::Create(path)` consistent with `Mesh` and `Shader`. Integrate into `ResourceManager::LoadTexture(path)` for deduplication via `weak_ptr` cache.
+
+- [ ] **`Material` class** — owns a `Shader` + one or more `Texture`s + per-material uniform values (base color, roughness, etc.). Exposes `Bind()` which activates the shader, binds textures to their slots, and sets uniforms. `Model` gains a `material_` member. `Layer::OnRender` iterates by material instead of by shader (replaces the current `shaderModels_` map with a `materialModels_` equivalent).
+
+- [ ] **Lighting** — depends on normals in vertex shader. Minimum viable: directional light + point light, Blinn-Phong in the fragment shader. Needs a `Light` struct (position/direction, color, intensity, attenuation for point lights). Scene holds a list of lights; they are passed to shaders either as uniforms or via a UBO. This is the largest piece of work here.
+
+- [ ] **Multiple cameras / split-screen** — `Scene::cameras_` and `active_camera_` already support multiple cameras; the render side does not. Needs: a viewport rect per camera, `glViewport` calls to partition the window, and `Renderer::RenderScene` running once per active camera per frame with its own view/projection. `RenderContext` gets updated per camera per pass. Independent of lighting but architecturally significant.

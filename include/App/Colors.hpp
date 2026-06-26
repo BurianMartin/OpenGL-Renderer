@@ -2,7 +2,7 @@
 #pragma once
 #include <glm/glm.hpp>
 
-namespace Solitare
+namespace Test
 {
     namespace Color_A1
     {

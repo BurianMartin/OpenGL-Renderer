@@ -12,7 +12,7 @@
 
 #include <glad/gl.h>
 
-namespace Solitare
+namespace Test
 {
     class TestLayer : public Core::Layer
     {
@@ -28,4 +28,4 @@ namespace Solitare
         void Destroy() override;
     };
 
-} // namespace Solitare
+} // namespace Test

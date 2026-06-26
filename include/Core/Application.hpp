@@ -8,9 +8,6 @@
 #include "Core/Specifications.hpp"
 #include "Core/ResourceManager.hpp"
 
-#include "App/TestLayer.hpp"
-#include "App/TestScene.hpp"
-
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>

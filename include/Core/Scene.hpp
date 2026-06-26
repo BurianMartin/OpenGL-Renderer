@@ -18,7 +18,6 @@ namespace Core
         Skydome,
         None
     };
-
     class Scene
     {
     protected:
@@ -31,32 +30,109 @@ namespace Core
         std::shared_ptr<RenderContext> rctx_;
         std::shared_ptr<ResourceManager> rmanager_;
 
-        void DrawSolidBackground();
-        void DrawSkyboxBackground();
-        void DrawSkydomeBackground();
+        virtual void DrawSolidBackground() final
+        {
+            glClearColor(backgroundColor_.r, backgroundColor_.g, backgroundColor_.b, backgroundColor_.a);
+            glClear(GL_COLOR_BUFFER_BIT); // Has to be called to fill the screen with the color
+        }
+
+        virtual void DrawSkyboxBackground() final
+        {
+            // TODO: Finish after adding textures to models
+            glClear(GL_DEPTH_BUFFER_BIT); // Backround drawn, clear depth buffer to draw everything over it
+        }
+
+        virtual void DrawSkydomeBackground() final
+        {
+            // TODO: Finish after adding textures to models
+            glClear(GL_DEPTH_BUFFER_BIT); // Backround drawn, clear depth buffer to draw everything over it
+        }
+
+        virtual void UpdateRenderContext() final
+        {
+            rctx_->camera_position_ = cameras_[active_camera_].GetPosition();
+            rctx_->view_ = cameras_[active_camera_].GetViewMatrix();
+            rctx_->projection_ = cameras_[active_camera_].GetProjectionMatrix();
+        }
 
     public:
-        Scene(std::shared_ptr<ResourceManager> rmanager);
-        ~Scene() = default;
+        Scene() = default;
+        virtual ~Scene() = default;
 
-        void OnLoad(std::shared_ptr<RenderContext> rctx);
+        virtual void OnEvent(Event &event) = 0;
 
-        void OnMouseCapture();
+        virtual void OnMouseCapture() = 0;
 
-        void Update(GLfloat delta_time);
+        virtual void OnUpdate(float delta_time) = 0;
 
-        void AddLayer(std::shared_ptr<Layer> layer);
+        virtual void OnSceneBoot() = 0;
 
-        const std::vector<std::shared_ptr<Layer>> &GetLayers() const;
+        virtual void OnLoad(std::shared_ptr<ResourceManager> rmanager, std::shared_ptr<RenderContext> rctx)
+        {
+            rmanager_ = rmanager;
+            rctx_ = rctx;
+            OnSceneBoot();
+        }
 
-        void Destroy();
+        virtual void Update(GLfloat delta_time) final
+        {
+            OnUpdate(delta_time);
+            for (auto layer : layers_)
+            {
+                layer->OnUpdate();
+            }
+        }
 
-        void DrawBackground();
+        virtual void AddLayer(std::shared_ptr<Layer> layer) final
+        {
+            layers_.push_back(layer);
+        }
 
-        void SetBackgroundColor(glm::vec4 color);
+        virtual void Destroy() final
+        {
+            for (auto &layer : layers_)
+            {
+                layer->Destroy();
+            }
+        }
 
-        void HandleEvent(Event &event);
+        virtual void DrawBackground()
+        {
+            switch (backgroundType_)
+            {
+            case Background_Type::Solid:
+                DrawSolidBackground();
+                break;
 
-        void UpdateRenderContext();
+            case Background_Type::Skybox:
+                DrawSkyboxBackground();
+                break;
+
+            case Background_Type::Skydome:
+                DrawSkydomeBackground();
+                break;
+
+            case Background_Type::None:
+                break;
+
+            default:
+                break;
+            }
+        }
+
+        virtual void SetBackgroundColor(glm::vec4 color) final
+        {
+            backgroundColor_ = color;
+            backgroundType_ = Background_Type::Solid;
+        }
+
+        virtual void Render() final
+        {
+            UpdateRenderContext();
+            for (const auto &layer : layers_)
+            {
+                layer->OnRender(rctx_); // Layer ordering matters !!
+            }
+        }
     };
 }

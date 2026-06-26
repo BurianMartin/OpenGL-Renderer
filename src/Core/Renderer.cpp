@@ -18,16 +18,11 @@ namespace Core
 
 		glClear(GL_DEPTH_BUFFER_BIT);
 
-		scene->UpdateRenderContext();
 		rctx_->delta_time_ = delta_time;
 		rctx_->time_ += delta_time; // accumulated elapsed time for animated shaders
 
 		scene->DrawBackground();
-
-		for (const auto &layer : scene->GetLayers())
-		{
-			layer->OnRender(rctx_); // Remember, layer ordering matters !!
-		}
+		scene->Render();
 	}
 
 	std::shared_ptr<RenderContext> Renderer::GetRenderContext()

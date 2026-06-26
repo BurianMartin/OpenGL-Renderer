@@ -1,6 +1,6 @@
 #include "App/Colors.hpp"
 
-const glm::vec4 Solitare::Color_A1::RandomColor()
+const glm::vec4 Test::Color_A1::RandomColor()
 {
     int color = rand() % 15;
     switch (color)
