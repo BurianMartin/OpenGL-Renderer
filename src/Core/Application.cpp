@@ -13,9 +13,6 @@ namespace Core
             return;
         }
 
-        auto testScene = std::make_shared<Test::TestScene>(rmanager_);
-        AddScene(testScene);
-
         debug_info("After adding test scene");
     }
 
@@ -116,7 +113,7 @@ namespace Core
             current_scene_ = 0;
         }
         scenes_.push_back(scene);
-        scene->OnLoad(renderer_.GetRenderContext());
+        scene->OnLoad(rmanager_, renderer_.GetRenderContext());
         return scenes_.size() - 1;
     }
 
@@ -179,7 +176,7 @@ namespace Core
         if (event.GetEventType() == Core::EventType::MouseMoved && cursor_mode_ == GLFW_CURSOR_NORMAL)
             return;
 
-        scenes_[current_scene_]->HandleEvent(event);
+        scenes_[current_scene_]->OnEvent(event);
     }
 
 } // namespace Core

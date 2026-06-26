@@ -4,8 +4,10 @@
 
 #include <glad/gl.h>
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <GLFW/glfw3.h>
+#include <glm/gtc/matrix_transform.hpp>
+
+#include <unordered_map>
 
 enum class CamMove
 {
@@ -19,6 +21,14 @@ enum class CamMove
 
 namespace Core
 {
+
+    inline const std::unordered_map<int, CamMove> key_map = {
+        {GLFW_KEY_W, CamMove::FORWARD},
+        {GLFW_KEY_S, CamMove::BACKWARD},
+        {GLFW_KEY_A, CamMove::LEFT},
+        {GLFW_KEY_D, CamMove::RIGHT},
+        {GLFW_KEY_SPACE, CamMove::UP},
+        {GLFW_KEY_LEFT_SHIFT, CamMove::DOWN}};
 
     class Camera
     {

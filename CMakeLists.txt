@@ -20,9 +20,9 @@ add_executable(OpenGL_App
 
         src/App/TestLayer.cpp
         src/App/Colors.cpp
+        src/App/TestScene.cpp
         
         src/Core/Mesh.cpp
-        src/Core/Scene.cpp
         src/Core/Model.cpp
         src/Core/Camera.cpp
         src/Core/Shader.cpp

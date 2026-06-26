@@ -1,6 +1,6 @@
 #include "App/TestLayer.hpp"
 
-namespace Solitare
+namespace Test
 {
     TestLayer::TestLayer(std::shared_ptr<Core::ResourceManager> resourceManager)
     {
@@ -118,4 +118,4 @@ namespace Solitare
             }
         }
     }
-} // namespace Solitare
+} // namespace Test
