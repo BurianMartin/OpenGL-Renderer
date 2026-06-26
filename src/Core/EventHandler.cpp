@@ -9,25 +9,25 @@ namespace Core
 
         glfwSetKeyCallback(window_, [](GLFWwindow *win, int key, int scancode, int action, int mods)
                            {
-            EventHandler *EventHandler = static_cast<Core::EventHandler *>(glfwGetWindowUserPointer(win));
-           
+            EventHandler *handler = static_cast<Core::EventHandler *>(glfwGetWindowUserPointer(win));
+
             switch (action)
             {
             case GLFW_PRESS:{
                 KeyPressedEvent event(key, false);
-                EventHandler->RaiseEvent(event);
+                handler->RaiseEvent(event);
                 break;}
 
             case GLFW_RELEASE:
             {
                 KeyReleasedEvent event(key);
-                EventHandler->RaiseEvent(event);
+                handler->RaiseEvent(event);
                 break;
             }
             case GLFW_REPEAT:
             {
                 KeyPressedEvent event(key, true);
-                EventHandler->RaiseEvent(event);
+                handler->RaiseEvent(event);
                 break;
             }
 
@@ -37,25 +37,25 @@ namespace Core
 
         glfwSetWindowSizeCallback(window_, [](GLFWwindow *win, int width, int height)
                                   {
-                                      EventHandler *EventHandler = static_cast<Core::EventHandler *>(glfwGetWindowUserPointer(win));
+                                      EventHandler *handler = static_cast<Core::EventHandler *>(glfwGetWindowUserPointer(win));
                                       WindowResizeEvent event(width, height);
-                                      EventHandler->RaiseEvent(event); });
+                                      handler->RaiseEvent(event); });
 
         glfwSetMouseButtonCallback(window_, [](GLFWwindow *win, int button, int action, int mods)
                                    {
-            EventHandler *EventHandler = static_cast<Core::EventHandler *>(glfwGetWindowUserPointer(win));
+            EventHandler *handler = static_cast<Core::EventHandler *>(glfwGetWindowUserPointer(win));
             
                     switch (action)
                     {
                     case GLFW_PRESS:{
                         MouseButtonPressedEvent event(button);
-                        EventHandler->RaiseEvent(event);
+                        handler->RaiseEvent(event);
                         break;}
 
                     case GLFW_RELEASE:
                         {
                         MouseButtonReleasedEvent event(button);
-                        EventHandler->RaiseEvent(event);
+                        handler->RaiseEvent(event);
                         break;
                         }
                         
@@ -65,22 +65,22 @@ namespace Core
 
         glfwSetWindowCloseCallback(window_, [](GLFWwindow *win)
                                    {
-                                       EventHandler *EventHandler = static_cast<Core::EventHandler *>(glfwGetWindowUserPointer(win));
+                                       EventHandler *handler = static_cast<Core::EventHandler *>(glfwGetWindowUserPointer(win));
  
                                        WindowCloseEvent event;
-                                       EventHandler->RaiseEvent(event); });
+                                       handler->RaiseEvent(event); });
 
         glfwSetCursorPosCallback(window_, [](GLFWwindow *win, double xpos, double ypos)
                                  {
-            EventHandler *EventHandler = static_cast<Core::EventHandler *>(glfwGetWindowUserPointer(win));
+            EventHandler *handler = static_cast<Core::EventHandler *>(glfwGetWindowUserPointer(win));
             MouseMovedEvent event(xpos, ypos);
-            EventHandler->RaiseEvent(event); });
+            handler->RaiseEvent(event); });
 
         glfwSetScrollCallback(window_, [](GLFWwindow *win, double xoffset, double yoffset)
                               {
-            EventHandler *EventHandler = static_cast<Core::EventHandler *>(glfwGetWindowUserPointer(win));
+            EventHandler *handler = static_cast<Core::EventHandler *>(glfwGetWindowUserPointer(win));
             MouseScrolledEvent event(xoffset, yoffset);
-            EventHandler->RaiseEvent(event); });
+            handler->RaiseEvent(event); });
     }
 
     void EventHandler::RaiseEvent(Event &e)

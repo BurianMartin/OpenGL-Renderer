@@ -22,8 +22,8 @@ namespace Test
         case Core::EventType::KeyPressed:
         {
             auto ev = static_cast<Core::KeyPressedEvent &>(event);
-            auto it = Core::key_map.find(ev.GetKeyCode());
-            if (it != Core::key_map.end())
+            auto it = key_map.find(ev.GetKeyCode());
+            if (it != key_map.end())
             {
                 cameras_[active_camera_].CameraMove(it->second, true);
                 return;
@@ -33,8 +33,8 @@ namespace Test
         case Core::EventType::KeyReleased:
         {
             auto ev = static_cast<Core::KeyReleasedEvent &>(event);
-            auto it = Core::key_map.find(ev.GetKeyCode());
-            if (it != Core::key_map.end())
+            auto it = key_map.find(ev.GetKeyCode());
+            if (it != key_map.end())
             {
                 cameras_[active_camera_].CameraMove(it->second, false);
                 return;

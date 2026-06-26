@@ -26,12 +26,10 @@ namespace Core
     class Mesh
     {
     public:
-        std::string tag_;
-
         // --- Factory ---
         static std::shared_ptr<Mesh> Create(const std::string &tag, const std::vector<Vertex> &vertices, const std::vector<unsigned int> &indices, GLenum drawMode = GL_TRIANGLES);
         static std::shared_ptr<Mesh> Create(const std::string &tag, const std::vector<GLfloat> &vertices, const std::vector<GLuint> &indices, GLenum drawMode = GL_TRIANGLES);
-        static std::shared_ptr<Mesh> Create(const std::string filename, GLenum drawMode = GL_TRIANGLES);
+        static std::shared_ptr<Mesh> Create(const std::string &filename, GLenum drawMode = GL_TRIANGLES);
 
         ~Mesh();
 
@@ -59,6 +57,8 @@ namespace Core
 
         void setup(const std::vector<Vertex> &vertices, const std::vector<unsigned int> &indices);
         void destroy();
+
+        std::string tag_;
 
         GLuint VAO = 0;
         GLuint VBO = 0;

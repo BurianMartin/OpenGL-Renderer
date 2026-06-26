@@ -7,7 +7,6 @@
 
 #include <ranges>
 #include <vector>
-#include <unordered_map>
 
 namespace Core
 {
@@ -20,6 +19,33 @@ namespace Core
     };
     class Scene
     {
+    private:
+        void DrawSolidBackground()
+        {
+            glClearColor(backgroundColor_.r, backgroundColor_.g, backgroundColor_.b, backgroundColor_.a);
+            glClear(GL_COLOR_BUFFER_BIT); // Has to be called to fill the screen with the color
+        }
+
+        void DrawSkyboxBackground()
+        {
+            // TODO: Finish after adding textures to models
+            glClear(GL_DEPTH_BUFFER_BIT); // Backround drawn, clear depth buffer to draw everything over it
+        }
+
+        void DrawSkydomeBackground()
+        {
+            // TODO: Finish after adding textures to models
+            glClear(GL_DEPTH_BUFFER_BIT); // Backround drawn, clear depth buffer to draw everything over it
+        }
+
+        void UpdateRenderContext()
+        {
+            assert(!cameras_.empty());
+            rctx_->camera_position_ = cameras_[active_camera_].GetPosition();
+            rctx_->view_ = cameras_[active_camera_].GetViewMatrix();
+            rctx_->projection_ = cameras_[active_camera_].GetProjectionMatrix();
+        }
+
     protected:
         glm::vec4 backgroundColor_ = glm::vec4(0);
         Background_Type backgroundType_ = Background_Type::None;
@@ -29,31 +55,6 @@ namespace Core
 
         std::shared_ptr<RenderContext> rctx_;
         std::shared_ptr<ResourceManager> rmanager_;
-
-        virtual void DrawSolidBackground() final
-        {
-            glClearColor(backgroundColor_.r, backgroundColor_.g, backgroundColor_.b, backgroundColor_.a);
-            glClear(GL_COLOR_BUFFER_BIT); // Has to be called to fill the screen with the color
-        }
-
-        virtual void DrawSkyboxBackground() final
-        {
-            // TODO: Finish after adding textures to models
-            glClear(GL_DEPTH_BUFFER_BIT); // Backround drawn, clear depth buffer to draw everything over it
-        }
-
-        virtual void DrawSkydomeBackground() final
-        {
-            // TODO: Finish after adding textures to models
-            glClear(GL_DEPTH_BUFFER_BIT); // Backround drawn, clear depth buffer to draw everything over it
-        }
-
-        virtual void UpdateRenderContext() final
-        {
-            rctx_->camera_position_ = cameras_[active_camera_].GetPosition();
-            rctx_->view_ = cameras_[active_camera_].GetViewMatrix();
-            rctx_->projection_ = cameras_[active_camera_].GetProjectionMatrix();
-        }
 
     public:
         Scene() = default;
@@ -67,14 +68,14 @@ namespace Core
 
         virtual void OnSceneBoot() = 0;
 
-        virtual void OnLoad(std::shared_ptr<ResourceManager> rmanager, std::shared_ptr<RenderContext> rctx)
+        void OnLoad(std::shared_ptr<ResourceManager> rmanager, std::shared_ptr<RenderContext> rctx)
         {
             rmanager_ = rmanager;
             rctx_ = rctx;
             OnSceneBoot();
         }
 
-        virtual void Update(GLfloat delta_time) final
+        virtual void Update(float delta_time) final
         {
             OnUpdate(delta_time);
             for (auto layer : layers_)
@@ -96,7 +97,7 @@ namespace Core
             }
         }
 
-        virtual void DrawBackground()
+        virtual void DrawBackground() final
         {
             switch (backgroundType_)
             {
@@ -113,7 +114,7 @@ namespace Core
                 break;
 
             case Background_Type::None:
-                break;
+                break; // intentional — caller owns the color buffer
 
             default:
                 break;
