@@ -7,7 +7,7 @@
 #include "Core/RenderContext.hpp"
 #include "Core/ResourceManager.hpp"
 
-#include "App/Colors.hpp"
+#include "Core/Colors.hpp"
 #include "App/InputConfig.hpp"
 
 #include <memory>

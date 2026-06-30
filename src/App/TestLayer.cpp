@@ -22,11 +22,10 @@ namespace Test
         if (!solidColorShader)
             debug_error("Failed to create Solid shader");
 
-        shaders_.push_back(solidColorShader);
-        solidColorShader->Use();
-        solidColorShader->SetVec4("triangle_color", Color_A1::Magenta);
+        auto material = Core::Material::Create(solidColorShader, "Solid");
 
-        shaderModels_[solidColorShader].push_back(model);
+        materialModels_[material].push_back(model);
+        materials_.push_back(material);
 
         srand(time(NULL));
     }
@@ -38,7 +37,6 @@ namespace Test
         case Core::EventType::KeyPressed:
         {
             Core::KeyPressedEvent ev = static_cast<Core::KeyPressedEvent &>(event);
-            debug_info("Key pressed");
             switch (ev.GetKeyCode())
             {
             case GLFW_KEY_TAB:
@@ -46,16 +44,17 @@ namespace Test
                 if (!ev.IsRepeat())
                 {
                     debug_info("Change triangle color");
-                    auto shader_find = std::ranges::find(shaders_, "Solid", &Core::Shader::GetTag); // Get shader by name/tag
-                    if (shader_find == shaders_.end())
+                    auto material_find = std::ranges::find_if(materials_, [](const std::shared_ptr<Core::Material> &m)
+                                                              { return m->GetTag() == "Solid"; });
+                    if (material_find == materials_.end())
                     {
-                        debug_info("Failed to find Solid shader");
+                        debug_info("Failed to find Solid material");
                         return true;
                     }
 
-                    auto shader = *shader_find;
-                    shader->Use();
-                    shader->SetVec4("triangle_color", Color_A1::RandomColor());
+                    auto material = *material_find;
+                    material->GetShader()->Use();
+                    material->GetShader()->SetVec4("triangle_color", Core::Color_A1::RandomColor());
                     return true;
                 }
                 else
@@ -97,15 +96,13 @@ namespace Test
 
     void TestLayer::OnRender(std::shared_ptr<Core::RenderContext> ctx) const
     {
-        for (const auto &[shader, models] : shaderModels_)
+        for (const auto &[material, models] : materialModels_)
         {
-            shader->Use();
-            shader->SetMat4("uView", ctx->view_);
-            shader->SetMat4("uProjection", ctx->projection_);
+            material->Bind(ctx);
 
             for (const auto &model : models)
             {
-                shader->SetMat4("uModel", model->getModelMatrix());
+                material->GetShader()->SetMat4("uModel", model->getModelMatrix());
                 model->Draw();
             }
         }
