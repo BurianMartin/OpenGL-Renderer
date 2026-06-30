@@ -1,4 +1,5 @@
 #include "Core/Model.hpp"
+#include "Core/Material.hpp"
 
 namespace Core
 {
@@ -10,9 +11,9 @@ namespace Core
     }
 
     void Model::SetPosition(const glm::vec3 &pos) { position_ = pos; }
-    void Model::SetScale(const glm::vec3 &scale)  { scale_ = scale; }
-    void Model::SetScale(float s)                  { scale_ = glm::vec3(s); }
-    void Model::SetRotation(const glm::quat &rot)  { rotation_ = rot; }
+    void Model::SetScale(const glm::vec3 &scale) { scale_ = scale; }
+    void Model::SetScale(float s) { scale_ = glm::vec3(s); }
+    void Model::SetRotation(const glm::quat &rot) { rotation_ = rot; }
     void Model::SetRotation(float angle_radians, const glm::vec3 &axis)
     {
         rotation_ = glm::angleAxis(angle_radians, glm::normalize(axis));
@@ -22,6 +23,9 @@ namespace Core
     {
         mesh_->draw();
     }
+
+    void Model::SetMaterial(std::shared_ptr<Material> material) { material_ = material; }
+    std::shared_ptr<Material> Model::GetMaterial() const { return material_; }
 
     glm::mat4 Model::getModelMatrix() const
     {

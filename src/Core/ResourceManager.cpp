@@ -33,4 +33,15 @@ namespace Core
         return fresh;
     }
 
+    std::shared_ptr<Texture> ResourceManager::LoadTexture(const std::string &filename)
+    {
+        auto &weak = textures_[filename];
+        if (auto existing = weak.lock())
+            return existing;
+
+        auto fresh = Texture::Create(filename);
+        weak = fresh;
+        return fresh;
+    }
+
 } // namespace Core

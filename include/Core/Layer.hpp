@@ -1,7 +1,7 @@
 #pragma once
 #include "Utils.hpp"
-#include "Core/Shader.hpp"
 #include "Core/Model.hpp"
+#include "Core/Material.hpp"
 #include "Core/InputEvents.hpp"
 #include "Core/RenderContext.hpp"
 
@@ -13,8 +13,9 @@ namespace Core
     class Layer
     {
     protected:
-        std::vector<std::shared_ptr<Shader>> shaders_;
-        std::unordered_map<std::shared_ptr<Shader>, std::vector<std::shared_ptr<Model>>> shaderModels_;
+        std::vector<std::shared_ptr<Material>> materials_;
+        std::unordered_map<std::shared_ptr<Material>, std::vector<std::shared_ptr<Model>>>
+            materialModels_;
 
     public:
         Layer() = default;

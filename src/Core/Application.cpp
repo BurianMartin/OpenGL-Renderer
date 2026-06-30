@@ -70,11 +70,22 @@ namespace Core
         }
 
         last_frame_time_ = glfwGetTime();
+#ifdef SHOW_FPS
+        int fps_frame_count = 0;
+        GLfloat fps_accum = 0.0f;
+#endif
         while (!glfwWindowShouldClose(window_))
         {
             GLfloat delta_time = ComputeDeltaTime();
 #ifdef SHOW_FPS
-            debug_info("FPS: " << 1.0f / delta_time);
+            fps_accum += delta_time;
+            fps_frame_count++;
+            if (fps_accum >= 1.0f)
+            {
+                debug_info("FPS: " << fps_frame_count / fps_accum);
+                fps_frame_count = 0;
+                fps_accum = 0.0f;
+            }
 #endif
 
             scenes_[current_scene_]->Update(delta_time);

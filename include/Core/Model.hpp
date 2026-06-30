@@ -9,14 +9,16 @@
 
 namespace Core
 {
+    class Material;
+
     class Model
     {
-        const std::shared_ptr<Mesh> mesh_; // non-owning reference (or shared_ptr)
+        const std::shared_ptr<Mesh> mesh_;
         glm::vec3 position_;
         glm::vec3 scale_;
-        glm::quat rotation_; // prefer quat over Euler to avoid gimbal lock
+        glm::quat rotation_;
 
-        // TODO: Add textures and lighting
+        std::shared_ptr<Material> material_;
 
     public:
         void Draw() const;
@@ -27,6 +29,9 @@ namespace Core
         void SetScale(float uniform_scale);
         void SetRotation(const glm::quat &rot);
         void SetRotation(float angle_radians, const glm::vec3 &axis);
+
+        void SetMaterial(std::shared_ptr<Material> material);
+        std::shared_ptr<Material> GetMaterial() const;
 
         Model(std::shared_ptr<Mesh> mesh);
         ~Model() = default;
