@@ -4,131 +4,99 @@ Tracks open bugs, design decisions, and implementation plans.
 
 ---
 
-## Open Bugs
-
-- [ ] **Vertex normals and texCoords uploaded but unused** — `Mesh::setup()` wires attributes at locations 1 (normal) and 2 (texCoords) but `vertex.glsl` only declares `aPos`. Normals and UV data are silently discarded by the driver every frame. Prerequisite for all lighting and texture work.
-
----
-
 ## Open Architecture
-
-- [ ] **Multiple cameras / split-screen** — `Scene::cameras_` and `active_camera_` already support multiple cameras; the render side does not. Needs a viewport rect per camera, `glViewport` calls to partition the window, and `Renderer::RenderScene` running once per active camera with its own view/projection. `RenderContext` updated per camera per pass.
 
 - [ ] **Rename `RenderContext`** — currently holds camera matrices, time, delta_time, aspect_ratio. The name implies render target only. Rename to something like `FrameContext` or `SceneContext` everywhere.
 
----
+- [ ] **`ResourceManager::LoadMaterial`** — signature exists but has no implementation. Needs a decision on parameters (material isn't a file — needs shader + tag at minimum). Implement when the Layer integration is fully settled.
 
-## Implementation Plan: Textures + Lighting + Materials
-
-To be done in one pass — all three touch the same files. Doing them separately means writing the vertex shader, Material class, and fragment shaders twice.
-
-Estimated time: 14–24 hours.
+- [ ] **Multiple cameras / split-screen** — `Scene::cameras_` and `active_camera_` already support multiple cameras; the render side does not. Needs a viewport rect per camera, `glViewport` calls, and `Renderer::RenderScene` running once per active camera.
 
 ---
 
-### Phase 1 — Vertex shader groundwork
+## Next: Shaders + Lighting
 
-1. Update `shaders/vertex.glsl`:
-   - Add `layout(location = 1) in vec3 aNormal`
-   - Add `layout(location = 2) in vec2 aTexCoords`
-   - Pass both to the fragment stage as `out vec3 vNormal` and `out vec2 vTexCoords`
-   - Transform normal to world space: `vNormal = mat3(transpose(inverse(uModel))) * aNormal`
+To be done in order — vertex shader first (independent), then light struct design, then fragment shader and C++ lights together.
 
 ---
 
-### Phase 2 — Texture system
+### Step 1 — Vertex shader (`shaders/vertex.glsl`)
 
-2. Add `stb_image.h` to the project (single-header library, drop into `include/vendor/`). Define `STB_IMAGE_IMPLEMENTATION` in exactly one `.cpp` file.
-
-3. Create `include/Core/Texture.hpp` + `src/Core/Texture.cpp`:
-   - Private constructor, `Texture::Create(path)` factory — consistent with `Mesh` and `Shader`
-   - Load image with stb_image, upload via `glTexImage2D`, generate mipmaps
-   - `Bind(GLuint slot)` — calls `glActiveTexture(GL_TEXTURE0 + slot)` then `glBindTexture`
-   - `Unbind()`
-   - Stores `ID_`, `width_`, `height_`
-
-4. Add `ResourceManager::LoadTexture(path)` — same `weak_ptr` cache pattern as `LoadMesh` and `LoadShader`.
+- [ ] Add `layout(location = 1) in vec3 aNormal`
+- [ ] Add `layout(location = 2) in vec2 aTexCoords`
+- [ ] Add `out vec3 vNormal` and `out vec2 vTexCoords`
+- [ ] Transform normal to world space: `vNormal = mat3(transpose(inverse(uModel))) * aNormal`
+- [ ] Pass through: `vTexCoords = aTexCoords`
 
 ---
 
-### Phase 3 — Light class hierarchy
+### Step 2 — Design the light struct (no code, paper/whiteboard)
 
-5. Create `include/Core/Light.hpp`:
-   - Abstract base `Light`: `color_` (vec3), `intensity_` (float), pure virtual `GetType()`
-   - `PointLight`: adds `position_` (vec3), attenuation constants (`constant_`, `linear_`, `quadratic_`)
-   - `DirectionalLight`: adds `direction_` (vec3), no position
-   - `SpotLight`: adds `position_` (vec3), `direction_` (vec3), inner and outer cone angles
-
-6. Define the **std140-aligned GPU struct** — must match the GLSL UBO block exactly:
-   - `vec3` pads to `vec4` under std140 — every vec3 field needs a trailing float padding
-   - Include a `type` int field so the shader can branch per light
-   - Define a max light count constant (e.g. 32) used in both C++ and GLSL
+- [ ] Decide what fields each light type needs (position, direction, color, intensity, attenuation, cone angles)
+- [ ] Decide on a max light count (e.g. 32)
+- [ ] Decide how to encode light type (int: 0=point, 1=directional, 2=spot)
+- [ ] Account for std140 padding — every `vec3` occupies 16 bytes, not 12
 
 ---
 
-### Phase 4 — UBO setup
+### Step 3 — Fragment uber-shader (`shaders/lit.frag`)
 
-7. Add `vector<shared_ptr<Light>> lights_` and `AddLight(shared_ptr<Light>)` to `Core::Scene`.
-
-8. Create the UBO in `Scene::OnSceneBoot`:
-   - `glGenBuffers`, `glBindBuffer(GL_UNIFORM_BUFFER)`
-   - `glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo_)` — binding point 0 is the lights block
-   - Allocate buffer storage for max light count upfront
-
-9. In `Scene::UpdateRenderContext()`, pack current lights into the std140 struct and upload via `glBufferSubData`. Also write the active light count into the buffer.
-
----
-
-### Phase 5 — Material class
-
-10. Create `include/Core/Material.hpp` + `src/Core/Material.cpp`:
-    - Owns `shared_ptr<Shader>`
-    - Owns `vector<pair<shared_ptr<Texture>, GLuint>>` (texture + slot index)
-    - Owns per-material uniform values (base color `vec4`, etc.)
-    - `Material::Create(shader)` factory
-    - `AddTexture(texture, slot)`
-    - `Bind(shared_ptr<RenderContext>)` — calls `shader->Use()`, binds textures, sets camera uniforms from rctx (view, projection, camera_position, time)
-
-11. Update `Model`:
-    - Add `shared_ptr<Material> material_`
-    - Add `SetMaterial(shared_ptr<Material>)`
-
-12. Update `Layer`:
-    - Replace `shaderModels_` (`map<shared_ptr<Shader>, vector<shared_ptr<Model>>>`) with `materialModels_` (`map<shared_ptr<Material>, vector<shared_ptr<Model>>>`)
-    - Replace `shaders_` vector with `materials_` vector
-    - Update `OnRender`: iterate `materialModels_`, call `material->Bind(rctx)`, set `uModel` per model, draw
+- [ ] Declare `uniform bool uLit` and `uniform bool uHasTexture`
+- [ ] Declare `uniform sampler2D uTexture`
+- [ ] Declare `uniform vec4 uBaseColor`
+- [ ] Declare `uniform struct { vec3 ambient; vec3 diffuse; vec3 specular; float shininess; } uMaterial` — matches what `Material::Bind` already sets
+- [ ] Declare the lights UBO block: `layout(std140, binding = 0) uniform LightsBlock` — struct layout must match Step 2 exactly
+- [ ] Declare `uniform int uLightCount`
+- [ ] Write unlit branch: output `uBaseColor` (or texture sample if `uHasTexture`)
+- [ ] Write Blinn-Phong lit branch: loop over lights, branch on type, sum ambient + diffuse + specular
 
 ---
 
-### Phase 6 — Fragment shaders
+### Step 4 — C++ Light classes (`include/Core/Light.hpp`)
 
-13. Create `shaders/lit_color.frag` — Blinn-Phong, solid base color, no texture:
-    - Declare the lights UBO block (`layout(std140, binding = 0)`) matching the C++ struct exactly
-    - Loop over active lights, branch on type (point / directional / spot)
-    - Output: ambient + diffuse + specular
-
-14. Create `shaders/lit_textured.frag` — same as above but samples `uniform sampler2D uTexture` for the base color.
-
-15. Keep `shaders/solid_color.frag` and `shaders/time_color.glsl` as-is for unlit use.
+- [ ] Abstract base `Light`: `color_` (vec3), `intensity_` (float), pure virtual `GetType()`
+- [ ] `PointLight`: adds `position_` (vec3), attenuation (`constant_`, `linear_`, `quadratic_`)
+- [ ] `DirectionalLight`: adds `direction_` (vec3)
+- [ ] `SpotLight`: adds `position_`, `direction_`, `innerCutoff_`, `outerCutoff_`
+- [ ] Define `GPULight` packed struct with std140 padding (vec3 → vec4, trailing int for type) — must match the GLSL struct from Step 3 exactly
 
 ---
 
-### Phase 7 — Integration and test
+### Step 5 — UBO wiring in `Scene`
 
-16. Update `TestScene::OnSceneBoot`: add at least one `PointLight` and one `DirectionalLight` via `AddLight()`.
+- [ ] Add `vector<shared_ptr<Light>> lights_` and `AddLight()` to `Scene`
+- [ ] Add `GLuint lightUBO_` member
+- [ ] Create and allocate the UBO in `OnSceneBoot` (after GL context exists): `glGenBuffers`, `glBindBufferBase(GL_UNIFORM_BUFFER, 0, lightUBO_)`
+- [ ] In `UpdateRenderContext()`: pack lights into `GPULight` array, upload via `glBufferSubData`, upload `uLightCount`
 
-17. Update `TestLayer`: replace the raw shader+model map with a `Material`, assign a texture if one is available, use `lit_color.frag` or `lit_textured.frag`.
+---
 
-18. Add stb_image and all new source files to `CMakeLists.txt`.
+### Step 6 — Integration
 
-19. Build, run, verify lighting and textures are correct.
+- [ ] `TestScene::OnSceneBoot` — load `lit.frag` instead of `solid_color.glsl`, add a `PointLight` and a `DirectionalLight` via `AddLight()`
+- [ ] `TestLayer` constructor — create material with the new shader, optionally `SetTexture` if a test image is available
+- [ ] `TestLayer` Tab handler — change to `material->SetColor(...)` now that `uBaseColor` is in the shader (currently goes through `GetShader()->SetVec4("triangle_color", ...)` as a workaround)
+- [ ] Add `Light.cpp` to `CMakeLists.txt` if needed
+
+---
+
+## Backlog
+
+- **Sub-mesh support** — one OBJ file produces N `(Mesh, Material)` pairs via `usemtl` groups. Requires Material system (done) + OBJ parser update + Scene/Layer wiring. Natural next feature after lighting.
+- **Skybox / Skydome** — `DrawSkyboxBackground()` and `DrawSkydomeBackground()` are stubbed in `Scene`; finish after textures are working.
 
 ---
 
 ## Completed
 
-Kept for reference.
-
+- Texture class (`include/Core/Texture.hpp`, `src/Core/Texture.cpp`) — private constructor, `Create(path)` factory, `Bind(slot)`, `Unbind()`, RAII destructor, stb_image load with vertical flip, GL_RGB/GL_RGBA format detection
+- Material class (`include/Core/Material.hpp`, `src/Core/Material.cpp`) — private constructor, `Create(shader, tag)` factory, `Bind(ctx)` sets all shader uniforms + binds texture, Blinn-Phong coefficients (ambient/diffuse/specular/shininess), base color, `GetShader()`, setters
+- Layer refactor — `shaderModels_`/`shaders_` replaced by `materialModels_`/`materials_`; `OnRender` now calls `material->Bind(ctx)` once per bucket
+- `TestLayer` updated — uses Material, tag-based lookup via `GetTag()`, Tab handler uses `GetShader()` as temporary workaround until `lit.frag` exists
+- `ResourceManager` updated — `LoadTexture` returns `shared_ptr<Texture>` with weak_ptr cache; `LoadMaterial` signature added (not yet implemented)
+- `Colors.hpp` moved from `include/App/` to `include/Core/`, namespace changed from `Test::Color_A1` to `Core::Color_A1`; all call sites updated
+- FPS counter changed to 1-second rolling average (was instantaneous `1/delta_time`)
+- stb_image added at `include/stb_image/stb_image.h`
 - Vertex attributes correctly wired in `Mesh::setup()` at locations 0 (pos), 1 (normal), 2 (texCoords)
 - `Core::Scene` fully abstract — `OnEvent`, `OnUpdate`, `OnMouseCapture`, `OnSceneBoot` pure virtual
 - Core/App separation complete — engine has zero compile-time dependency on app-layer code
