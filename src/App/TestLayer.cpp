@@ -1,31 +1,44 @@
 #include "App/TestLayer.hpp"
-
+#include "Core/Material.hpp"
+#include "Core/Light.hpp"
 namespace Test
 {
     TestLayer::TestLayer(std::shared_ptr<Core::ResourceManager> resourceManager)
     {
-        auto testMesh = resourceManager->LoadMesh("models/star.obj");
+        auto testMesh = resourceManager->LoadMesh("models/cube.obj");
 
         if (!testMesh)
             debug_error("Failed to create TestMesh");
 
         auto model = std::make_shared<Core::Model>(testMesh);
+        auto sun = std::make_shared<Core::Model>(testMesh);
 
         // The OBJ is in raw Tinkercad units: bounding box center ≈ (-11.09, 1.0, 5.0),
         // width ≈ 36 units. Scale to 0.05 first, then translate to bring the scaled
         // center to the desired world position.;
         // Centering offset = -scale * OBJ_center = -0.05 * (-11.09, 1.0, 5.0) = (0.55, -0.05, -0.25)
         model->SetScale(0.05f);
-        model->SetPosition(glm::vec3(0.55f, -0.05f, -0.25f)); // star centered at world (0, 0, 0)
+        model->SetPosition(glm::vec3(-1.0f, -0.05f, -0.25f)); // cube centered at world (0, 0, 0)
 
-        auto solidColorShader = resourceManager->LoadShader("shaders/vertex.glsl", "shaders/solid_color.glsl", "Solid");
+        sun->SetScale(0.05f);
+        sun->SetPosition(glm::vec3(1.0f, -0.05f, -0.25f)); // sun centered at world (0, 0, 0)
+
+        auto solidColorShader = resourceManager->LoadShader("shaders/vertex.glsl", "shaders/fragment.glsl", "Uber");
         if (!solidColorShader)
             debug_error("Failed to create Solid shader");
 
-        auto material = Core::Material::Create(solidColorShader, "Solid");
+        /*
+        auto material1 = Core::Material::Create(solidColorShader, "Changing");
+        auto material2 = Core::Material::Create(solidColorShader, "Solid");
+        */
 
-        materialModels_[material].push_back(model);
-        materials_.push_back(material);
+        auto material1 = Core::Material::Gold(solidColorShader);
+        auto material2 = Core::Material::Gold(solidColorShader);
+
+        materialModels_[material2].push_back(model);
+        materialModels_[material1].push_back(sun);
+        materials_.push_back(material1);
+        materials_.push_back(material2);
 
         srand(time(NULL));
     }
@@ -43,12 +56,12 @@ namespace Test
             {
                 if (!ev.IsRepeat())
                 {
-                    debug_info("Change triangle color");
+                    debug_info("Color change now!");
                     auto material_find = std::ranges::find_if(materials_, [](const std::shared_ptr<Core::Material> &m)
-                                                              { return m->GetTag() == "Solid"; });
+                                                              { return m->GetTag() == "Changing"; });
                     if (material_find == materials_.end())
                     {
-                        debug_info("Failed to find Solid material");
+                        debug_info("Failed to find Changing material");
                         return true;
                     }
 

@@ -4,6 +4,33 @@ Tracks open bugs, design decisions, and implementation plans.
 
 ---
 
+## 🔜 Next session — Finish lighting
+
+The lighting pipeline is partially done. The fragment shader has working Blinn-Phong with a **hardcoded placeholder light** (`normalize(2, 3, 1.5)`). The C++ `Light`, `PointLight`, `DirectionalLight`, `SpotLight` classes exist but are not yet connected to the renderer.
+
+**Remaining steps in order:**
+1. Design `GPULight` packed struct with std140 padding (Step 2)
+2. Replace hardcoded light in `fragment.glsl` with UBO loop (Step 3)
+3. Wire the UBO into `Scene` — `AddLight()`, `glGenBuffers`, upload per frame (Step 5)
+4. Add real lights in `TestScene::OnSceneBoot()` (Step 6)
+
+---
+
+## Known bugs / issues found in audit
+
+- [ ] **Normal matrix computed on GPU** (`vertex.glsl:18`) — `mat3(transpose(inverse(uModel)))` runs per-vertex. Should be computed on CPU and passed as `uniform mat3 uNormalMatrix`. Low priority now, but will hurt when many models are on screen.
+- [ ] **OBJ loader drops non-triangle faces** (`Mesh.cpp:81`) — quads and n-gons silently skipped. Blender exports quads by default. Always export with "Triangulate Faces", or add a fan-triangulation step to the loader.
+- [ ] **`assert` in `UpdateRenderContext`** (`Scene.hpp:43`) — compiles out in release, turning a missing-camera error into UB. Replace with `debug_error`.
+- [ ] **`ResourceManager::LoadShader` cache ignores tag** (`ResourceManager.cpp:28`) — same vert+frag paths with different tags return the first cached shader with the wrong tag.
+- [ ] **`getModelMatrix()` camelCase** (`Model.cpp:30`) — inconsistent with all other PascalCase getters. Rename to `GetModelMatrix()`.
+- [ ] **Dead `if (!Init())` in Application constructor** (`Application.cpp:10`) — `Init()` never returns false, it always throws. Check is dead code.
+
+Fixed in this audit:
+- [x] **Back faces rendered** — `glEnable(GL_CULL_FACE)` + `glCullFace(GL_BACK)` added to `Application::Init` (`Application.cpp:58`)
+- [x] **Fragment shader: no clamp, full ambient** — added `0.1 *` ambient scale and `clamp(...)` on output (`fragment.glsl`)
+
+---
+
 ## Open Architecture
 
 - [ ] **Rename `RenderContext`** — currently holds camera matrices, time, delta_time, aspect_ratio. The name implies render target only. Rename to something like `FrameContext` or `SceneContext` everywhere.
@@ -20,44 +47,47 @@ To be done in order — vertex shader first (independent), then light struct des
 
 ---
 
-### Step 1 — Vertex shader (`shaders/vertex.glsl`)
+### Step 1 — Vertex shader (`shaders/vertex.glsl`) ✅
 
-- [ ] Add `layout(location = 1) in vec3 aNormal`
-- [ ] Add `layout(location = 2) in vec2 aTexCoords`
-- [ ] Add `out vec3 vNormal` and `out vec2 vTexCoords`
-- [ ] Transform normal to world space: `vNormal = mat3(transpose(inverse(uModel))) * aNormal`
-- [ ] Pass through: `vTexCoords = aTexCoords`
+- [x] Add `layout(location = 1) in vec3 aNormal`
+- [x] Add `layout(location = 2) in vec2 aTexCoords`
+- [x] Add `out vec3 vNormal`, `out vec3 vFragPos`, `out vec2 vTexCoords`
+- [x] Transform normal to world space: `vNormal = mat3(transpose(inverse(uModel))) * aNormal`
+- [x] Pass through: `vTexCoords = aTexCoords`, `vFragPos = vec3(uModel * vec4(aPos, 1.0))`
 
 ---
 
 ### Step 2 — Design the light struct (no code, paper/whiteboard)
 
-- [ ] Decide what fields each light type needs (position, direction, color, intensity, attenuation, cone angles)
 - [ ] Decide on a max light count (e.g. 32)
-- [ ] Decide how to encode light type (int: 0=point, 1=directional, 2=spot)
-- [ ] Account for std140 padding — every `vec3` occupies 16 bytes, not 12
+- [ ] Decide how to encode light type (int: 0=directional, 1=point, 2=spot — matches `LightType` enum)
+- [ ] Account for std140 padding — every `vec3` occupies 16 bytes, not 12; use `vec4` in the GPU struct
 
 ---
 
-### Step 3 — Fragment uber-shader (`shaders/lit.frag`)
+### Step 3 — Fragment uber-shader (`shaders/fragment.glsl`) — partially done
 
-- [ ] Declare `uniform bool uLit` and `uniform bool uHasTexture`
-- [ ] Declare `uniform sampler2D uTexture`
-- [ ] Declare `uniform vec4 uBaseColor`
-- [ ] Declare `uniform struct { vec3 ambient; vec3 diffuse; vec3 specular; float shininess; } uMaterial` — matches what `Material::Bind` already sets
-- [ ] Declare the lights UBO block: `layout(std140, binding = 0) uniform LightsBlock` — struct layout must match Step 2 exactly
-- [ ] Declare `uniform int uLightCount`
-- [ ] Write unlit branch: output `uBaseColor` (or texture sample if `uHasTexture`)
-- [ ] Write Blinn-Phong lit branch: loop over lights, branch on type, sum ambient + diffuse + specular
+- [x] Declare inputs: `vNormal`, `vFragPos`, `vTexCoords`
+- [x] Declare `uniform bool uHasTexture`, `uniform sampler2D uTexture`, `uniform vec4 uBaseColor`
+- [x] Declare `uniform struct { vec3 ambient; vec3 diffuse; vec3 specular; float shininess; } uMaterial`
+- [x] Declare `uniform vec3 uCameraPos`, `uniform float uTime`
+- [x] Unlit/texture branch: `baseColor = uHasTexture ? texture(...) : uBaseColor`
+- [x] Blinn-Phong calculation with hardcoded directional light at `normalize(1, 2, 0.5)` as placeholder
+- [ ] Replace hardcoded light with `layout(std140, binding = 0) uniform LightsBlock` + loop over lights
+- [ ] Add `uniform int uLightCount`
+- [ ] Add light color to ambient/diffuse/specular calculations
+- [ ] Branch on light type (directional vs point vs spot) inside the loop
+- [ ] Add attenuation for point and spot lights
+- [ ] Add cone angle test for spot lights
 
 ---
 
-### Step 4 — C++ Light classes (`include/Core/Light.hpp`)
+### Step 4 — C++ Light classes ✅
 
-- [ ] Abstract base `Light`: `color_` (vec3), `intensity_` (float), pure virtual `GetType()`
-- [ ] `PointLight`: adds `position_` (vec3), attenuation (`constant_`, `linear_`, `quadratic_`)
-- [ ] `DirectionalLight`: adds `direction_` (vec3)
-- [ ] `SpotLight`: adds `position_`, `direction_`, `innerCutoff_`, `outerCutoff_`
+- [x] Abstract base `Light` (`include/Core/Light.hpp`): `color_` (vec3), `intensity_` (float), `LIGHT_CLASS_TYPE` macro, `LightType` enum (Directional, Point, Spot)
+- [x] `DirectionalLight` (`include/Core/Lights.hpp`): adds `direction_` (vec3), normalised on set
+- [x] `PointLight`: adds `position_` (vec3), attenuation (`constant_`, `linear_`, `quadratic_`)
+- [x] `SpotLight`: adds `position_`, `direction_`, `innerCutoff_`, `outerCutoff_` (stored as cosines)
 - [ ] Define `GPULight` packed struct with std140 padding (vec3 → vec4, trailing int for type) — must match the GLSL struct from Step 3 exactly
 
 ---
@@ -66,17 +96,17 @@ To be done in order — vertex shader first (independent), then light struct des
 
 - [ ] Add `vector<shared_ptr<Light>> lights_` and `AddLight()` to `Scene`
 - [ ] Add `GLuint lightUBO_` member
-- [ ] Create and allocate the UBO in `OnSceneBoot` (after GL context exists): `glGenBuffers`, `glBindBufferBase(GL_UNIFORM_BUFFER, 0, lightUBO_)`
+- [ ] Create and allocate the UBO in `OnSceneBoot`: `glGenBuffers`, `glBindBufferBase(GL_UNIFORM_BUFFER, 0, lightUBO_)`
 - [ ] In `UpdateRenderContext()`: pack lights into `GPULight` array, upload via `glBufferSubData`, upload `uLightCount`
 
 ---
 
 ### Step 6 — Integration
 
-- [ ] `TestScene::OnSceneBoot` — load `lit.frag` instead of `solid_color.glsl`, add a `PointLight` and a `DirectionalLight` via `AddLight()`
-- [ ] `TestLayer` constructor — create material with the new shader, optionally `SetTexture` if a test image is available
-- [ ] `TestLayer` Tab handler — change to `material->SetColor(...)` now that `uBaseColor` is in the shader (currently goes through `GetShader()->SetVec4("triangle_color", ...)` as a workaround)
-- [ ] Add `Light.cpp` to `CMakeLists.txt` if needed
+- [x] `TestLayer` uses `fragment.glsl` and `Material` presets (Gold etc.)
+- [ ] `TestScene::OnSceneBoot` — add a `PointLight` and a `DirectionalLight` via `AddLight()`
+- [ ] `TestLayer` Tab handler — update to `material->SetColor(...)` (currently dead code looking for "Changing" tag)
+- [ ] Confirm `Light.cpp` not needed (all light classes are header-only)
 
 ---
 

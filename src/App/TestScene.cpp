@@ -83,7 +83,7 @@ namespace Test
 
         AddLayer(testLayer);
 
-        SetBackgroundColor(Core::Color_A1::Lime);
+        SetBackgroundColor(Core::Color_A1::Black);
     }
 
 } // namespace Test
