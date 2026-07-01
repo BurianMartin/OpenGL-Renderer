@@ -135,20 +135,34 @@ namespace Core
         {
             debug_info("No normals found in " << filename << " — generating flat normals");
 
+            // Expand to one vertex per index so each triangle gets its own
+            // unshared vertices — shared vertices would get overwritten by the
+            // last face that touches them, giving wrong normals at edges/corners.
+            std::vector<Vertex> flat;
+            std::vector<unsigned int> flatIndices;
+            flat.reserve(indices.size());
+            flatIndices.reserve(indices.size());
+
             for (size_t i = 0; i < indices.size(); i += 3)
             {
-                Vertex &v0 = vertices[indices[i]];
-                Vertex &v1 = vertices[indices[i + 1]];
-                Vertex &v2 = vertices[indices[i + 2]];
+                Vertex v0 = vertices[indices[i]];
+                Vertex v1 = vertices[indices[i + 1]];
+                Vertex v2 = vertices[indices[i + 2]];
 
-                glm::vec3 edge1 = v1.position - v0.position;
-                glm::vec3 edge2 = v2.position - v0.position;
-                glm::vec3 normal = glm::normalize(glm::cross(edge1, edge2));
+                glm::vec3 normal = glm::normalize(glm::cross(v1.position - v0.position, v2.position - v0.position));
+                v0.normal = v1.normal = v2.normal = normal;
 
-                v0.normal = normal;
-                v1.normal = normal;
-                v2.normal = normal;
+                unsigned int base = static_cast<unsigned int>(flat.size());
+                flat.push_back(v0);
+                flat.push_back(v1);
+                flat.push_back(v2);
+                flatIndices.push_back(base);
+                flatIndices.push_back(base + 1);
+                flatIndices.push_back(base + 2);
             }
+
+            vertices = std::move(flat);
+            indices  = std::move(flatIndices);
         }
 
         debug_info("Loaded OBJ: " << filename << " — " << vertices.size() << " vertices, " << indices.size() / 3 << " triangles");

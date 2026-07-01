@@ -18,6 +18,17 @@ namespace Core
     {
     public:
         static std::shared_ptr<Material> Create(std::shared_ptr<Shader> shader, const std::string &tag);
+
+        static std::shared_ptr<Material> Gold(std::shared_ptr<Shader> shader);
+        static std::shared_ptr<Material> Silver(std::shared_ptr<Shader> shader);
+        static std::shared_ptr<Material> Bronze(std::shared_ptr<Shader> shader);
+        static std::shared_ptr<Material> Chrome(std::shared_ptr<Shader> shader);
+        static std::shared_ptr<Material> Emerald(std::shared_ptr<Shader> shader);
+        static std::shared_ptr<Material> Ruby(std::shared_ptr<Shader> shader);
+        static std::shared_ptr<Material> Pearl(std::shared_ptr<Shader> shader);
+        static std::shared_ptr<Material> Obsidian(std::shared_ptr<Shader> shader);
+        static std::shared_ptr<Material> Light(std::shared_ptr<Shader> shader);
+        static std::shared_ptr<Material> Copper(std::shared_ptr<Shader> shader);
         ~Material() = default;
 
         void Bind(std::shared_ptr<RenderContext> ctx) const;

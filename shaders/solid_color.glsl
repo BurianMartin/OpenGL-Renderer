@@ -1,8 +1,8 @@
 #version 450 core
-uniform vec4 triangle_color;
+uniform vec4 uBaseColor;
 out vec4 FragColor;
 
 void main()
 {
-    FragColor = triangle_color;
+    FragColor = uBaseColor;
 }

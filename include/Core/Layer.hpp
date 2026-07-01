@@ -14,8 +14,7 @@ namespace Core
     {
     protected:
         std::vector<std::shared_ptr<Material>> materials_;
-        std::unordered_map<std::shared_ptr<Material>, std::vector<std::shared_ptr<Model>>>
-            materialModels_;
+        std::unordered_map<std::shared_ptr<Material>, std::vector<std::shared_ptr<Model>>> materialModels_;
 
     public:
         Layer() = default;
