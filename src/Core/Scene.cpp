@@ -1,6 +1,7 @@
 #include "Core/Scene.hpp"
 
 #include <cassert>
+#include "Scene.hpp"
 
 namespace Core
 {
@@ -28,6 +29,27 @@ namespace Core
         rctx_->camera_position_ = cameras_[active_camera_].GetPosition();
         rctx_->view_ = cameras_[active_camera_].GetViewMatrix();
         rctx_->projection_ = cameras_[active_camera_].GetProjectionMatrix();
+    }
+
+    void Scene::LoadLights()
+    {
+        rctx_->BindLightBuffer();
+
+        glm::vec4 countHeader(static_cast<float>(lights_.size()), 0.0f, 0.0f, 0.0f);
+        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::vec4), &countHeader);
+
+        std::vector<GPULight> gpuLights;
+        gpuLights.reserve(lights_.size());
+        for (const auto &light : lights_)
+            gpuLights.push_back(light->ToGPULight());
+
+        glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::vec4),
+                        gpuLights.size() * sizeof(GPULight), gpuLights.data());
+    }
+
+    void Scene::AddLight(std::shared_ptr<Light> light)
+    {
+        lights_.push_back(light);
     }
 
     void Scene::OnLoad(std::shared_ptr<ResourceManager> rmanager, std::shared_ptr<RenderContext> rctx)
@@ -92,6 +114,7 @@ namespace Core
     void Scene::Render()
     {
         UpdateRenderContext();
+        LoadLights();
         for (const auto &layer : layers_)
         {
             layer->OnRender(rctx_); // Layer ordering matters !!

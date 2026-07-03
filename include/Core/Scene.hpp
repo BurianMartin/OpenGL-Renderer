@@ -1,6 +1,7 @@
 #pragma once
 #include "Utils.hpp"
 #include "Core/Layer.hpp"
+#include "Core/Lights.hpp"
 #include "Core/Camera.hpp"
 #include "Core/InputEvents.hpp"
 #include "Core/ResourceManager.hpp"
@@ -39,15 +40,26 @@ namespace Core
         /// Refreshes `rctx_`'s camera-derived fields from the active Camera. @warning Asserts `!cameras_.empty()`, which compiles out in release builds — calling Render() before any camera exists is undefined behavior there.
         void UpdateRenderContext();
 
+        void LoadLights();
+
     protected:
         glm::vec4 backgroundColor_ = glm::vec4(0);
         Background_Type backgroundType_ = Background_Type::None;
         std::vector<std::shared_ptr<Layer>> layers_;
         std::vector<Camera> cameras_;
+        std::vector<std::shared_ptr<Light>> lights_;
         GLint active_camera_ = 0; // index in the cameras vector
 
         std::shared_ptr<RenderContext> rctx_;
         std::shared_ptr<ResourceManager> rmanager_;
+
+        void AddLight(std::shared_ptr<Light> light);
+
+        /// Appends a layer to the render/event-dispatch list; order matters (see Layer). Only ever called by subclasses from OnSceneBoot(), never externally.
+        virtual void AddLayer(std::shared_ptr<Layer> layer) final;
+
+        /// Sets a solid background color and switches `backgroundType_` to `Solid`. Only ever called by subclasses from OnSceneBoot(), never externally.
+        virtual void SetBackgroundColor(glm::vec4 color) final;
 
     public:
         Scene() = default;
@@ -71,17 +83,11 @@ namespace Core
         /// Calls OnUpdate(delta_time), then every layer's OnUpdate(). Called once per frame.
         virtual void Update(float delta_time) final;
 
-        /// Appends a layer to the render/event-dispatch list; order matters (see Layer).
-        virtual void AddLayer(std::shared_ptr<Layer> layer) final;
-
         /// Calls Destroy() on every layer, ahead of scene teardown.
         virtual void Destroy() final;
 
         /// Dispatches to the active Background_Type's draw routine.
         virtual void DrawBackground() final;
-
-        /// Sets a solid background color and switches `backgroundType_` to `Solid`.
-        virtual void SetBackgroundColor(glm::vec4 color) final;
 
         /// Refreshes the render context from the active camera, then calls every layer's OnRender() in order.
         virtual void Render() final;
