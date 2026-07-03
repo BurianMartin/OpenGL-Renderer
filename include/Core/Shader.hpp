@@ -15,13 +15,31 @@
 namespace Core
 {
 
+    /**
+     * @brief Compiles/links a GLSL vertex+fragment program and exposes typed uniform setters.
+     *
+     * Construction is private — use `Create`, which compiles both stages
+     * and links them, returning `nullptr` if a file is missing or
+     * compilation/linking fails (the underlying constructor throws via
+     * `debug_error`; `Create` catches it). Uniform locations are looked up
+     * once per name and cached, so repeated `Set*` calls with the same name
+     * are cheap.
+     */
     class Shader
     {
     public:
+        /**
+         * @brief Loads, compiles, and links a shader program from two GLSL files.
+         * @param vertexPath Path to the vertex shader source, relative to the working directory.
+         * @param fragmentPath Path to the fragment shader source, relative to the working directory.
+         * @param tag Identifier for later lookup (see GetTag()); has no effect on the GL program itself.
+         * @return A new Shader, or `nullptr` if a file couldn't be loaded or compilation/linking failed.
+         */
         static std::shared_ptr<Shader> Create(const char *vertexPath, const char *fragmentPath, const std::string &tag);
 
         ~Shader();
 
+        /// Binds this program (`glUseProgram`) so subsequent `Set*`/draw calls apply to it.
         void Use();
 
         void SetBool(const std::string &name, bool value);
@@ -38,6 +56,7 @@ namespace Core
         void SetMat3(const std::string &name, const glm::mat3 &value);
         void SetMat4(const std::string &name, const glm::mat4 &value);
 
+        /// @return The tag this shader was created with.
         std::string GetTag() const;
 
     private:

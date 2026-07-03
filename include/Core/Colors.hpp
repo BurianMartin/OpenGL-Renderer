@@ -4,6 +4,7 @@
 
 namespace Core
 {
+    /// Named `glm::vec4` (RGBA, 0-1 range) color constants, plus RandomColor() for picking one at random.
     namespace Color_A1
     {
         inline const glm::vec4 Red = {1.0f, 0.0f, 0.0f, 1.0f};
@@ -26,6 +27,7 @@ namespace Core
         inline const glm::vec4 SkyBlue = {0.4f, 0.7f, 1.0f, 1.0f};
         inline const glm::vec4 Brown = {0.6f, 0.3f, 0.1f, 1.0f};
 
+        /// @return One of the named colors above, chosen uniformly at random.
         const glm::vec4 RandomColor();
 
     } // namespace Color

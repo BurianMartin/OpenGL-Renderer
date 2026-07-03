@@ -5,6 +5,17 @@
 
 namespace Core
 {
+    /**
+     * @brief Per-frame data handed to every Layer::OnRender call.
+     *
+     * Owned by Renderer, refreshed once per frame by
+     * Scene::UpdateRenderContext() from the scene's active Camera, and
+     * passed down as a `shared_ptr` so Layers/Materials can read from it
+     * without the Scene needing to expose its Camera list directly.
+     * Material::Bind is the main consumer — it uploads `view_`,
+     * `projection_`, `camera_position_`, and `time_` as shader uniforms
+     * every time a material is bound.
+     */
     struct RenderContext // Used to pass context and necessary data to layes on render
     {
         glm::mat4 view_;

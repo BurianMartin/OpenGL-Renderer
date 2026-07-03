@@ -1,0 +1,49 @@
+<!-- HTML footer for doxygen 1.9.8-->
+<!-- start footer part -->
+<!--BEGIN GENERATE_TREEVIEW-->
+<div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
+  <ul>
+    $navpath
+    <li class="footer">$generatedby <a href="https://www.doxygen.org/index.html"><img class="footer" src="$relpath^doxygen.svg" width="104" height="31" alt="doxygen"/></a> $doxygenversion </li>
+  </ul>
+</div>
+<!--END GENERATE_TREEVIEW-->
+<!--BEGIN !GENERATE_TREEVIEW-->
+<hr class="footer"/><address class="footer"><small>
+$generatedby&#160;<a href="https://www.doxygen.org/index.html"><img class="footer" src="$relpath^doxygen.svg" width="104" height="31" alt="doxygen"/></a> $doxygenversion
+</small></address>
+<!--END !GENERATE_TREEVIEW-->
+
+<!--
+These extensions are deliberately in the FOOTER, not the header. jQuery
+runs $(document).ready() callbacks in registration order, and the
+menu/search box (#MSearchBox) is created by a ready-callback registered
+in the body (menu.js's initMenu() call). A version of this that lived in
+header.html registered earlier and ran first, before #MSearchBox existed,
+so DoxygenAwesomeDarkModeToggle.init()'s `getElementById("MSearchBox")`
+returned null and the toggle button silently never appeared — Doxygen
+still built a valid site, it just had no visible way to leave dark mode.
+Registering these from the footer guarantees they run after the menu is
+built.
+-->
+<script type="text/javascript" src="$relpath^doxygen-awesome-darkmode-toggle.js"></script>
+<script type="text/javascript">
+    DoxygenAwesomeDarkModeToggle.init()
+</script>
+
+<script type="text/javascript" src="$relpath^doxygen-awesome-fragment-copy-button.js"></script>
+<script type="text/javascript">
+    DoxygenAwesomeFragmentCopyButton.init()
+</script>
+
+<script type="text/javascript" src="$relpath^doxygen-awesome-paragraph-link.js"></script>
+<script type="text/javascript">
+    DoxygenAwesomeParagraphLink.init()
+</script>
+
+<script type="text/javascript" src="$relpath^doxygen-awesome-interactive-toc.js"></script>
+<script type="text/javascript">
+    DoxygenAwesomeInteractiveToc.init()
+</script>
+</body>
+</html>

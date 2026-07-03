@@ -1,0 +1,92 @@
+/* Custom theme tweaks layered on top of the vendored Doxygen Awesome theme
+ * (docs/doxygen-awesome-css/) — accent color + a gradient banner behind the
+ * project title, going for a livelier "GPU/graphics" feel instead of the
+ * theme's default flat white/blue look. See docs/README.md for the
+ * customization mechanism this relies on (CSS custom properties).
+ */
+
+html {
+    --primary-color: #6D5DFC;
+    --primary-dark-color: #4B3FB0;
+    --primary-light-color: #A79BFF;
+    --border-radius-small: 6px;
+    --border-radius-medium: 10px;
+    --border-radius-large: 14px;
+}
+
+html.dark-mode {
+    --primary-color: #8C7DFF;
+    --primary-dark-color: #6D5DFC;
+    --primary-light-color: #C1B8FF;
+}
+
+/* Gradient banner behind the project title/logo/search box.
+ * NOTE: only `background` is overridden here — the sidebar-only theme
+ * (doxygen-awesome-sidebar-only.css) hardcodes #top to a fixed 120px
+ * height and #titlearea already budgets its own padding within that; an
+ * earlier version of this added extra padding/margin on #titlearea and it
+ * silently pushed the search box out of the fixed-height area (clipped,
+ * so it just never appeared — same "looks fine, one thing quietly
+ * doesn't work" failure mode as the toggle-button ordering bug). Don't
+ * add padding/margin/width/height overrides here without checking
+ * doxygen-awesome-sidebar-only.css's --top-height / --side-nav-fixed-width
+ * math first.
+ */
+#titlearea {
+    background: linear-gradient(120deg, #2563EB 0%, #7C3AED 55%, #06B6D4 100%);
+}
+
+#titlearea #projectname,
+#titlearea #projectnumber,
+#titlearea #projectbrief {
+    color: #ffffff !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+#projectlogo img {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+/* Slightly livelier code blocks and panels to match the rounder corners. */
+div.fragment,
+div.contents table.markdownTable,
+div.memitem {
+    border-radius: var(--border-radius-medium);
+}
+
+/* Main page background: a faint viewport-grid pattern (nod to a 3D
+ * renderer's default grid floor) instead of a flat fill, applied only to
+ * `body` — NOT the `--page-background-color` variable, which ~30 other
+ * rules across the theme also reuse (search windows, borders, etc.) with
+ * `background-color` (solid-only, would silently ignore a gradient/image
+ * value). #side-nav / #nav-tree / #top already paint their own opaque
+ * `--side-nav-background`, so this only shows in the actual reading area.
+ */
+body {
+    background-color: #fbfbfe;
+    background-image:
+        linear-gradient(rgba(109, 93, 252, 0.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(109, 93, 252, 0.07) 1px, transparent 1px);
+    background-size: 42px 42px;
+    background-attachment: fixed;
+}
+
+html.dark-mode body {
+    background-color: #17171f;
+    background-image:
+        linear-gradient(rgba(140, 125, 255, 0.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(140, 125, 255, 0.07) 1px, transparent 1px);
+    background-size: 42px 42px;
+    background-attachment: fixed;
+}
+
+@media screen and (prefers-color-scheme: dark) {
+    html:not(.light-mode) body {
+        background-color: #17171f;
+        background-image:
+            linear-gradient(rgba(140, 125, 255, 0.07) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(140, 125, 255, 0.07) 1px, transparent 1px);
+        background-size: 42px 42px;
+        background-attachment: fixed;
+    }
+}

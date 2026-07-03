@@ -13,6 +13,7 @@
 
 namespace Core
 {
+    /// Common base for KeyPressedEvent/KeyReleasedEvent — carries the GLFW key code.
     class KeyEvent : public Event
     {
     protected:
@@ -20,9 +21,11 @@ namespace Core
         GLint keycode_;
 
     public:
+        /// @return The GLFW key code (e.g. `GLFW_KEY_W`) this event refers to.
         inline GLint GetKeyCode() const { return keycode_; }
     };
 
+    /// Raised on key-down (and, per GLFW, on OS key-repeat while held).
     class KeyPressedEvent : public KeyEvent
     {
     private:
@@ -31,6 +34,7 @@ namespace Core
     public:
         KeyPressedEvent(int keycode, bool isRepeat) : KeyEvent(keycode), IsRepeat_(isRepeat) {}
 
+        /// @return True if this is an OS-generated repeat while the key is held, not the initial press.
         inline bool IsRepeat() const { return IsRepeat_; }
 
         std::string ToString() const { return std::format("KeyPressedEvent: {} (repeat: {})", keycode_, IsRepeat_); }
@@ -38,6 +42,7 @@ namespace Core
         EVENT_CLASS_TYPE(KeyPressed);
     };
 
+    /// Raised on key-up.
     class KeyReleasedEvent : public KeyEvent
     {
     public:
@@ -50,6 +55,7 @@ namespace Core
 
     // ------------------- Mouse Events -------------------
 
+    /// Raised on every cursor position update; coordinates are in screen space (pixels from top-left).
     class MouseMovedEvent : public Event
     {
     private:
@@ -66,6 +72,7 @@ namespace Core
         EVENT_CLASS_TYPE(MouseMoved);
     };
 
+    /// Raised on scroll-wheel/trackpad scroll input; consumed by Camera::Zoom for FOV control.
     class MouseScrolledEvent : public Event
     {
     private:
@@ -82,6 +89,7 @@ namespace Core
         EVENT_CLASS_TYPE(MouseScrolled)
     };
 
+    /// Common base for MouseButtonPressedEvent/MouseButtonReleasedEvent — carries the GLFW button code.
     class MouseButtonEvent : public Event
     {
     protected:
@@ -89,9 +97,11 @@ namespace Core
         MouseButtonEvent(GLint button) : Button_(button) {}
 
     public:
+        /// @return The GLFW mouse button code (e.g. `GLFW_MOUSE_BUTTON_LEFT`).
         inline int GetMouseButton() const { return Button_; }
     };
 
+    /// Raised on mouse-button-down.
     class MouseButtonPressedEvent : public MouseButtonEvent
     {
     public:
@@ -103,6 +113,7 @@ namespace Core
         EVENT_CLASS_TYPE(MouseButtonPressed);
     };
 
+    /// Raised on mouse-button-up.
     class MouseButtonReleasedEvent : public MouseButtonEvent
     {
     public:
@@ -114,6 +125,7 @@ namespace Core
         EVENT_CLASS_TYPE(MouseButtonReleased);
     };
 
+    /// Raised once when the user requests the window be closed (e.g. clicking the X). Application handles this by stopping the main loop.
     class WindowCloseEvent : public Event
     {
     private:
@@ -127,6 +139,7 @@ namespace Core
         EVENT_CLASS_TYPE(WindowClose);
     };
 
+    /// Raised whenever the window's framebuffer size changes; consumers should update aspect-ratio-dependent state (e.g. Camera's projection matrix).
     class WindowResizeEvent : public Event
     {
     private:
