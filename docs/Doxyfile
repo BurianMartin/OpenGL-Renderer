@@ -1,0 +1,85 @@
+# Doxyfile for OpenGL-Renderer.
+#
+# This file only lists the settings we deliberately override — everything
+# else uses Doxygen's built-in default. Run `doxygen -g docs/Doxyfile.full`
+# from the project root if you ever want to see every available option.
+#
+# Usage (from the project root):
+#   doxygen docs/Doxyfile
+# Output goes to docs/generated/html/index.html (gitignored — it's a build
+# artifact, not source).
+#
+# Requires Doxygen to be installed separately (not vendored in this repo).
+
+# ---------------------------------------------------------------------------
+# Project
+# ---------------------------------------------------------------------------
+PROJECT_NAME            = "OpenGL Renderer"
+PROJECT_BRIEF           = "A small C++20 OpenGL rendering engine (Application -> Scene -> Layer)"
+PROJECT_LOGO            = docs/logo.svg
+OUTPUT_DIRECTORY        = docs/generated
+
+# ---------------------------------------------------------------------------
+# Input
+# ---------------------------------------------------------------------------
+INPUT                   = include src README.md ROADMAP.md
+RECURSIVE               = YES
+FILE_PATTERNS           = *.hpp *.cpp *.h *.c
+USE_MDFILE_AS_MAINPAGE  = README.md
+
+# Vendored third-party code — not ours to document.
+EXCLUDE                 = include/glad include/KHR include/stb_image src/glad
+
+# ---------------------------------------------------------------------------
+# Extraction — favor surfacing documentation gaps over hiding them
+# ---------------------------------------------------------------------------
+EXTRACT_ALL             = NO
+EXTRACT_STATIC          = YES
+EXTRACT_PRIVATE         = NO
+WARN_IF_UNDOCUMENTED    = YES
+JAVADOC_AUTOBRIEF       = YES
+
+# ---------------------------------------------------------------------------
+# HTML output — themed with Doxygen Awesome (vendored at
+# docs/doxygen-awesome-css/, pinned to release v2.4.2, see LICENSE there).
+# ---------------------------------------------------------------------------
+GENERATE_HTML           = YES
+GENERATE_LATEX          = NO
+GENERATE_TREEVIEW       = YES
+DISABLE_INDEX           = NO
+FULL_SIDEBAR            = NO
+HTML_EXTRA_STYLESHEET   = docs/doxygen-awesome-css/doxygen-awesome.css \
+                          docs/doxygen-awesome-css/doxygen-awesome-sidebar-only.css \
+                          docs/doxygen-awesome-css/doxygen-awesome-sidebar-only-darkmode-toggle.css \
+                          docs/custom.css
+
+# Doxygen >= 1.9.5 ships its own dark mode, which fights with the theme's —
+# keep this on LIGHT and let doxygen-awesome.css handle dark mode itself
+# (it already follows the OS/browser prefers-color-scheme automatically,
+# plus a manual toggle button via the header/JS extensions below).
+HTML_COLORSTYLE         = LIGHT
+
+# Custom header/footer wire up the Doxygen Awesome JS extensions: manual
+# dark/light toggle, per-snippet copy button, paragraph permalinks, and an
+# interactive table-of-contents. Both generated via `doxygen -w html`, then
+# hand-edited — see comments in docs/footer.html for why the extensions
+# live in the FOOTER (script registration-order bug if placed in the
+# header). Disabling the native equivalents (PAGE_OUTLINE_PANEL,
+# HTML_COPY_CLIPBOARD) avoids doubling up with the JS extensions.
+HTML_HEADER             = docs/header.html
+HTML_FOOTER             = docs/footer.html
+PAGE_OUTLINE_PANEL      = NO
+HTML_COPY_CLIPBOARD     = NO
+HTML_EXTRA_FILES        = docs/doxygen-awesome-css/doxygen-awesome-darkmode-toggle.js \
+                          docs/doxygen-awesome-css/doxygen-awesome-fragment-copy-button.js \
+                          docs/doxygen-awesome-css/doxygen-awesome-paragraph-link.js \
+                          docs/doxygen-awesome-css/doxygen-awesome-interactive-toc.js
+
+# ---------------------------------------------------------------------------
+# Diagrams — Graphviz `dot` adds class/collaboration/include graphs, which
+# fill out otherwise-bare class pages. Requires Graphviz installed; if it's
+# missing on a machine, Doxygen just skips diagram generation with a warning.
+# ---------------------------------------------------------------------------
+HAVE_DOT                = YES
+DOT_IMAGE_FORMAT        = svg
+INTERACTIVE_SVG         = YES

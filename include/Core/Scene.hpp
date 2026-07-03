@@ -10,6 +10,7 @@
 
 namespace Core
 {
+    /// Which DrawBackground() strategy is active; set indirectly via SetBackgroundColor() (Skybox/Skydome have no public setter yet — see their TODOs).
     enum class Background_Type
     {
         Solid,
@@ -17,34 +18,26 @@ namespace Core
         Skydome,
         None
     };
+
+    /**
+     * @brief Owns a scene's Layers and Cameras and drives one frame of update/render.
+     *
+     * Subclasses implement the pure-virtual hooks (`OnEvent`, `OnUpdate`,
+     * `OnMouseCapture`, `OnSceneBoot`) to define actual scene behavior;
+     * everything else here is `final` — Application/Renderer call `Update`/
+     * `Render` without knowing the concrete Scene type. `OnLoad` is called
+     * once by `Application::AddScene` to inject the shared ResourceManager/
+     * RenderContext and then run `OnSceneBoot()`.
+     */
     class Scene
     {
     private:
-        void DrawSolidBackground()
-        {
-            glClearColor(backgroundColor_.r, backgroundColor_.g, backgroundColor_.b, backgroundColor_.a);
-            glClear(GL_COLOR_BUFFER_BIT); // Has to be called to fill the screen with the color
-        }
+        void DrawSolidBackground();
+        void DrawSkyboxBackground();
+        void DrawSkydomeBackground();
 
-        void DrawSkyboxBackground()
-        {
-            // TODO: Finish after adding textures to models
-            glClear(GL_DEPTH_BUFFER_BIT); // Backround drawn, clear depth buffer to draw everything over it
-        }
-
-        void DrawSkydomeBackground()
-        {
-            // TODO: Finish after adding textures to models
-            glClear(GL_DEPTH_BUFFER_BIT); // Backround drawn, clear depth buffer to draw everything over it
-        }
-
-        void UpdateRenderContext()
-        {
-            assert(!cameras_.empty());
-            rctx_->camera_position_ = cameras_[active_camera_].GetPosition();
-            rctx_->view_ = cameras_[active_camera_].GetViewMatrix();
-            rctx_->projection_ = cameras_[active_camera_].GetProjectionMatrix();
-        }
+        /// Refreshes `rctx_`'s camera-derived fields from the active Camera. @warning Asserts `!cameras_.empty()`, which compiles out in release builds — calling Render() before any camera exists is undefined behavior there.
+        void UpdateRenderContext();
 
     protected:
         glm::vec4 backgroundColor_ = glm::vec4(0);
@@ -60,80 +53,37 @@ namespace Core
         Scene() = default;
         virtual ~Scene() = default;
 
+        /// Handle input and forward to layers as appropriate; called by Application for every raised Event.
         virtual void OnEvent(Event &event) = 0;
 
+        /// Called when cursor capture is toggled on — reset mouse tracking (e.g. Camera::ResetMouseTracking) here to avoid a look-direction jump.
         virtual void OnMouseCapture() = 0;
 
+        /// Per-frame scene logic (e.g. camera update); called before every layer's own `OnUpdate`.
         virtual void OnUpdate(float delta_time) = 0;
 
+        /// Called once during OnLoad, after the ResourceManager/RenderContext are available — create cameras, add layers, add lights, set the background here.
         virtual void OnSceneBoot() = 0;
 
-        void OnLoad(std::shared_ptr<ResourceManager> rmanager, std::shared_ptr<RenderContext> rctx)
-        {
-            rmanager_ = rmanager;
-            rctx_ = rctx;
-            OnSceneBoot();
-        }
+        /// Stores the shared ResourceManager/RenderContext, then calls OnSceneBoot(). Called once by Application::AddScene.
+        void OnLoad(std::shared_ptr<ResourceManager> rmanager, std::shared_ptr<RenderContext> rctx);
 
-        virtual void Update(float delta_time) final
-        {
-            OnUpdate(delta_time);
-            for (auto layer : layers_)
-            {
-                layer->OnUpdate();
-            }
-        }
+        /// Calls OnUpdate(delta_time), then every layer's OnUpdate(). Called once per frame.
+        virtual void Update(float delta_time) final;
 
-        virtual void AddLayer(std::shared_ptr<Layer> layer) final
-        {
-            layers_.push_back(layer);
-        }
+        /// Appends a layer to the render/event-dispatch list; order matters (see Layer).
+        virtual void AddLayer(std::shared_ptr<Layer> layer) final;
 
-        virtual void Destroy() final
-        {
-            for (auto &layer : layers_)
-            {
-                layer->Destroy();
-            }
-        }
+        /// Calls Destroy() on every layer, ahead of scene teardown.
+        virtual void Destroy() final;
 
-        virtual void DrawBackground() final
-        {
-            switch (backgroundType_)
-            {
-            case Background_Type::Solid:
-                DrawSolidBackground();
-                break;
+        /// Dispatches to the active Background_Type's draw routine.
+        virtual void DrawBackground() final;
 
-            case Background_Type::Skybox:
-                DrawSkyboxBackground();
-                break;
+        /// Sets a solid background color and switches `backgroundType_` to `Solid`.
+        virtual void SetBackgroundColor(glm::vec4 color) final;
 
-            case Background_Type::Skydome:
-                DrawSkydomeBackground();
-                break;
-
-            case Background_Type::None:
-                break; // intentional — caller owns the color buffer
-
-            default:
-                break;
-            }
-        }
-
-        virtual void SetBackgroundColor(glm::vec4 color) final
-        {
-            backgroundColor_ = color;
-            backgroundType_ = Background_Type::Solid;
-        }
-
-        virtual void Render() final
-        {
-            UpdateRenderContext();
-            for (const auto &layer : layers_)
-            {
-                layer->OnRender(rctx_); // Layer ordering matters !!
-            }
-        }
+        /// Refreshes the render context from the active camera, then calls every layer's OnRender() in order.
+        virtual void Render() final;
     };
-}
+} // namespace Core

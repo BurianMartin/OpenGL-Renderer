@@ -13,6 +13,13 @@
 #include <vector>
 #include <unordered_map>
 
+/**
+ * @namespace Test
+ * @brief Application-layer demo code built on top of the `Core` engine (`TestScene`, `TestLayer`).
+ *
+ * Depends on `Core` but not vice versa — see CLAUDE.md's "Core/App
+ * separation" notes. Not yet fully documented; this pass focused on `Core`.
+ */
 namespace Test
 {
 

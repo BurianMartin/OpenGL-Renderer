@@ -32,7 +32,9 @@ add_executable(OpenGL_App
         src/Core/Application.cpp
         src/Core/EventHandler.cpp
         src/Core/ResourceManager.cpp
-    ) 
+        src/Core/Scene.cpp
+        src/Core/Lights.cpp
+    )
 
 target_include_directories(OpenGL_App
     PRIVATE

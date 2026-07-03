@@ -9,6 +9,7 @@
 namespace Core
 {
 
+    /// Movement directions understood by Camera::CameraMove; see `key_map` for the WASD/Space/Shift binding.
     enum class CamMove
     {
         UP,
@@ -19,27 +20,59 @@ namespace Core
         BACKWARD
     };
 
+    /**
+     * @brief Perspective camera with WASD-style movement and mouse-look.
+     *
+     * Movement is edge-triggered: `CameraMove` just flips a boolean flag per
+     * direction, and `Update(delta_time)` integrates every held direction
+     * each frame — so multiple directions (e.g. forward + right) combine
+     * naturally. Mouse look accumulates into yaw/pitch via
+     * `ProcessMousePosition`/`Rotate`, and `Zoom` narrows/widens FOV rather
+     * than moving the camera.
+     */
     class Camera
     {
     public:
+        /// @param aspect_ratio Initial viewport aspect ratio (width/height), used to build the projection matrix.
         Camera(GLfloat aspect_ratio);
 
+        /// @return The view matrix for the camera's current position/orientation.
         glm::mat4 GetViewMatrix() const;
+
+        /// @return The perspective projection matrix for the camera's current FOV/aspect ratio.
         glm::mat4 GetProjectionMatrix() const;
 
         // Mouse and scroll
+
+        /**
+         * @brief Feeds a raw cursor position to the mouse-look system.
+         * @param xpos Cursor X in screen space (pixels).
+         * @param ypos Cursor Y in screen space (pixels).
+         * @note The first call after construction or after ResetMouseTracking()
+         * only primes `last_x_`/`last_y_` — it does not rotate the camera, to
+         * avoid a jump from an unset previous position.
+         */
         void ProcessMousePosition(float xpos, float ypos);
+
+        /// Applies a mouse-look delta (already scaled by sensitivity upstream) to yaw/pitch and rebuilds the front vector.
         void Rotate(GLfloat x_offset, GLfloat y_offset);
+
+        /// Adjusts FOV by a scroll delta (narrows on scroll up), clamped to [1°, 45°] — 45° is also the default, so this only ever zooms in, never wider than the initial view.
         void Zoom(GLfloat y_offset);
 
+        /// @return The camera's current world-space position.
         glm::vec3 GetPosition() const;
 
+        /// Integrates every currently-held movement direction by `delta_time`; call once per frame.
         void Update(GLfloat delta_time);
 
+        /// Sets or clears the held-movement flag for one direction; movement itself happens on the next Update().
         void CameraMove(CamMove direction, bool state);
 
+        /// Recomputes the projection matrix for a new viewport aspect ratio (call on window resize).
         void UpdateAspectRatio(float aspect_ratio);
 
+        /// Marks the next ProcessMousePosition call as the first one again, preventing a jump when re-capturing the cursor.
         void ResetMouseTracking();
 
     private:
