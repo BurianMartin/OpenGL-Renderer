@@ -1,5 +1,6 @@
 #include "App/TestScene.hpp"
 #include "Core/Camera.hpp"
+#include "Core/Lights.hpp"
 
 namespace Test
 {
@@ -84,6 +85,11 @@ namespace Test
         AddLayer(testLayer);
 
         SetBackgroundColor(Core::Color_A1::Black);
+
+        // Warm key light, plus two colorful rim lights either side of the scene.
+        AddLight(Core::PointLight::Create(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(1.0f, 0.95f, 0.85f), 1.0f));
+        AddLight(Core::PointLight::Create(glm::vec3(-3.0f, 1.0f, -1.0f), glm::vec3(1.0f, 0.95f, 0.85f), 0.8f));
+        AddLight(Core::PointLight::Create(glm::vec3(3.0f, 1.0f, -3.0f), glm::vec3(1.0f, 0.95f, 0.85f), 0.8f));
     }
 
 } // namespace Test

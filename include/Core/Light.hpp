@@ -17,6 +17,15 @@ namespace Core
         Area
     };
 
+    struct GPULight
+    {
+        glm::vec4 position;  // xyz = position; w = light type (0=dir,1=point,2=spot)
+        glm::vec4 direction; // xyz = direction; w = intensity
+        glm::vec4 color;     // rgb = color; a unused
+        glm::vec4 params;    // x=constant, y=linear, z=quadratic, w=innerCutoff
+        glm::vec4 params2;   // x=outerCutoff, yzw unused/padding
+    };
+
     /**
      * @brief Generates the boilerplate RTTI-style overrides every concrete
      * Light subclass needs (mirrors `EVENT_CLASS_TYPE`).
@@ -51,6 +60,8 @@ namespace Core
         virtual LightType GetLightType() const = 0;
         virtual const char *GetName() const = 0;
         virtual std::string ToString() const { return GetName(); }
+
+        virtual GPULight ToGPULight() const = 0;
 
     protected:
         glm::vec3 GetColor() const { return color_; }

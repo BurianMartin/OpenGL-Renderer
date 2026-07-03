@@ -4,15 +4,15 @@ Tracks open bugs, design decisions, and implementation plans.
 
 ---
 
-## 🔜 Next session — Finish lighting
+## 🔜 Next up — finish lighting (UBO) + lighting maps (textures)
 
-The lighting pipeline is partially done. The fragment shader has working Blinn-Phong with a **hardcoded placeholder light** (`normalize(2, 3, 1.5)`). The C++ `Light`, `PointLight`, `DirectionalLight`, `SpotLight` classes exist but are not yet connected to the renderer.
+Two related efforts, both the user's own implementation (Claude guides/reviews, doesn't write this code — see CLAUDE.md). Detailed step-by-step lists live under "Next: Shaders + Lighting" below (Steps 2/3/5/6 for lighting, new Step 7 for textures); this is the at-a-glance status.
 
-**Remaining steps in order:**
-1. Design `GPULight` packed struct with std140 padding (Step 2)
-2. Replace hardcoded light in `fragment.glsl` with UBO loop (Step 3)
-3. Wire the UBO into `Scene` — `AddLight()`, `glGenBuffers`, upload per frame (Step 5)
-4. Add real lights in `TestScene::OnSceneBoot()` (Step 6)
+**Lighting UBO — done:** vertex shader normals/UVs (Step 1), C++ `Light`/`DirectionalLight`/`PointLight`/`SpotLight` classes (Step 4), fragment shader Blinn-Phong math with a hardcoded placeholder light (Step 3).
+**Lighting UBO — left:** `GPULight` struct + `ToGPULight()`, `Scene` UBO wiring (one-time setup vs. per-frame content refresh — see Step 5), fragment shader multi-light loop, real lights in `TestScene::OnSceneBoot`, `TestLayer` Tab-handler fix.
+
+**Lighting maps (textures) — done:** procedural crate texture generator + generated `textures/crate_diffuse.png`/`crate_specular.png` (not yet wired anywhere); `Texture`/`ResourceManager::LoadTexture` and `Material`'s existing one-texture-slot pattern are already proven via the diffuse/base-color map.
+**Lighting maps (textures) — left:** `models/crate.obj` (UV-unwrapped cube), a second `Material` texture slot for the specular map (same pattern as the existing diffuse slot), shader sampling, and fixing `Texture::Unbind()`'s active-unit assumption before juggling two texture units at once.
 
 ---
 
@@ -62,9 +62,10 @@ To be done in order — vertex shader first (independent), then light struct des
 
 ### Step 2 — Design the light struct (no code, paper/whiteboard)
 
-- [ ] Decide on a max light count (e.g. 32)
+- [ ] Decide on a max light count (suggested default: 16 — adjust freely)
 - [ ] Decide how to encode light type (int: 0=directional, 1=point, 2=spot — matches `LightType` enum)
-- [ ] Account for std140 padding — every `vec3` occupies 16 bytes, not 12; use `vec4` in the GPU struct
+- [ ] Account for std140 padding — every `vec3` occupies 16 bytes, not 12; make every `GPULight` field a `vec4` (no mixed scalar/vec3 arrays) so there's no implicit padding to reason about
+- [ ] Decide: pack `uLightCount` into the UBO itself (e.g. as an unused-lanes `vec4`/`ivec4`) instead of a separate plain `uniform int` — a plain uniform is per-shader-program and would need re-setting on every `Material::Bind()`, undoing the "materials never touch light data" goal from Step 5
 
 ---
 
@@ -77,7 +78,7 @@ To be done in order — vertex shader first (independent), then light struct des
 - [x] Unlit/texture branch: `baseColor = uHasTexture ? texture(...) : uBaseColor`
 - [x] Blinn-Phong calculation with hardcoded directional light at `normalize(1, 2, 0.5)` as placeholder
 - [ ] Replace hardcoded light with `layout(std140, binding = 0) uniform LightsBlock` + loop over lights
-- [ ] Add `uniform int uLightCount`
+- [ ] Read light count from the UBO itself (see Step 2 — no separate `uLightCount` uniform)
 - [ ] Add light color to ambient/diffuse/specular calculations
 - [ ] Branch on light type (directional vs point vs spot) inside the loop
 - [ ] Add attenuation for point and spot lights
@@ -91,16 +92,21 @@ To be done in order — vertex shader first (independent), then light struct des
 - [x] `DirectionalLight` (`include/Core/Lights.hpp`): adds `direction_` (vec3), normalised on set
 - [x] `PointLight`: adds `position_` (vec3), attenuation (`constant_`, `linear_`, `quadratic_`)
 - [x] `SpotLight`: adds `position_`, `direction_`, `innerCutoff_`, `outerCutoff_` (stored as cosines)
-- [ ] Define `GPULight` packed struct with std140 padding (vec3 → vec4, trailing int for type) — must match the GLSL struct from Step 3 exactly
+- [ ] Define `GPULight` packed struct (new `include/Core/GPULight.hpp`) — all-`vec4` fields per Step 2, must match the GLSL struct from Step 3 exactly
+- [ ] Add `virtual GPULight ToGPULight() const = 0;` to `Light`, implement in each subclass in `Lights.hpp`/`Lights.cpp` (packing logic lives next to the data it packs)
 
 ---
 
 ### Step 5 — UBO wiring in `Scene`
 
+Two distinct kinds of work here — don't conflate them, they run at different frequencies:
+- **One-time setup** (e.g. in `OnLoad`/`OnSceneBoot`, once ever): allocate the buffer and bind it to its binding point. After this, *any* shader declaring the matching `layout(std140, binding=0)` block reads it automatically — no per-material or per-layer rebinding, ever.
+- **Per-frame refresh** (once per frame, not per layer/material): update the buffer's contents, since light positions/count can change frame to frame.
+
 - [ ] Add `vector<shared_ptr<Light>> lights_` and `AddLight()` to `Scene`
 - [ ] Add `GLuint lightUBO_` member
-- [ ] Create and allocate the UBO in `OnSceneBoot`: `glGenBuffers`, `glBindBufferBase(GL_UNIFORM_BUFFER, 0, lightUBO_)`
-- [ ] In `UpdateRenderContext()`: pack lights into `GPULight` array, upload via `glBufferSubData`, upload `uLightCount`
+- [ ] One-time: create and allocate the UBO (`glGenBuffers`, `glBufferData` sized for the max light count, `glBindBufferBase(GL_UNIFORM_BUFFER, 0, lightUBO_)`)
+- [ ] Per-frame: pack `lights_` into a `GPULight` array (via `ToGPULight()`) and upload with `glBufferSubData` — extend `UpdateRenderContext()` or add a sibling private method called alongside it from `Render()`, before the layer loop
 
 ---
 
@@ -110,6 +116,20 @@ To be done in order — vertex shader first (independent), then light struct des
 - [ ] `TestScene::OnSceneBoot` — add a `PointLight` and a `DirectionalLight` via `AddLight()`
 - [ ] `TestLayer` Tab handler — update to `material->SetColor(...)` (currently dead code looking for "Changing" tag)
 - [ ] Confirm `Light.cpp` not needed (all light classes are header-only)
+
+---
+
+### Step 7 — Lighting maps (textures)
+
+Independent of Steps 2–6 (textures and lighting don't depend on each other), but shares the same "mostly shader work" shape. `Material` already proves this pattern once for the diffuse/base-color slot — this is that same pattern, doubled, for a specular map.
+
+- [x] Procedural crate texture generator (`scripts/generate_crate_textures.py`) + generated `textures/crate_diffuse.png`/`crate_specular.png` (512×512, no external/network assets)
+- [ ] `models/crate.obj` — UV-unwrapped cube (24 unshared vertices, `vt`/`vn` per face) to pair with the generated textures
+- [ ] Fix `Texture::Unbind()`'s active-unit assumption (see Known Bugs) before two texture units are ever bound at once
+- [ ] `Material`: add a second texture slot — `specularTexture_` member, `SetSpecularTexture()`, `HasSpecularMap()` (mirrors the existing `texture_`/`SetTexture()`/`HasTexture()`)
+- [ ] `Material::Bind()`: bind the specular texture to a second texture unit (slot 1), set `uHasSpecularMap`/`uSpecularMap`
+- [ ] `fragment.glsl`: sample `uSpecularMap` in place of `uMaterial.specular` when `uHasSpecularMap` is true
+- [ ] Wire the crate model + both textures into `TestLayer` (or a new layer) to actually see it rendered
 
 ---
 

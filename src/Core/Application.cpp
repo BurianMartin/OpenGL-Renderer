@@ -6,7 +6,6 @@ namespace Core
         : specification_(specification), renderer_((float)specification_.windowSpec.width / (float)specification_.windowSpec.height),
           rmanager_(std::make_shared<Core::ResourceManager>())
     {
-
         if (!Init())
         {
             debug_error("Failed to initialize application");
@@ -58,6 +57,8 @@ namespace Core
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
         glCullFace(GL_BACK);
+
+        renderer_.GetRenderContext()->CreateLightBuffer();
 
         debug_info("App init complete");
         return true;

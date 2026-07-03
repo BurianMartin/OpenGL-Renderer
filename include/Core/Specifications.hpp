@@ -21,7 +21,7 @@ namespace Core
         uint32_t width = 1080;
         uint32_t height = 1080;
         bool isResizable = true;
-        bool VSync = false;
+        bool VSync = true;
 
         /// Signature for the function that receives every raised Event.
         using EventCallbackFn = std::function<void(Event &)>;
