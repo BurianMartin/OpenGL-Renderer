@@ -27,6 +27,7 @@ Two related efforts, both the user's own implementation (Claude guides/reviews, 
 - [ ] **`Layer.hpp`'s interface doesn't match `CLAUDE.md`'s description** — `CLAUDE.md` says `Transition()`/`Suspend()`/`Destroy()` "have default empty implementations; only override if needed," but in the actual header `Transition()`/`Suspend()` are commented out entirely (not part of the interface at all) and `Destroy()` is pure virtual (`= 0`), forcing every Layer subclass to implement it even if it does nothing. Either update `CLAUDE.md` to match reality, or give `Destroy()` a default empty body and uncomment `Transition()`/`Suspend()` with defaults, whichever was actually intended.
 - [ ] **`Texture::Unbind()` unbinds whatever texture unit is currently active, not necessarily unit 0** (`Texture.cpp:59`) — it calls `glBindTexture(GL_TEXTURE_2D, 0)` without an `glActiveTexture` call first, so it acts on whatever unit was last made active (typically whatever slot the most recent `Bind()` used). Fine today since only one texture slot is ever bound, but worth fixing before adding a second (specular map) slot so `Unbind()` can't accidentally target the wrong unit.
 - [ ] **`LightType::Area` has no matching class** (`Light.hpp`) — the enum reserves a `Area` value but there is no `AreaLight` subclass, no `LIGHT_CLASS_TYPE(Area)` usage anywhere. Either implement it or drop the enumerator until it's needed.
+- [ ] **`Texture` never sets `GL_UNPACK_ALIGNMENT`** (`Texture.cpp`, just before the `glTexImage2D` call) — GL defaults to an alignment of 4, meaning it assumes each row of pixel data is padded to a multiple of 4 bytes. stb_image's buffer is tightly packed with no such padding, so any image whose `width * channels` isn't a multiple of 4 gets loaded with GL silently reading past the real data (undefined behavior — in practice, a segfault or garbled texture). Confirmed as a real, currently-live bug: it's what caused a hard crash loading a differently-sized texture atlas in a Solitaire game built on a copy of this engine — no image tried against `Texture` so far in *this* repo happens to have hit the alignment, but it's latent, not fixed. One-line fix: `glPixelStorei(GL_UNPACK_ALIGNMENT, 1);` right before `glTexImage2D`.
 
 Fixed in this audit:
 - [x] **Back faces rendered** — `glEnable(GL_CULL_FACE)` + `glCullFace(GL_BACK)` added to `Application::Init` (`Application.cpp:58`)
@@ -137,6 +138,29 @@ Independent of Steps 2–6 (textures and lighting don't depend on each other), b
 
 - **Sub-mesh support** — one OBJ file produces N `(Mesh, Material)` pairs via `usemtl` groups. Requires Material system (done) + OBJ parser update + Scene/Layer wiring. Natural next feature after lighting.
 - **Skybox / Skydome** — `DrawSkyboxBackground()` and `DrawSkydomeBackground()` are stubbed in `Scene`; finish after textures are working.
+
+---
+
+## Lessons from building Solitaire on a copy of this engine
+
+None of this is implemented here — this repo is still mid-lighting/textures.
+Recorded now, while it's fresh, as a heads-up for whenever this engine grows
+toward 2D/UI content or gets reused for something beyond the current 3D
+demo scene. A full Klondike Solitaire (click-and-drag cards, top-down
+camera) was built on an AI-finished copy of this exact engine snapshot;
+these are the gaps/traps that copy needed patched or worked around that
+weren't visible from a 3D-only demo scene.
+
+- **No 2D/orthographic support at all** — `Camera` only ever did perspective. A flat/UI-style scene needs `SetOrthographic(halfHeight)`, and the default `lookAt` world-up `(0,1,0)` degenerates for a straight-down camera (front vector nearly parallel to up, cross product ~0) — needed a `SetUp(vec3)` override to supply a horizontal reference instead.
+- **No picking primitives** — click-and-drag needs a screen-to-world ray (`Camera::ScreenPointToRay`, via `inverse(projection * view)`) and ray/AABB + ray/plane intersection tests. None of that existed; `Model` also needed a world-space bounding box (`GetWorldBounds()`) to intersect against.
+- **`Mesh` had no way to address a sub-rect of a texture** — needed a `CreateQuad(tag, uvMin, uvMax)` overload for texture-atlas sprites (52 playing cards sharing one atlas image, one quad per card pointing at its own cell).
+- **`GL_BLEND` is never enabled anywhere in `Application::Init`** — real alpha transparency (e.g. a translucent UI overlay/outline) silently does nothing until it's turned on. Costs nothing for existing fully-opaque textures, so there's no real downside to just always enabling it.
+- **No animation/tweening utility** — ended up writing a small `Vec3Tween`/`EaseOutQuad` helper (lerp position A→B over a duration, with easing) from scratch for a card-slide animation. Small, generic, reusable — worth having in `Core` rather than re-deriving per-project.
+- **`Layer::OnEvent`/`OnUpdate` aren't given the camera/frame data (`FrameContext`)** — only `OnRender` gets it. Anything that needs view/projection for picking, or delta-time for animation, outside of `OnRender` has to cache whatever `OnRender` last saw. Works fine for a static camera; would break the moment the camera moves and an event fires between frames.
+- **No text/UI rendering system** — this is why the current engine has no on-screen score/HUD/prompt of any kind, and Solitaire had to cut scoring/timer features and use a card "bounce" animation instead of a win banner. Worth keeping in mind as a real, currently-missing capability, not just a Solitaire-specific gap.
+- **Orthographic cameras have a genuine invisible axis** — animating an object purely along the camera's own view direction is a real position change with *zero* visible pixels under orthographic projection (no perspective falloff to reveal it). Bit a "victory bounce" animation that moved along the wrong axis; only caught by actually looking at a rendered frame, not by checking the position math. Worth remembering for *any* animation added to an orthographic scene later.
+- **Coincident flat quads z-fight** — two quads at the exact same depth (e.g. an animated sprite passing through a static marker at the same position) flicker unpredictably. Needed a small manual depth offset to fix; a proper convention (consistent tiny Z-bias for "decorative overlay" quads, or explicit draw-order control) would avoid needing to hand-fix this per case.
+- **No way to screenshot/verify a render from outside the process** — every external screenshot tool failed in that sandbox. `glReadPixels` called directly from inside the render loop worked, but had to be re-added as throwaway temporary code every time a visual change needed checking, then removed again before committing. A small supported "step N frames headlessly and dump a framebuffer capture" hook on `Application` would make this repeatable instead of hand-rolled each time — probably worth adding once this engine's demo scenes get complex enough that "did it compile" stops being enough to trust a change.
 
 ---
 
