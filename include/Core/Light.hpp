@@ -13,8 +13,7 @@ namespace Core
     {
         Directional = 0,
         Point,
-        Spot,
-        Area
+        Spot
     };
 
     struct GPULight

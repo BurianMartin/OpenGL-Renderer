@@ -52,7 +52,7 @@ namespace Core
         // ------------ Base methods end ------------
 
         /// Release any layer-owned resources ahead of destruction.
-        virtual void Destroy() = 0;
+        virtual void Destroy() {};
     };
 
 } // namespace Core

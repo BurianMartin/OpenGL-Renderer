@@ -27,7 +27,7 @@ namespace Core
     void Model::SetMaterial(std::shared_ptr<Material> material) { material_ = material; }
     std::shared_ptr<Material> Model::GetMaterial() const { return material_; }
 
-    glm::mat4 Model::getModelMatrix() const
+    glm::mat4 Model::GetModelMatrix() const
     {
         glm::mat4 m = glm::mat4(1.0f);
         m = glm::translate(m, position_);

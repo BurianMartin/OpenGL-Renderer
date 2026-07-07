@@ -132,7 +132,12 @@ namespace Test
 
             for (const auto &model : models)
             {
-                material->GetShader()->SetMat4("uModel", model->getModelMatrix());
+                glm::mat4 modelMatrix = model->GetModelMatrix();
+                glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(modelMatrix)));
+
+                material->GetShader()->SetMat4("uModel", modelMatrix);
+                material->GetShader()->SetMat3("uNormalMatrix", normalMatrix);
+
                 model->Draw();
             }
         }

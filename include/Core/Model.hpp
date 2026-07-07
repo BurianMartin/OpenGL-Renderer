@@ -35,7 +35,7 @@ namespace Core
         void Draw() const;
 
         /// @return The composed translation * rotation * scale matrix for this instance, for the `uModel` uniform.
-        glm::mat4 getModelMatrix() const;
+        glm::mat4 GetModelMatrix() const;
 
         void SetPosition(const glm::vec3 &pos);
         void SetScale(const glm::vec3 &scale);

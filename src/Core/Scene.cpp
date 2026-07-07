@@ -1,8 +1,5 @@
 #include "Core/Scene.hpp"
 
-#include <cassert>
-#include "Scene.hpp"
-
 namespace Core
 {
     void Scene::DrawSolidBackground()
@@ -25,7 +22,11 @@ namespace Core
 
     void Scene::UpdateRenderContext()
     {
-        assert(!cameras_.empty());
+        if (cameras_.empty())
+        {
+            debug_error("No active camera found");
+            return;
+        }
         rctx_->camera_position_ = cameras_[active_camera_].GetPosition();
         rctx_->view_ = cameras_[active_camera_].GetViewMatrix();
         rctx_->projection_ = cameras_[active_camera_].GetProjectionMatrix();

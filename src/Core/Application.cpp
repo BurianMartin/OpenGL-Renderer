@@ -6,7 +6,7 @@ namespace Core
         : specification_(specification), renderer_((float)specification_.windowSpec.width / (float)specification_.windowSpec.height),
           rmanager_(std::make_shared<Core::ResourceManager>())
     {
-        if (!Init())
+        if (init_success_ = Init(), !init_success_)
         {
             debug_error("Failed to initialize application");
             return;
@@ -66,7 +66,13 @@ namespace Core
 
     void Application::Run()
     {
-        if (scenes_.empty())
+
+        if (!init_success_)
+        {
+            debug_error("App intialization failed");
+            return;
+        }
+        else if (scenes_.empty())
         {
             debug_error("No scenes to render");
             return;
