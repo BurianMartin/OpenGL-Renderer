@@ -1,18 +1,35 @@
 # Renderer Roadmap
 
-Tracks open bugs, design decisions, and implementation plans.
+Tracks open bugs, design decisions, and implementation plans. **See `SCOPE.md` first**
+for what this engine is actually for and how much of this file's backlog is in scope —
+several items below (multi-camera/split-screen, the whole Backlog section) are
+deliberately deferred, not gating v1, and Redline's phase order now follows `SCOPE.md`'s
+priority rather than the order it was originally written in.
 
 ---
 
-## 🔜 Next up — two Step 6 loose ends, then lighting maps (textures)
+## ✅ Step 6 & Step 7 — done
 
-Two related efforts, both the user's own implementation (Claude guides/reviews, doesn't write this code — see CLAUDE.md). Detailed step-by-step lists live under "Next: Shaders + Lighting" below (Step 6 for the lighting loose ends, Step 7 for textures); this is the at-a-glance status.
+Both closed out: `TestScene::OnSceneBoot` now adds a real `DirectionalLight`, the Tab
+handler's dead `"Changing"`-tag lookup is gone (calls `SetColor` on a real material
+directly), `Texture::Unbind(slot)` takes and activates a unit, `Material` has a second
+texture slot for the specular map, `fragment.glsl` samples it in all three light
+functions, and `models/crate.obj` is wired into `TestLayer` with both textures. Redline's
+Phases A and B, in full.
 
-**Lighting UBO — done:** the whole pipeline actually works now (commit "Wire the multi-light UBO into the renderer") — vertex shader normals/UVs (Step 1), the light struct design (Step 2), `GPULight` + per-subclass `ToGPULight()` (Step 4), `Scene`'s one-time UBO alloc + per-frame refresh (Step 5), and the fragment shader's real multi-light loop with attenuation + cone falloff (Step 3). The checkboxes under Steps 2/3/4/5 below were still unticked after that commit landed — ticked now to match reality.
-**Lighting UBO — left (Step 6):** `TestScene::OnSceneBoot` only adds `PointLight`s, no `DirectionalLight` yet; `TestLayer`'s Tab handler is still dead code looking for a `"Changing"`-tagged material that no longer exists (should call `material->SetColor(...)` on a real material instead).
+## 🔜 Next up — per `SCOPE.md`: finish Tier 1, then Tier 2
 
-**Lighting maps (textures) — done:** procedural crate texture generator + generated `textures/crate_diffuse.png`/`crate_specular.png` (not yet wired anywhere); `Texture`/`ResourceManager::LoadTexture` and `Material`'s existing one-texture-slot pattern are already proven via the diffuse/base-color map.
-**Lighting maps (textures) — left:** `models/crate.obj` (UV-unwrapped cube), a second `Material` texture slot for the specular map (same pattern as the existing diffuse slot), shader sampling, and fixing `Texture::Unbind()`'s active-unit assumption before juggling two texture units at once.
+**Tier 1 (close the existing gap — small, mechanical, ~3-4 hrs total):** the known-bug
+backlog below, `ResourceManager::LoadMaterial`, the `RenderContext`→`FrameContext`
+rename. Multi-camera/split-screen is **deferred** — see `SCOPE.md`, not needed for the
+TCG.
+
+**Tier 2 (net-new, required for v1 — the real remaining work):** text/UI rendering, a
+clickable-region abstraction, threading `FrameContext` into `Layer::OnEvent`/`OnUpdate`,
+the 2D/orthographic + picking primitives ported back from Solitaire, and networking
+(client-server, home-server-hosted, ENet, ported over the existing home VPN). All of
+this used to live under Redline's "optional, not on the roadmap" Phase F — it no longer
+is optional. Full detail and reasoning in `SCOPE.md`.
 
 ---
 
@@ -25,7 +42,7 @@ Two related efforts, both the user's own implementation (Claude guides/reviews, 
 - [ ] **`getModelMatrix()` camelCase** (`Model.cpp:30`) — inconsistent with all other PascalCase getters. Rename to `GetModelMatrix()`.
 - [ ] **`if (!Init())` in Application constructor doesn't actually guard construction** (`Application.cpp:10`) — corrected from an earlier audit pass: `Init()` *can* return `false` (GLFW init failure, window creation failure, GLAD load failure all return `false` before throwing via `debug_error`), so the check isn't dead code. But in a release build `debug_error` is a no-op and the constructor just `return`s early — leaving the `Application` half-constructed rather than preventing its use. Needs the constructor to actually stop construction (e.g. throw unconditionally) on `Init()` failure.
 - [ ] **`Layer.hpp`'s interface doesn't match `CLAUDE.md`'s description** — `CLAUDE.md` says `Transition()`/`Suspend()`/`Destroy()` "have default empty implementations; only override if needed," but in the actual header `Transition()`/`Suspend()` are commented out entirely (not part of the interface at all) and `Destroy()` is pure virtual (`= 0`), forcing every Layer subclass to implement it even if it does nothing. Either update `CLAUDE.md` to match reality, or give `Destroy()` a default empty body and uncomment `Transition()`/`Suspend()` with defaults, whichever was actually intended.
-- [ ] **`Texture::Unbind()` unbinds whatever texture unit is currently active, not necessarily unit 0** (`Texture.cpp:59`) — it calls `glBindTexture(GL_TEXTURE_2D, 0)` without an `glActiveTexture` call first, so it acts on whatever unit was last made active (typically whatever slot the most recent `Bind()` used). Fine today since only one texture slot is ever bound, but worth fixing before adding a second (specular map) slot so `Unbind()` can't accidentally target the wrong unit.
+- [x] **`Texture::Unbind()` unbinds whatever texture unit is currently active, not necessarily unit 0** (`Texture.cpp:59`) — fixed: `Unbind(GLuint slot = 0)` now calls `glActiveTexture(GL_TEXTURE0 + slot)` before unbinding.
 - [ ] **`LightType::Area` has no matching class** (`Light.hpp`) — the enum reserves a `Area` value but there is no `AreaLight` subclass, no `LIGHT_CLASS_TYPE(Area)` usage anywhere. Either implement it or drop the enumerator until it's needed.
 - [ ] **`Texture` never sets `GL_UNPACK_ALIGNMENT`** (`Texture.cpp`, just before the `glTexImage2D` call) — GL defaults to an alignment of 4, meaning it assumes each row of pixel data is padded to a multiple of 4 bytes. stb_image's buffer is tightly packed with no such padding, so any image whose `width * channels` isn't a multiple of 4 gets loaded with GL silently reading past the real data (undefined behavior — in practice, a segfault or garbled texture). Confirmed as a real, currently-live bug: it's what caused a hard crash loading a differently-sized texture atlas in a Solitaire game built on a copy of this engine — no image tried against `Texture` so far in *this* repo happens to have hit the alignment, but it's latent, not fixed. One-line fix: `glPixelStorei(GL_UNPACK_ALIGNMENT, 1);` right before `glTexImage2D`.
 
@@ -41,7 +58,7 @@ Fixed in this audit:
 
 - [ ] **`ResourceManager::LoadMaterial`** — signature exists but has no implementation. Needs a decision on parameters (material isn't a file — needs shader + tag at minimum). Implement when the Layer integration is fully settled.
 
-- [ ] **Multiple cameras / split-screen** — `Scene::cameras_` and `active_camera_` already support multiple cameras; the render side does not. Needs a viewport rect per camera, `glViewport` calls, and `Renderer::RenderScene` running once per active camera.
+- [ ] **Multiple cameras / split-screen** — *deferred, see `SCOPE.md`: not needed for the TCG, not gating v1.* `Scene::cameras_` and `active_camera_` already support multiple cameras; the render side does not. Needs a viewport rect per camera, `glViewport` calls, and `Renderer::RenderScene` running once per active camera.
 
 ---
 
@@ -110,46 +127,51 @@ Two distinct kinds of work here — don't conflate them, they run at different f
 
 ---
 
-### Step 6 — Integration — partially done, two items left
+### Step 6 — Integration — done
 
 - [x] `TestLayer` uses `fragment.glsl` and `Material` presets (Gold etc.)
 - [x] `TestScene::OnSceneBoot` — adds three `PointLight`s via `AddLight()` (a warm key light + two colored rim lights)
-- [ ] `TestScene::OnSceneBoot` — still no `DirectionalLight` added; only `PointLight`s exist in the scene right now, so `DirectionLightValue`'s code path in the shader has never actually been exercised against real scene data
-- [ ] `TestLayer` Tab handler — still dead code looking for a `"Changing"`-tagged material that no longer exists (`std::ranges::find_if` fails, logs `"Failed to find Changing material"`, does nothing). Update to `material->SetColor(Core::Color_A1::RandomColor())` on one of the real materials instead.
+- [x] `TestScene::OnSceneBoot` — a real `DirectionalLight` added; `DirectionLightValue`'s shader path now actually runs against real scene data
+- [x] `TestLayer` Tab handler — dead `"Changing"`-tag lookup replaced with a direct `material->SetColor(Core::Color_A1::RandomColor())` call
 - [x] `Light.cpp` *was* needed after all — `ToGPULight()`'s implementations live in `src/Core/Lights.cpp` (light classes are no longer purely header-only)
 
 ---
 
-### Step 7 — Lighting maps (textures)
+### Step 7 — Lighting maps (textures) — done
 
 Independent of Steps 2–6 (textures and lighting don't depend on each other), but shares the same "mostly shader work" shape. `Material` already proves this pattern once for the diffuse/base-color slot — this is that same pattern, doubled, for a specular map.
 
 - [x] Procedural crate texture generator (`scripts/generate_crate_textures.py`) + generated `textures/crate_diffuse.png`/`crate_specular.png` (512×512, no external/network assets)
-- [ ] `models/crate.obj` — UV-unwrapped cube (24 unshared vertices, `vt`/`vn` per face) to pair with the generated textures
-- [ ] Fix `Texture::Unbind()`'s active-unit assumption (see Known Bugs) before two texture units are ever bound at once
-- [ ] `Material`: add a second texture slot — `specularTexture_` member, `SetSpecularTexture()`, `HasSpecularMap()` (mirrors the existing `texture_`/`SetTexture()`/`HasTexture()`)
-- [ ] `Material::Bind()`: bind the specular texture to a second texture unit (slot 1), set `uHasSpecularMap`/`uSpecularMap`
-- [ ] `fragment.glsl`: sample `uSpecularMap` in place of `uMaterial.specular` when `uHasSpecularMap` is true
-- [ ] Wire the crate model + both textures into `TestLayer` (or a new layer) to actually see it rendered
+- [x] `models/crate.obj` — UV-unwrapped cube (24 unshared vertices, `vt`/`vn` per face) to pair with the generated textures
+- [x] Fixed `Texture::Unbind()`'s active-unit assumption (see Known Bugs) before two texture units are ever bound at once
+- [x] `Material`: second texture slot — `specularTexture_` member, `SetSpecularTexture()`, `HasSpecularMap()` (mirrors the existing `texture_`/`SetTexture()`/`HasTexture()`)
+- [x] `Material::Bind()`: binds the specular texture to texture unit 1, sets `uHasSpecularMap`/`uSpecularMap`
+- [x] `fragment.glsl`: samples `uSpecularMap` in place of `uMaterial.specular` when `uHasSpecularMap` is true, threaded through all three light functions
+- [x] Crate model + both textures wired into `TestLayer`, rendered alongside the existing demo materials
 
 ---
 
-## Backlog
+## Backlog — deferred, see `SCOPE.md`
 
-- **Sub-mesh support** — one OBJ file produces N `(Mesh, Material)` pairs via `usemtl` groups. Requires Material system (done) + OBJ parser update + Scene/Layer wiring. Natural next feature after lighting.
-- **Skybox / Skydome** — `DrawSkyboxBackground()` and `DrawSkydomeBackground()` are stubbed in `Scene`; finish after textures are working.
+Neither of these is needed for the TCG; not gating v1. Left here rather than deleted in case a future 3D project revives them.
+
+- **Sub-mesh support** — one OBJ file produces N `(Mesh, Material)` pairs via `usemtl` groups. Requires Material system (done) + OBJ parser update + Scene/Layer wiring. Natural next feature after lighting, if this were still a 3D-demo-first project.
+- **Skybox / Skydome** — `DrawSkyboxBackground()` and `DrawSkydomeBackground()` are stubbed in `Scene`; finish after textures are working, if ever needed.
 
 ---
 
 ## Lessons from building Solitaire on a copy of this engine
 
-None of this is implemented here — this repo is still mid-lighting/textures.
-Recorded now, while it's fresh, as a heads-up for whenever this engine grows
-toward 2D/UI content or gets reused for something beyond the current 3D
-demo scene. A full Klondike Solitaire (click-and-drag cards, top-down
-camera) was built on an AI-finished copy of this exact engine snapshot;
-these are the gaps/traps that copy needed patched or worked around that
-weren't visible from a 3D-only demo scene.
+**Update:** this is no longer just a heads-up for "whenever this engine grows toward 2D/UI
+content" — per `SCOPE.md`, it's growing that way on purpose, now. Every item below that
+isn't already fixed is Tier 2 in `SCOPE.md`'s definition of done, not a someday-maybe.
+
+None of this is implemented here yet. Originally recorded as a heads-up for whenever
+this engine grows toward 2D/UI content or gets reused for something beyond the current
+3D demo scene. A full Klondike Solitaire (click-and-drag cards, top-down camera) was
+built on an AI-finished copy of this exact engine snapshot; these are the gaps/traps
+that copy needed patched or worked around that weren't visible from a 3D-only demo
+scene.
 
 - **No 2D/orthographic support at all** — `Camera` only ever did perspective. A flat/UI-style scene needs `SetOrthographic(halfHeight)`, and the default `lookAt` world-up `(0,1,0)` degenerates for a straight-down camera (front vector nearly parallel to up, cross product ~0) — needed a `SetUp(vec3)` override to supply a horizontal reference instead.
 - **No picking primitives** — click-and-drag needs a screen-to-world ray (`Camera::ScreenPointToRay`, via `inverse(projection * view)`) and ray/AABB + ray/plane intersection tests. None of that existed; `Model` also needed a world-space bounding box (`GetWorldBounds()`) to intersect against.
