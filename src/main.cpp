@@ -6,8 +6,7 @@ int main(void)
 {
     Core::Application App;
 
-    auto testScene = std::make_shared<Test::TestScene>();
-    App.AddScene(testScene);
+    App.AddScene(std::make_shared<Test::TestScene>());
 
     App.Run();
 

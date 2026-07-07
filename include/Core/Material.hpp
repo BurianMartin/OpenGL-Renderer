@@ -57,9 +57,11 @@ namespace Core
 
         /// Sets the base-color/diffuse texture, sampled in place of `uBaseColor` when present.
         void SetTexture(std::shared_ptr<Texture> texture);
+        void SetSpecularTexture(std::shared_ptr<Texture> tex);
 
         /// @return True if a texture has been set via SetTexture().
         bool HasTexture() const;
+        bool HasSpecularMap() const;
 
         /// Flat base color. In `fragment.glsl` this is used only when no texture is set — a set texture replaces it entirely rather than blending.
         void SetColor(const glm::vec4 &color);
@@ -79,6 +81,7 @@ namespace Core
 
         std::shared_ptr<Shader> shader_;
         std::shared_ptr<Texture> texture_;
+        std::shared_ptr<Texture> specularTexture_;
         std::string tag_;
 
         glm::vec3 ambient_;

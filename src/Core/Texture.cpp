@@ -54,8 +54,9 @@ namespace Core
         glBindTexture(GL_TEXTURE_2D, ID_);
     }
 
-    void Texture::Unbind() const
+    void Texture::Unbind(GLuint slot) const
     {
+        glActiveTexture(GL_TEXTURE0 + slot);
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 

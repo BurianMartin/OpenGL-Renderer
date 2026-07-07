@@ -27,7 +27,7 @@ namespace Core
         void Bind(GLuint slot = 0) const;
 
         /// Unbinds `GL_TEXTURE_2D` on whichever texture unit is currently active (i.e. whatever `glActiveTexture` was last set to — typically the slot passed to the most recent Bind() call, not necessarily unit 0).
-        void Unbind() const;
+        void Unbind(GLuint slot = 0) const;
 
         /// @return The path this texture was loaded from.
         std::string GetPath() const;
