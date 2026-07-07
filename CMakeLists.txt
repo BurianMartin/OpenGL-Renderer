@@ -14,12 +14,12 @@ set_source_files_properties(src/glad/gl.c PROPERTIES LANGUAGE C)
 find_package(glfw3 3.3 REQUIRED)
 find_package(glm REQUIRED)
 
-add_executable(OpenGL_App 
-        src/main.cpp
+# --- EngineCore: the reusable framework/engine layer ---
+# Everything under src/Core (+ glad, which the engine depends on) lives here so it can be
+# linked by OpenGL_App, future engine consumers, and the test binary alike, without pulling
+# in main.cpp or app-layer (src/App) code.
+add_library(EngineCore STATIC
         src/glad/gl.c
-
-        src/App/TestLayer.cpp
-        src/App/TestScene.cpp
 
         src/Core/Mesh.cpp
         src/Core/Model.cpp
@@ -36,25 +36,55 @@ add_executable(OpenGL_App
         src/Core/Lights.cpp
     )
 
-target_include_directories(OpenGL_App
-    PRIVATE
+target_include_directories(EngineCore
+    PUBLIC
         ${CMAKE_SOURCE_DIR}/include
         ${CMAKE_SOURCE_DIR}/include/Core
-        ${CMAKE_SOURCE_DIR}/include/App
-        ${CMAKE_SOURCE_DIR}/src/App
-        ${CMAKE_SOURCE_DIR}/src
-        ${CMAKE_SOURCE_DIR}/include/glad 
+        ${CMAKE_SOURCE_DIR}/include/glad
 )
 
-target_link_libraries(OpenGL_App PRIVATE glfw GL glm::glm)
+# PUBLIC: Core headers expose GLFW/glm types (e.g. Application.hpp, EventHandler.hpp), so
+# anything linking EngineCore needs these propagated too, not just EngineCore's own .cpp files.
+target_link_libraries(EngineCore PUBLIC glfw GL glm::glm)
 
 option(SHOW_FPS "Show FPS counter in console" OFF)
 if(SHOW_FPS)
-    target_compile_definitions(OpenGL_App PRIVATE SHOW_FPS)
+    target_compile_definitions(EngineCore PUBLIC SHOW_FPS)
 endif()
 
 option(LOG_EVENTS "Log all input events to console" OFF)
 if(LOG_EVENTS)
-    target_compile_definitions(OpenGL_App PRIVATE LOG_EVENTS)
+    target_compile_definitions(EngineCore PUBLIC LOG_EVENTS)
 endif()
- 
+
+# --- OpenGL_App: the demo application layer (src/App + main.cpp) ---
+add_executable(OpenGL_App
+        src/main.cpp
+
+        src/App/TestLayer.cpp
+        src/App/TestScene.cpp
+    )
+
+target_include_directories(OpenGL_App
+    PRIVATE
+        ${CMAKE_SOURCE_DIR}/include/App
+        ${CMAKE_SOURCE_DIR}/src/App
+        ${CMAKE_SOURCE_DIR}/src
+)
+
+target_link_libraries(OpenGL_App PRIVATE EngineCore)
+
+# --- Tests (opt-in: -DBUILD_TESTS=ON) ---
+option(BUILD_TESTS "Build the EngineCore test suite" OFF)
+if(BUILD_TESTS)
+    find_package(GTest REQUIRED)
+    enable_testing()
+
+    add_executable(EngineCore_tests
+        test/test_camera.cpp
+    )
+    target_link_libraries(EngineCore_tests PRIVATE EngineCore GTest::gtest GTest::gtest_main)
+
+    include(GoogleTest)
+    gtest_discover_tests(EngineCore_tests)
+endif()
