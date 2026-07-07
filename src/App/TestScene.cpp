@@ -90,6 +90,7 @@ namespace Test
         AddLight(Core::PointLight::Create(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(1.0f, 0.95f, 0.85f), 1.0f));
         AddLight(Core::PointLight::Create(glm::vec3(-3.0f, 1.0f, -1.0f), glm::vec3(1.0f, 0.95f, 0.85f), 0.8f));
         AddLight(Core::PointLight::Create(glm::vec3(3.0f, 1.0f, -3.0f), glm::vec3(1.0f, 0.95f, 0.85f), 0.8f));
+        AddLight(Core::DirectionalLight::Create(glm::vec3(0.60f, -1.0f, 0.30f), glm::vec3(1.0f, 1.0f, 1.0f), 0.4f));
     }
 
 } // namespace Test

@@ -18,6 +18,8 @@ uniform Material uMaterial;
 uniform vec4 uBaseColor;
 uniform bool uHasTexture;
 uniform sampler2D uTexture;
+uniform bool uHasSpecularMap;
+uniform sampler2D uSpecularMap;
 uniform vec3 uCameraPos;
 uniform float uTime;
 
@@ -34,9 +36,9 @@ layout(std140, binding = 0) uniform LightsBlock {
     Light lights[MAX_LIGHTS];
 };
 
-vec3 DirectionLightValue(Light l, vec4 color, vec3 norm, vec3 viewDir);
-vec3 PointLightValue(Light l, vec4 color, vec3 norm, vec3 viewDir);
-vec3 SpotLightValue(Light l, vec4 color, vec3 norm, vec3 viewDir);
+vec3 DirectionLightValue(Light l, vec4 color, vec3 specReflect, vec3 norm, vec3 viewDir);
+vec3 PointLightValue(Light l, vec4 color, vec3 specReflect, vec3 norm, vec3 viewDir);
+vec3 SpotLightValue(Light l, vec4 color, vec3 specReflect, vec3 norm, vec3 viewDir);
 
 void main()
 {
@@ -44,25 +46,26 @@ void main()
     vec3 viewDir  = normalize(uCameraPos - vFragPos);
     vec3 norm     = normalize(vNormal);
     vec3 totalLight = vec3(0);
+    vec3 specReflectance = uHasSpecularMap ? texture(uSpecularMap, vTexCoords).rgb : uMaterial.specular;
 
     for(int i = 0; i < uLightCountHeader.x; ++i)
     {
         switch (int(lights[i].position.w)) {
             case 0: // Light::Directional
             {
-                totalLight += DirectionLightValue(lights[i], baseColor, norm, viewDir);
+                totalLight += DirectionLightValue(lights[i], baseColor, specReflectance, norm, viewDir);
                 break;
             }
 
             case 1: // Light::Point
             {
-                totalLight += PointLightValue(lights[i], baseColor, norm, viewDir);
+                totalLight += PointLightValue(lights[i], baseColor, specReflectance, norm, viewDir);
                 break;
             }
 
             case 2: // Light::Spot
             {
-                totalLight += SpotLightValue(lights[i], baseColor, norm, viewDir);
+                totalLight += SpotLightValue(lights[i], baseColor, specReflectance, norm, viewDir);
                 break;
             }
             default:
@@ -74,7 +77,7 @@ void main()
 
 
 
-vec3 DirectionLightValue(Light l, vec4 color, vec3 norm, vec3 viewDir){
+vec3 DirectionLightValue(Light l, vec4 color, vec3 specReflect, vec3 norm, vec3 viewDir){
 
     // l.direction stores the direction the light travels (e.g. sunlight
     // pointing down); the lighting math needs the fragment-to-light
@@ -92,7 +95,7 @@ vec3 DirectionLightValue(Light l, vec4 color, vec3 norm, vec3 viewDir){
 
     // specular — the highlight
     float spec = pow(max(dot(norm, halfDir), 0.0), uMaterial.shininess);
-    vec3 specular = uMaterial.specular * spec * l.color.rgb * intensity;
+    vec3 specular = specReflect * spec * l.color.rgb * intensity;
 
     vec3 total = ambient + diffuse + specular;
 
@@ -100,7 +103,7 @@ vec3 DirectionLightValue(Light l, vec4 color, vec3 norm, vec3 viewDir){
 
 }
 
-vec3 PointLightValue(Light l, vec4 color, vec3 norm, vec3 viewDir){
+vec3 PointLightValue(Light l, vec4 color, vec3 specReflect, vec3 norm, vec3 viewDir){
 
     // Unlike a directional light, a point light has an actual position, so
     // the direction toward it is different for every fragment.
@@ -119,7 +122,7 @@ vec3 PointLightValue(Light l, vec4 color, vec3 norm, vec3 viewDir){
     vec3 diffuse = uMaterial.diffuse * diff * color.rgb * l.color.rgb * intensity;
 
     float spec = pow(max(dot(norm, halfDir), 0.0), uMaterial.shininess);
-    vec3 specular = uMaterial.specular * spec * l.color.rgb * intensity;
+    vec3 specular = specReflect * spec * l.color.rgb * intensity;
 
     vec3 total = ambient + diffuse + specular;
 
@@ -127,7 +130,7 @@ vec3 PointLightValue(Light l, vec4 color, vec3 norm, vec3 viewDir){
 
 }
 
-vec3 SpotLightValue(Light l, vec4 color, vec3 norm, vec3 viewDir){
+vec3 SpotLightValue(Light l, vec4 color, vec3 specReflect, vec3 norm, vec3 viewDir){
 
     // A spot light is a point light with an extra cone-shaped mask on top.
     vec3 lightDir = normalize(l.position.xyz - vFragPos);
@@ -152,7 +155,7 @@ vec3 SpotLightValue(Light l, vec4 color, vec3 norm, vec3 viewDir){
     vec3 diffuse = uMaterial.diffuse * diff * color.rgb * l.color.rgb * intensity * coneFactor;
 
     float spec = pow(max(dot(norm, halfDir), 0.0), uMaterial.shininess);
-    vec3 specular = uMaterial.specular * spec * l.color.rgb * intensity * coneFactor;
+    vec3 specular = specReflect * spec * l.color.rgb * intensity * coneFactor;
 
     // Ambient is deliberately NOT scaled by coneFactor, only by attenuation —
     // a fragment just outside the cone gets a faint ambient glow instead of

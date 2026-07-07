@@ -1,0 +1,86 @@
+# crate.obj -- hand-authored UV-unwrapped unit cube (half-extent 0.5, centered at origin)
+# Every face has its own 4 unshared vertices, own flat normal, and own full 0..1 UV
+# square -- no vertex is shared across faces, since each face needs an independent
+# UV mapping (see ROADMAP.md Step 7). Winding is CCW as seen from outside each face,
+# required for GL_CULL_FACE/GL_BACK. Faces are pre-triangulated (2 tris each) since
+# the OBJ loader only accepts triangular faces.
+
+# --- Front face (+Z) ---
+v -0.5 -0.5  0.5
+v  0.5 -0.5  0.5
+v  0.5  0.5  0.5
+v -0.5  0.5  0.5
+vt 0.0 0.0
+vt 1.0 0.0
+vt 1.0 1.0
+vt 0.0 1.0
+vn 0.0 0.0 1.0
+f 1/1/1 2/2/1 3/3/1
+f 1/1/1 3/3/1 4/4/1
+
+# --- Back face (-Z) ---
+v  0.5 -0.5 -0.5
+v -0.5 -0.5 -0.5
+v -0.5  0.5 -0.5
+v  0.5  0.5 -0.5
+vt 0.0 0.0
+vt 1.0 0.0
+vt 1.0 1.0
+vt 0.0 1.0
+vn 0.0 0.0 -1.0
+f 5/5/2 6/6/2 7/7/2
+f 5/5/2 7/7/2 8/8/2
+
+# --- Right face (+X) ---
+v  0.5 -0.5  0.5
+v  0.5 -0.5 -0.5
+v  0.5  0.5 -0.5
+v  0.5  0.5  0.5
+vt 0.0 0.0
+vt 1.0 0.0
+vt 1.0 1.0
+vt 0.0 1.0
+vn 1.0 0.0 0.0
+f 9/9/3 10/10/3 11/11/3
+f 9/9/3 11/11/3 12/12/3
+
+# --- Left face (-X) ---
+v -0.5 -0.5 -0.5
+v -0.5 -0.5  0.5
+v -0.5  0.5  0.5
+v -0.5  0.5 -0.5
+vt 0.0 0.0
+vt 1.0 0.0
+vt 1.0 1.0
+vt 0.0 1.0
+vn -1.0 0.0 0.0
+f 13/13/4 14/14/4 15/15/4
+f 13/13/4 15/15/4 16/16/4
+
+# --- Top face (+Y) ---
+v -0.5  0.5 -0.5
+v -0.5  0.5  0.5
+v  0.5  0.5  0.5
+v  0.5  0.5 -0.5
+vt 0.0 0.0
+vt 1.0 0.0
+vt 1.0 1.0
+vt 0.0 1.0
+vn 0.0 1.0 0.0
+f 17/17/5 18/18/5 19/19/5
+f 17/17/5 19/19/5 20/20/5
+
+# --- Bottom face (-Y) ---
+v -0.5 -0.5 -0.5
+v  0.5 -0.5 -0.5
+v  0.5 -0.5  0.5
+v -0.5 -0.5  0.5
+vt 0.0 0.0
+vt 1.0 0.0
+vt 1.0 1.0
+vt 0.0 1.0
+vn 0.0 -1.0 0.0
+f 21/21/6 22/22/6 23/23/6
+f 21/21/6 23/23/6 24/24/6
+
+# 24 vertices, 6 normals, 24 UVs, 12 triangles (6 faces)

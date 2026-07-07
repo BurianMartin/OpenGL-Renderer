@@ -1,4 +1,5 @@
 #include "Core/Material.hpp"
+#include "Material.hpp"
 
 namespace Core
 {
@@ -40,6 +41,12 @@ namespace Core
         {
             texture_->Bind(0);
             shader_->SetInt("uTexture", 0);
+        }
+        shader_->SetBool("uHasSpecularMap", HasSpecularMap());
+        if (HasSpecularMap())
+        {
+            specularTexture_->Bind(1); // unit 1 -- diffuse already owns unit 0
+            shader_->SetInt("uSpecularMap", 1);
         }
     }
 
@@ -117,11 +124,15 @@ namespace Core
     void Material::SetTexture(std::shared_ptr<Texture> texture) { texture_ = texture; }
     bool Material::HasTexture() const { return texture_ != nullptr; }
 
+    bool Material::HasSpecularMap() const { return specularTexture_ != nullptr; }
+
     void Material::SetColor(const glm::vec4 &color) { color_ = color; }
     void Material::SetAmbient(const glm::vec3 &ambient) { ambient_ = ambient; }
     void Material::SetDiffuse(const glm::vec3 &diffuse) { diffuse_ = diffuse; }
     void Material::SetSpecular(const glm::vec3 &specular) { specular_ = specular; }
     void Material::SetShininess(float shininess) { shininess_ = shininess; }
+
+    void Material::SetSpecularTexture(std::shared_ptr<Texture> tex) { specularTexture_ = tex; }
 
     std::string Material::GetTag() const { return tag_; }
 

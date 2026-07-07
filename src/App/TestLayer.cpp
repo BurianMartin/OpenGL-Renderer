@@ -47,6 +47,18 @@ namespace Test
         auto material2 = Core::Material::Create(solidColorShader, "Solid");
         */
 
+        auto crateMesh = resourceManager->LoadMesh("models/crate.obj");
+        auto crateMat = Core::Material::Create(solidColorShader, "Crate");
+        crateMat->SetTexture(resourceManager->LoadTexture("textures/crate_diffuse.png"));
+        crateMat->SetSpecularTexture(resourceManager->LoadTexture("textures/crate_specular.png"));
+
+        auto crateModel = std::make_shared<Core::Model>(crateMesh);
+        materialModels_[crateMat].push_back(crateModel);
+        materials_.push_back(crateMat);
+
+        crateModel->SetScale(0.8);
+        crateModel->SetPosition(glm::vec3(2.2f, 0.05f, -1.0f));
+
         auto material1 = Core::Material::Gold(solidColorShader);
         auto material2 = Core::Material::Gold(solidColorShader);
         auto material3 = Core::Material::Silver(solidColorShader);
@@ -78,27 +90,8 @@ namespace Test
             {
             case GLFW_KEY_TAB:
             {
-                if (!ev.IsRepeat())
-                {
-                    debug_info("Color change now!");
-                    auto material_find = std::ranges::find_if(materials_, [](const std::shared_ptr<Core::Material> &m)
-                                                              { return m->GetTag() == "Changing"; });
-                    if (material_find == materials_.end())
-                    {
-                        debug_info("Failed to find Changing material");
-                        return true;
-                    }
-
-                    auto material = *material_find;
-                    material->GetShader()->Use();
-                    material->GetShader()->SetVec4("triangle_color", Core::Color_A1::RandomColor());
-                    return true;
-                }
-                else
-                {
-                    debug_info("Tab key repeat detected");
-                    return true;
-                }
+                materials_[1]->SetColor(Core::Color_A1::RandomColor());
+                return true;
             }
             default:
                 return true;
