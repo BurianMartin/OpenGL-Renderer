@@ -78,11 +78,14 @@ namespace Core
                 while (ss >> ft)
                     faceTokens.push_back(ft);
 
-                if (faceTokens.size() != 3)
+                if (faceTokens.size() < 3)
                 {
-                    debug_warn("Non-triangle face encountered in " << filename << ", skipping");
+                    debug_warn("Degenerate face (< 3 vertices) encountered in " << filename << ", skipping");
                     continue;
                 }
+
+                std::vector<unsigned int> faceIndices;
+                faceIndices.reserve(faceTokens.size());
 
                 for (const auto &ft : faceTokens)
                 {
@@ -123,7 +126,16 @@ namespace Core
                         vertices.push_back(v);
                     }
 
-                    indices.push_back(uniqueVertices[ft]);
+                    faceIndices.push_back(uniqueVertices[ft]);
+                }
+
+                // Fan-triangulate: assumes a convex, planar face (true for Blender's
+                // default export). indices[0] anchors every triangle in the fan.
+                for (size_t i = 1; i + 1 < faceIndices.size(); ++i)
+                {
+                    indices.push_back(faceIndices[0]);
+                    indices.push_back(faceIndices[i]);
+                    indices.push_back(faceIndices[i + 1]);
                 }
             }
         }

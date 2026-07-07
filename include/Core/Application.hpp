@@ -60,6 +60,8 @@ namespace Core
 
         GLint cursor_mode_ = GLFW_CURSOR_DISABLED;
 
+        bool init_success_ = false;
+
         /// Initializes GLFW, creates the window, wires up EventHandler, loads GLAD, and enables depth testing + back-face culling. @return False if any step failed.
         bool Init();
 
