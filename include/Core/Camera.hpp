@@ -63,6 +63,8 @@ namespace Core
         /// @return The camera's current world-space position.
         glm::vec3 GetPosition() const;
 
+        /// @return The camera's current vertical field of view, in degrees (clamped to [1°, 45°] by Zoom()).
+        GLfloat GetFOV() const;
         /// Integrates every currently-held movement direction by `delta_time`; call once per frame.
         void Update(GLfloat delta_time);
 
@@ -74,6 +76,9 @@ namespace Core
 
         /// Marks the next ProcessMousePosition call as the first one again, preventing a jump when re-capturing the cursor.
         void ResetMouseTracking();
+
+        /// Sets a speed bonus added on top of the base movement speed for every direction (e.g. an OnEvent handler tying this to a "sprint" key); 0 to disable. Not clamped — a negative value would slow or reverse movement.
+        void SetBoost(GLfloat boost);
 
     private:
         bool move_up_ = false;
@@ -96,6 +101,7 @@ namespace Core
         GLfloat fov_;
 
         GLfloat speed_;
+        GLfloat boost_;
         GLfloat sensitivity_;
 
         GLfloat aspect_ratio_;

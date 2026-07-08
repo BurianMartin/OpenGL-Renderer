@@ -8,6 +8,8 @@
 
 #include "Core/Camera.hpp"
 
+/// Maps GLFW key codes to Camera movement directions, used by TestScene::OnEvent to translate
+/// raw WASD/Space/Left-Shift key events into `Camera::CameraMove` calls.
 inline const std::unordered_map<int, Core::CamMove> key_map = {
     {GLFW_KEY_W, Core::CamMove::FORWARD},
     {GLFW_KEY_S, Core::CamMove::BACKWARD},

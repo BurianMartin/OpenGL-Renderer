@@ -34,6 +34,18 @@ namespace Core
         if (!file.is_open())
             throw std::runtime_error("Failed to open OBJ file: " + filename);
 
+        ParsedMeshData parsed = ParseObjFile(file, filename);
+
+        return std::shared_ptr<Mesh>(new Mesh(filename, parsed.vertices, parsed.indices, drawMode));
+    }
+
+    ParsedMeshData Mesh::ParseObjFile(std::istream &input, const std::string &sourceName)
+    {
+        if (!std::filesystem::exists(sourceName))
+        {
+            debug_warn("File not found: " << sourceName);
+        }
+
         std::vector<glm::vec3> positions;
         std::vector<glm::vec3> normals;
         std::vector<glm::vec2> texCoords;
@@ -43,7 +55,7 @@ namespace Core
         std::unordered_map<std::string, unsigned int> uniqueVertices;
 
         std::string line;
-        while (std::getline(file, line))
+        while (std::getline(input, line))
         {
             if (line.empty() || line[0] == '#')
                 continue;
@@ -80,7 +92,7 @@ namespace Core
 
                 if (faceTokens.size() < 3)
                 {
-                    debug_warn("Degenerate face (< 3 vertices) encountered in " << filename << ", skipping");
+                    debug_warn("Degenerate face (< 3 vertices) encountered in " << sourceName << ", skipping");
                     continue;
                 }
 
@@ -115,7 +127,7 @@ namespace Core
                         if (vIdx > 0 && vIdx <= (int)positions.size())
                             v.position = positions[vIdx - 1];
                         else
-                            debug_warn("OBJ vertex index out of range in " << filename);
+                            debug_warn("OBJ vertex index out of range in " << sourceName);
 
                         if (vtIdx > 0 && vtIdx <= (int)texCoords.size())
                             v.texCoords = texCoords[vtIdx - 1];
@@ -141,11 +153,11 @@ namespace Core
         }
 
         if (vertices.empty())
-            throw std::runtime_error("OBJ file produced no vertices: " + filename);
+            throw std::runtime_error("OBJ file produced no vertices: " + sourceName);
 
         if (normals.empty())
         {
-            debug_info("No normals found in " << filename << " — generating flat normals");
+            debug_info("No normals found in " << sourceName << " — generating flat normals");
 
             // Expand to one vertex per index so each triangle gets its own
             // unshared vertices — shared vertices would get overwritten by the
@@ -174,12 +186,12 @@ namespace Core
             }
 
             vertices = std::move(flat);
-            indices  = std::move(flatIndices);
+            indices = std::move(flatIndices);
         }
 
-        debug_info("Loaded OBJ: " << filename << " — " << vertices.size() << " vertices, " << indices.size() / 3 << " triangles");
+        debug_info("Loaded OBJ: " << sourceName << " — " << vertices.size() << " vertices, " << indices.size() / 3 << " triangles");
 
-        return std::shared_ptr<Mesh>(new Mesh(filename, vertices, indices, drawMode));
+        return ParsedMeshData{std::move(vertices), std::move(indices)};
     }
 
     Mesh::Mesh(const std::string &tag, const std::vector<Vertex> &vertices, const std::vector<unsigned int> &indices, GLenum drawMode)

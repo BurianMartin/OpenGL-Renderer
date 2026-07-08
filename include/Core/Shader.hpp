@@ -42,18 +42,32 @@ namespace Core
         /// Binds this program (`glUseProgram`) so subsequent `Set*`/draw calls apply to it.
         void Use();
 
+        // --- Uniform setters ---
+        // Each looks up `name`'s uniform location (cached after the first call for that name)
+        // and uploads `value` via the matching `glUniform*` call. Requires this program to
+        // already be bound via Use() — none of these call glUseProgram themselves.
+
+        /// Uploads a `bool` uniform (as a GLSL `bool`/`int`).
         void SetBool(const std::string &name, bool value);
 
+        /// Uploads an `int` uniform (e.g. a texture sampler unit index).
         void SetInt(const std::string &name, int value);
 
+        /// Uploads a scalar `float` uniform.
         void SetFloat(const std::string &name, float value);
 
+        /// Uploads a `vec2` uniform.
         void SetVec2(const std::string &name, const glm::vec2 &value);
+        /// Uploads a `vec3` uniform.
         void SetVec3(const std::string &name, const glm::vec3 &value);
+        /// Uploads a `vec4` uniform.
         void SetVec4(const std::string &name, const glm::vec4 &value);
 
+        /// Uploads a `mat2` uniform.
         void SetMat2(const std::string &name, const glm::mat2 &value);
+        /// Uploads a `mat3` uniform (e.g. a normal matrix).
         void SetMat3(const std::string &name, const glm::mat3 &value);
+        /// Uploads a `mat4` uniform (e.g. `uModel`/`uView`/`uProjection`).
         void SetMat4(const std::string &name, const glm::mat4 &value);
 
         /// @return The tag this shader was created with.

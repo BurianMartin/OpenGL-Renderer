@@ -1,6 +1,6 @@
 BUILD_DIR := build
 
-.PHONY: all run clean debug release event noevent fps nofps doc FORCE
+.PHONY: all run clean debug release event noevent fps nofps doc FORCE test runtests
 
 all: $(BUILD_DIR)/OpenGL_App
 
@@ -17,6 +17,13 @@ clean:
 	rm -rf $(BUILD_DIR)
 
 FORCE:
+
+# --- Tests (BUILD_TESTS is sticky until toggled off or `make clean`) ---
+
+test:
+	cmake -B $(BUILD_DIR) -S . -DBUILD_TESTS=ON
+	cmake --build $(BUILD_DIR) -j$$(nproc) --target EngineCore_tests
+	./$(BUILD_DIR)/EngineCore_tests
 
 # --- Build type (configure only, cmake caches the value) ---
 

@@ -1,4 +1,5 @@
 #include "Core/Camera.hpp"
+#include "Camera.hpp"
 
 namespace Core
 {
@@ -14,6 +15,7 @@ namespace Core
 
         fov_ = 45.0f;
         speed_ = 1.0f;
+        boost_ = 0.0f;
         sensitivity_ = 0.1f;
         near_plane_ = 0.1f;
         far_plane_ = 100.0f;
@@ -31,22 +33,22 @@ namespace Core
 
     void Camera::MoveForward(GLfloat delta_time)
     {
-        position_ += front_ * speed_ * delta_time;
+        position_ += front_ * (speed_ + boost_) * delta_time;
     }
 
     void Camera::MoveBackward(GLfloat delta_time)
     {
-        position_ -= front_ * speed_ * delta_time;
+        position_ -= front_ * (speed_ + boost_) * delta_time;
     }
 
     void Camera::MoveDown(GLfloat delta_time)
     {
-        position_ -= up_ * speed_ * delta_time;
+        position_ -= up_ * (speed_ + boost_) * delta_time;
     }
 
     void Camera::MoveUp(GLfloat delta_time)
     {
-        position_ += up_ * speed_ * delta_time;
+        position_ += up_ * (speed_ + boost_) * delta_time;
     }
 
     void Camera::ResetMouseTracking()
@@ -116,6 +118,11 @@ namespace Core
         return position_;
     }
 
+    GLfloat Camera::GetFOV() const
+    {
+        return fov_;
+    }
+
     void Camera::Update(GLfloat delta_time)
     {
         if (move_forward_)
@@ -165,6 +172,11 @@ namespace Core
         default:
             break;
         }
+    }
+
+    void Camera::SetBoost(GLfloat boost)
+    {
+        boost_ = boost;
     }
 
     void Camera::UpdateFront()
