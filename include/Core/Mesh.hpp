@@ -11,6 +11,7 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
+#include <filesystem>
 #include <unordered_map>
 
 namespace Core
@@ -21,7 +22,24 @@ namespace Core
         glm::vec3 position;
         glm::vec3 normal;
         glm::vec2 texCoords;
+
+        bool operator==(const Vertex &other) const
+        {
+            return position == other.position && normal == other.normal && texCoords == other.texCoords;
+        }
         // glm::vec4 color;  -- add if you need per-vertex color
+    };
+
+    /// Result of parsing OBJ geometry into GPU-ready vertex/index data, before any GPU resource exists.
+    struct ParsedMeshData
+    {
+        std::vector<Vertex> vertices;
+        std::vector<unsigned int> indices;
+
+        bool operator==(const ParsedMeshData &other) const
+        {
+            return vertices == other.vertices && indices == other.indices;
+        }
     };
 
     /**
@@ -63,6 +81,20 @@ namespace Core
          * @return A new Mesh, or `nullptr` if the file couldn't be opened or produced no vertices.
          */
         static std::shared_ptr<Mesh> Create(const std::string &filename, GLenum drawMode = GL_TRIANGLES);
+
+        /**
+         * @brief Parses Wavefront OBJ geometry from a stream into vertex/index data, generating
+         *        flat per-face normals if the source has none.
+         *
+         * Pure CPU logic - touches no GPU resources - split out of `Create(filename)` specifically
+         * so it can be unit tested without a GL context. Takes a stream rather than a filename so
+         * tests can pass an in-memory `std::istringstream` instead of a real file on disk.
+         * @param input Stream containing OBJ-format text.
+         * @param sourceName Used only for warning/log messages (e.g. the original filename).
+         * @return Parsed vertex/index data.
+         * @throws std::runtime_error if the stream produced no vertices.
+         */
+        static ParsedMeshData ParseObjFile(std::istream &input, const std::string &sourceName);
 
         ~Mesh();
 

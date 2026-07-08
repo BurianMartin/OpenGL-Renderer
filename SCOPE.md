@@ -27,7 +27,7 @@ this doesn't need to be.
 - [ ] Known-bug backlog (Redline Phase C — ~2.5–3.5 hrs)
 - [ ] `ResourceManager::LoadMaterial` (Redline Phase D)
 - [ ] Rename `RenderContext` → `FrameContext` (Redline Phase D)
-- [ ] Doxygen pass over `Core` (cheap, worth it since this is meant to be reused)
+- [x] Doxygen pass over `Core` — done, and extended to cover `App/` too (`TestLayer`/`TestScene`/`InputConfig`), which the original pass had explicitly left undocumented (see `ROADMAP.md`'s Completed section)
 
 **Tier 2 — net-new, driven by exactly what the TCG needs, nothing more**
 - [ ] **Text/UI rendering.** The most-flagged gap across every retrospective so far. A

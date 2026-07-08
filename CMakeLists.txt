@@ -82,6 +82,10 @@ if(BUILD_TESTS)
 
     add_executable(EngineCore_tests
         test/test_camera.cpp
+        test/test_mesh.cpp
+        test/test_lights.cpp
+        test/test_model.cpp
+        test/test_colors.cpp
     )
     target_link_libraries(EngineCore_tests PRIVATE EngineCore GTest::gtest GTest::gtest_main)
 

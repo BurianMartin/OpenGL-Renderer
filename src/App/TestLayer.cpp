@@ -33,7 +33,7 @@ namespace Test
         silverCube->SetPosition(glm::vec3(-2.2f, 0.05f, -1.0f));
 
         rubyCube->SetScale(0.025f);
-        rubyCube->SetPosition(glm::vec3(2.2f, -0.05f, -1.6f));
+        rubyCube->SetPosition(glm::vec3(2.2f, -0.05f, -2.6f));
 
         emeraldCube->SetScale(0.025f);
         emeraldCube->SetPosition(glm::vec3(0.3f, 0.9f, -2.2f));

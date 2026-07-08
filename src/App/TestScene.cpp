@@ -23,6 +23,14 @@ namespace Test
         case Core::EventType::KeyPressed:
         {
             auto ev = static_cast<Core::KeyPressedEvent &>(event);
+
+            switch (ev.GetKeyCode())
+            {
+            case GLFW_KEY_LEFT_CONTROL:
+                cameras_[active_camera_].SetBoost(3.0f);
+                return;
+            }
+
             auto it = key_map.find(ev.GetKeyCode());
             if (it != key_map.end())
             {
@@ -34,6 +42,14 @@ namespace Test
         case Core::EventType::KeyReleased:
         {
             auto ev = static_cast<Core::KeyReleasedEvent &>(event);
+
+            switch (ev.GetKeyCode())
+            {
+            case GLFW_KEY_LEFT_CONTROL:
+                cameras_[active_camera_].SetBoost(0.0f);
+                return;
+            }
+
             auto it = key_map.find(ev.GetKeyCode());
             if (it != key_map.end())
             {
