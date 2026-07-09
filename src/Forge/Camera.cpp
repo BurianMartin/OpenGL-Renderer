@@ -19,6 +19,19 @@ namespace Forge
         sensitivity_ = 0.1f;
         near_plane_ = 0.1f;
         far_plane_ = 100.0f;
+        is_orthographic_ = false;
+        ortho_half_height_ = 5.0f;
+    }
+
+    void Camera::SetOrthographic(GLfloat half_height)
+    {
+        is_orthographic_ = true;
+        ortho_half_height_ = half_height;
+    }
+
+    void Camera::SetUp(const glm::vec3 &up)
+    {
+        up_ = glm::normalize(up);
     }
 
     glm::mat4 Camera::GetViewMatrix() const
@@ -28,6 +41,11 @@ namespace Forge
 
     glm::mat4 Camera::GetProjectionMatrix() const
     {
+        if (is_orthographic_)
+        {
+            GLfloat halfWidth = ortho_half_height_ * viewport_.GetAspectRatio();
+            return glm::ortho(-halfWidth, halfWidth, -ortho_half_height_, ortho_half_height_, near_plane_, far_plane_);
+        }
         return glm::perspective(glm::radians(fov_), viewport_.GetAspectRatio(), near_plane_, far_plane_);
     }
 

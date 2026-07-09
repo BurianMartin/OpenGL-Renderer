@@ -1,6 +1,8 @@
 #include "Demo/LightDemoLayer.hpp"
 #include "Forge/Material.hpp"
 #include "Forge/Light.hpp"
+
+#include <glm/gtc/constants.hpp>
 namespace Demo
 {
     namespace
@@ -32,8 +34,8 @@ namespace Demo
         // something to actually read against, instead of objects floating in a void. ---
         auto floorMesh = BuildFloorMesh();
         auto floorMat = Forge::Material::Create(solidColorShader, "Floor",
-                                                  glm::vec3(0.05f, 0.05f, 0.06f), glm::vec3(0.35f, 0.35f, 0.38f),
-                                                  glm::vec3(0.15f, 0.15f, 0.15f), 16.0f);
+                                                glm::vec3(0.05f, 0.05f, 0.06f), glm::vec3(0.35f, 0.35f, 0.38f),
+                                                glm::vec3(0.15f, 0.15f, 0.15f), 16.0f);
         auto floorModel = std::make_shared<Forge::Model>(floorMesh);
         materialModels_[floorMat].push_back(floorModel);
         materials_.push_back(floorMat);
@@ -55,11 +57,13 @@ namespace Demo
 
         auto rubyCube = std::make_shared<Forge::Model>(cubeMesh);
         rubyCube->SetScale(0.025f);
-        rubyCube->SetPosition(glm::vec3(-2.5f, -0.05f, -6.0f)); // Station 3 — point light (warm rim)
+        glm::vec3 rubyCubePos(-2.5f, -0.05f, -6.0f); // Station 3 — point light (warm rim)
+        rubyCube->SetPosition(rubyCubePos);
 
         auto emeraldCube = std::make_shared<Forge::Model>(cubeMesh);
         emeraldCube->SetScale(0.025f);
-        emeraldCube->SetPosition(glm::vec3(2.5f, -0.05f, -8.5f)); // Station 4 — spot light, aimed straight down
+        glm::vec3 emeraldCubePos(2.5f, -0.05f, -8.5f); // Station 4 — spot light, aimed straight down
+        emeraldCube->SetPosition(emeraldCubePos);
 
         // --- Fifth station: the textured crate — demonstrates diffuse+specular texture
         // mapping specifically, as opposed to the flat Blinn-Phong presets above. ---
@@ -91,6 +95,23 @@ namespace Demo
 
         materialModels_[crateMat].push_back(crateModel);
         materials_.push_back(crateMat);
+
+        // --- Tween demo: the Ruby cube spins 360° forever. SetSpin builds the rotation directly
+        // from a continuously growing angle instead of slerping between two fixed quaternions —
+        // see SetSpin's comment for why a full-turn spin needs that. ---
+        auto rubySpin = std::make_unique<Forge::Vec3Tween>(rubyCube, rubyCubePos, rubyCubePos, 3.0f, Forge::Vec3Tween::Ease::Linear);
+        rubySpin->SetSpin(glm::vec3(0.0f, 1.0f, 0.0f), 2.0f * glm::pi<float>());
+        rubySpin->SetRepeat(Forge::Vec3Tween::Repeat::Loop);
+        AddTween(std::move(rubySpin));
+
+        // --- Tween demo: the Emerald cube bobs up and down forever — PingPong reverses
+        // direction each cycle (forth, back, forth, back...) instead of resetting like Loop.
+        // Default (EaseOutQuad) easing here on purpose: it decelerates into both the top and
+        // bottom of the bob, giving it a soft "hang and fall" feel rather than Ruby's constant-speed spin. ---
+        auto emeraldBob = std::make_unique<Forge::Vec3Tween>(
+            emeraldCube, emeraldCubePos, emeraldCubePos + glm::vec3(0.0f, 0.4f, 0.0f), 1.0f);
+        emeraldBob->SetRepeat(Forge::Vec3Tween::Repeat::PingPong);
+        AddTween(std::move(emeraldBob));
 
         srand(time(NULL));
     }

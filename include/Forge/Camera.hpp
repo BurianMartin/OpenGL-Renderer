@@ -178,6 +178,10 @@ namespace Forge
         /// Directly sets yaw/pitch (degrees) and rebuilds the front vector, bypassing Rotate()'s mouse-look path — for a fixed/scripted camera. Pitch is not clamped here (unlike Rotate()), since a scripted camera may deliberately look straight down/up.
         void SetYawPitch(GLfloat yaw, GLfloat pitch);
 
+        void SetUp(const glm::vec3 &up);
+
+        void SetOrthographic(GLfloat half_height);
+
     private:
         bool move_up_ = false;
         bool move_down_ = false;
@@ -204,6 +208,8 @@ namespace Forge
 
         GLfloat near_plane_;
         GLfloat far_plane_;
+        bool is_orthographic_;
+        GLfloat ortho_half_height_;
 
         Viewport viewport_;
 

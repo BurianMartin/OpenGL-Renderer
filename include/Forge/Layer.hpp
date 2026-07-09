@@ -4,9 +4,11 @@
 #include "Forge/Material.hpp"
 #include "Forge/InputEvents.hpp"
 #include "Forge/FrameContext.hpp"
+#include "Forge/Tweens.hpp"
 
 #include <memory>
 #include <unordered_map>
+#include <vector>
 
 namespace Forge
 {
@@ -33,9 +35,26 @@ namespace Forge
      */
     class Layer
     {
+    private:
+        void UpdateTweens(GLfloat delta_time)
+        {
+            for (auto &tween : tweens_)
+            {
+                tween->Update(delta_time);
+            }
+            std::erase_if(tweens_, [](const std::shared_ptr<Vec3Tween> &tween)
+                          { return tween->IsDone(); });
+        }
+
     protected:
         std::vector<std::shared_ptr<Material>> materials_;
         std::unordered_map<std::shared_ptr<Material>, std::vector<std::shared_ptr<Model>>> materialModels_;
+        std::vector<std::shared_ptr<Vec3Tween>> tweens_;
+
+        void AddTween(std::unique_ptr<Vec3Tween> tween)
+        {
+            tweens_.push_back(std::move(tween));
+        }
 
     public:
         Layer() = default;
@@ -58,6 +77,13 @@ namespace Forge
 
         /// Release any layer-owned resources ahead of destruction.
         virtual void Destroy() {};
+
+        /// Calls OnUpdate(), then advances/prunes this layer's tweens. Called once per frame by Scene::Update.
+        void Update(GLfloat delta_time)
+        {
+            OnUpdate();
+            UpdateTweens(delta_time);
+        }
 
         /// Submit this layer's draw calls. Typically binds each Material once, then sets `uModel` and draws every Model in its bucket.
         void Render(std::shared_ptr<FrameContext> ctx)

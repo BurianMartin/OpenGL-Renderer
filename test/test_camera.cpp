@@ -165,3 +165,47 @@ TEST(CameraTest, SecondMouseCallRotatesCamera)
     glm::mat4 after = test_cam.GetViewMatrix();
     EXPECT_FALSE(Mat4ApproxEqual(after, before, 1e-4f));
 }
+
+// Constructor defaults (near=0.1, far=100.0) are relied on here since Camera exposes no getter
+// for them — matches how other tests already hardcode known constructor defaults (e.g. fov=45).
+TEST(CameraTest, OrthographicProjectionMatchesGlmOrtho)
+{
+    Forge::Camera test_cam(Forge::Viewport(0, 0, 1.0f, 1.0f, 1080, 1080)); // aspect 1:1
+    test_cam.SetOrthographic(5.0f);
+    glm::mat4 expected = glm::ortho(-5.0f, 5.0f, -5.0f, 5.0f, 0.1f, 100.0f);
+    ExpectMat4Near(test_cam.GetProjectionMatrix(), expected, 1e-5f);
+}
+
+// Unlike FOV-based perspective, an orthographic half-height is a fixed world-space size —
+// widening the aspect ratio must widen the left/right bounds (half_height * aspect) while
+// leaving top/bottom untouched, not just uniformly rescale like FovWithinBoundsDecreasesByOffset.
+TEST(CameraTest, OrthographicProjectionScalesWidthWithAspectRatio)
+{
+    Forge::Camera test_cam(Forge::Viewport(0, 0, 1.0f, 1.0f, 1080, 1080));
+    test_cam.SetOrthographic(5.0f);
+    test_cam.UpdateViewportSize(2160, 1080); // aspect 2:1
+    glm::mat4 expected = glm::ortho(-10.0f, 10.0f, -5.0f, 5.0f, 0.1f, 100.0f);
+    ExpectMat4Near(test_cam.GetProjectionMatrix(), expected, 1e-5f);
+}
+
+// Regression guard for the documented straight-down degeneracy: with the default up (0,1,0),
+// pitch -90 makes front_ nearly antiparallel to up_, collapsing glm::lookAt's internal
+// cross(front, up) toward zero and corrupting the view matrix's rotation basis. SetUp must fix
+// this by supplying a horizontal reference instead — checked here by confirming the resulting
+// basis vectors are still unit-length and mutually perpendicular, not just "some matrix came back".
+TEST(CameraTest, SetUpProducesValidOrthonormalBasisWhenLookingStraightDown)
+{
+    Forge::Camera test_cam(Forge::Viewport(0, 0, 1.0f, 1.0f, 1080, 1080));
+    test_cam.SetYawPitch(-90.0f, -90.0f); // front_ becomes ~(0,-1,0)
+    test_cam.SetUp(glm::vec3(0.0f, 0.0f, -1.0f));
+
+    glm::mat4 view = test_cam.GetViewMatrix();
+    // glm::lookAt packs the right/up basis vectors into the view matrix's rows (not columns):
+    // row 0 = right, row 1 = up (see glm::lookAtRH's [col][row] assignments).
+    glm::vec3 right(view[0][0], view[1][0], view[2][0]);
+    glm::vec3 viewUp(view[0][1], view[1][1], view[2][1]);
+
+    EXPECT_NEAR(glm::length(right), 1.0f, 1e-4f);
+    EXPECT_NEAR(glm::length(viewUp), 1.0f, 1e-4f);
+    EXPECT_NEAR(glm::dot(right, viewUp), 0.0f, 1e-4f);
+}
