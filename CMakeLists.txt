@@ -70,6 +70,7 @@ if(BUILD_DEMO)
             src/Demo/LightDemoLayer.cpp
             src/Demo/LightDemoScene.cpp
             src/Demo/MultiCameraDemoScene.cpp
+            src/Demo/OrthoDemoScene.cpp
         )
 
     target_include_directories(OpenGL_App

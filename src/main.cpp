@@ -2,6 +2,7 @@
 #include "Demo/LightDemoLayer.hpp"
 #include "Demo/LightDemoScene.hpp"
 #include "Demo/MultiCameraDemoScene.hpp"
+#include "Demo/OrthoDemoScene.hpp"
 
 int main(void)
 {
@@ -11,6 +12,7 @@ int main(void)
     // (Engine::RaiseEvent -> SetScene((current_scene_ + 1) % scenes_.size())).
     engine.AddScene(std::make_shared<Demo::LightDemoScene>());
     engine.AddScene(std::make_shared<Demo::MultiCameraDemoScene>());
+    engine.AddScene(std::make_shared<Demo::OrthoDemoScene>());
 
     engine.Run();
 

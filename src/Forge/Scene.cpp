@@ -174,7 +174,7 @@ namespace Forge
         OnUpdate(delta_time);
         for (auto layer : layers_)
         {
-            layer->OnUpdate();
+            layer->Update(delta_time);
         }
     }
 

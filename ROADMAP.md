@@ -1,6 +1,7 @@
 # Forge Roadmap
 
-**Forge** is this project's name — a C++20 OpenGL engine (`Engine → Scene → Layer`)
+**Forge** is this project's name — short for **F**lexible **O**penGL **R**eal-time
+**G**raphics **E**ngine, a C++20 OpenGL engine (`Engine → Scene → Layer`)
 being built toward a networked TCG card game for friends, not a general-purpose public
 library. See `README.md` for the full pitch and current status.
 

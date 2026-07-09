@@ -1,5 +1,7 @@
 # 🔨 Forge
 
+**F**lexible **O**penGL **R**eal-time **G**raphics **E**ngine.
+
 ![Language](https://img.shields.io/badge/language-C%2FC%2B%2B-blue)
 ![API](https://img.shields.io/badge/API-OpenGL-green)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-lightgrey)
