@@ -1,6 +1,6 @@
 BUILD_DIR := build
 
-.PHONY: all run clean debug release event noevent fps nofps doc FORCE test runtests
+.PHONY: all run clean debug release event noevent fps nofps doc FORCE test runtests demo lib
 
 all: $(BUILD_DIR)/OpenGL_App
 
@@ -24,6 +24,18 @@ test:
 	cmake -B $(BUILD_DIR) -S . -DBUILD_TESTS=ON
 	cmake --build $(BUILD_DIR) -j$$(nproc) --target EngineCore_tests
 	./$(BUILD_DIR)/EngineCore_tests
+
+# --- Demo app / library-only build (BUILD_DEMO is sticky until toggled off or `make clean`) ---
+
+demo:
+	cmake -B $(BUILD_DIR) -S . -DBUILD_DEMO=ON
+	cmake --build $(BUILD_DIR) -j$$(nproc) --target OpenGL_App
+	./$(BUILD_DIR)/OpenGL_App
+
+lib:
+	cmake -B $(BUILD_DIR) -S . -DBUILD_DEMO=OFF
+	cmake --build $(BUILD_DIR) -j$$(nproc) --target EngineCore
+	@echo "Library built at $(BUILD_DIR)/libEngineCore.a — demo app not built (BUILD_DEMO=OFF, sticky until 'make demo' or 'make clean')"
 
 # --- Build type (configure only, cmake caches the value) ---
 

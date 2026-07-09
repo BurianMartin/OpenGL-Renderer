@@ -28,9 +28,8 @@ namespace Forge
         /// Seconds elapsed since the previous frame.
         GLfloat delta_time_;
         GLfloat time_ = 0.0f; // for animated shaders
-
-        /// Current viewport aspect ratio (width/height), kept in sync with the active camera.
-        GLfloat aspect_ratio_;
+        GLint window_width_;
+        GLint window_height_;
 
         /// GL buffer object ID for the lights UBO; 0 until CreateLightBuffer() has been called.
         GLuint lightBufferId_ = 0;

@@ -8,29 +8,32 @@
 #include "Forge/ResourceManager.hpp"
 
 #include "Forge/Colors.hpp"
-#include "App/InputConfig.hpp"
+#include "Demo/InputConfig.hpp"
 
 #include <memory>
 
-namespace Test
+namespace Demo
 {
     /**
      * @brief Demo `Forge::Layer` used to exercise the rendering/lighting pipeline against a real scene.
      *
-     * Loads a handful of cube models and a textured crate, assigns each a different
-     * `Forge::Material` preset (Gold/Silver/Ruby/Emerald, plus a textured crate material), and
-     * populates `materialModels_`/`materials_` so `OnRender` has something to draw against the
-     * multi-light shader loop. Tab (`Forge::Key::Tab`) randomizes one material's flat color via
+     * Builds a floor (hardcoded quad, no OBJ) plus five "stations" laid out along it — one
+     * cube per Blinn-Phong preset (Gold/Silver/Ruby/Emerald), each paired with a dedicated
+     * light in `LightDemoScene::OnSceneBoot` so that light's effect dominates its own station,
+     * plus a fifth station for the textured crate (diffuse+specular mapping, as opposed to
+     * the flat presets). Populates `materialModels_`/`materials_` so `OnRender` has something
+     * to draw against the multi-light shader loop. `Q` (not `Tab` — `Tab` is reserved by
+     * `Engine` for scene switching) randomizes the Gold material's flat color via
      * `Forge::Material::SetColor`.
      */
-    class TestLayer : public Forge::Layer
+    class LightDemoLayer : public Forge::Layer
     {
     public:
         /// Builds the demo scene's models/materials via `resourceManager`, seeding `materialModels_`/`materials_`.
-        TestLayer(std::shared_ptr<Forge::ResourceManager> resourceManager);
-        ~TestLayer() = default;
+        LightDemoLayer(std::shared_ptr<Forge::ResourceManager> resourceManager);
+        ~LightDemoLayer() = default;
 
-        /// Handles Tab (randomize a material's color); consumes every event (always returns `true`, i.e. never blocks propagation to layers below).
+        /// Handles Q (randomize the Gold material's color); consumes every event (always returns `true`, i.e. never blocks propagation to layers below).
         bool OnEvent(Forge::Event &e) override;
         /// No-op — this demo layer has no per-frame logic of its own.
         void OnUpdate() override;
@@ -42,4 +45,4 @@ namespace Test
         void Destroy() override;
     };
 
-} // namespace Test
+} // namespace Demo

@@ -17,14 +17,14 @@ namespace Forge
     class Renderer
     {
     private:
-        std::shared_ptr<FrameContext> rctx_;
+        std::shared_ptr<FrameContext> fctx_;
 
     public:
-        /// @param aspect_ratio Initial viewport aspect ratio, stored in the FrameContext.
-        Renderer(GLfloat aspect_ratio);
+        /// @param windowWidth,windowHeight Initial window size, stored in the FrameContext.
+        Renderer(GLint windowWidth, GLint windowHeight);
         ~Renderer() = default;
 
-        /// Clears the depth buffer, updates `rctx_`'s time/delta_time, then calls `scene->DrawBackground()` and `scene->Render()`. Logs and returns early (via `debug_error`) if `scene` is null.
+        /// Updates `fctx_`'s time/delta_time, then calls `scene->Render()` — which clears depth and draws the background once per camera, inside that camera's own scissored viewport. Logs and returns early (via `debug_error`) if `scene` is null.
         void RenderScene(std::shared_ptr<Scene> scene, GLfloat delta_time);
 
         /// @return The shared FrameContext this Renderer owns.

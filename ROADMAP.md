@@ -1,10 +1,14 @@
-# Renderer Roadmap
+# Forge Roadmap
+
+**Forge** is this project's name — a C++20 OpenGL engine (`Engine → Scene → Layer`)
+being built toward a networked TCG card game for friends, not a general-purpose public
+library. See `README.md` for the full pitch and current status.
 
 Tracks open bugs, design decisions, and implementation plans. **See `SCOPE.md` first**
 for what this engine is actually for and how much of this file's backlog is in scope —
-several items below (multi-camera/split-screen, the whole Backlog section) are
-deliberately deferred, not gating v1, and Redline's phase order now follows `SCOPE.md`'s
-priority rather than the order it was originally written in.
+Tier 3 (see `SCOPE.md`) is a small set of engine-capability items not gated on the TCG at
+all, and Redline's phase order now follows `SCOPE.md`'s priority rather than the order it
+was originally written in.
 
 ---
 
@@ -21,7 +25,11 @@ Phases A and B, in full.
 
 The known-bug backlog, `ResourceManager::LoadMaterial`, and the `RenderContext`→
 `FrameContext` rename are all closed out — see Known Bugs and Open Architecture below.
-Multi-camera/split-screen remains **deferred** — see `SCOPE.md`, not needed for the TCG.
+
+## ✅ Tier 3 — mostly done (engine capability, not gated on the TCG — see `SCOPE.md`)
+
+Multi-camera/split-screen and Skybox/Skydome are both done — see Open Architecture below
+and the Completed section. Sub-mesh support is the one Tier 3 item not started yet.
 
 ## 🔜 Next up — per `SCOPE.md`: Tier 2
 
@@ -59,7 +67,7 @@ Fixed in this audit:
 
 - [x] **`ResourceManager::LoadMaterial`** — done: takes `(shared_ptr<Shader> shader, const string& tag, glm::vec3 ambient = ..., glm::vec3 diffuse = ..., glm::vec3 specular = ..., float shininess = ...)` with averaged defaults across the existing Blinn-Phong presets, caches by tag via the same weak_ptr pattern as `LoadMesh`/`LoadTexture`, and delegates to `Material::Create(shader, tag, ambient, diffuse, specular, shininess)`.
 
-- [ ] **Multiple cameras / split-screen** — *deferred, see `SCOPE.md`: not needed for the TCG, not gating v1.* `Scene::cameras_` and `active_camera_` already support multiple cameras; the render side does not. Needs a viewport rect per camera, `glViewport` calls, and `Renderer::RenderScene` running once per active camera.
+- [x] **Multiple cameras / split-screen** — done (Tier 3, see `SCOPE.md`): `Camera` owns a `Viewport` (normalized `[0,1]` rect + the window's current pixel size, recomputed on resize via `Camera::UpdateViewportSize`/`Viewport::SetWindowSize`, never a stale absolute-pixel rect). `Scene::Render()` loops over every camera in `cameras_` each frame — `ApplyViewport(i)` (`Viewport::Apply()`: `glViewport`+`glScissor`), `UpdateFrameContext(i)`, a scissored depth clear, `DrawBackground()`, then every layer's `Render()` — wrapped in `glEnable`/`glDisable(GL_SCISSOR_TEST)` so one camera's clear can't bleed into another's viewport. `active_camera_` stays purely an input-routing index — every camera in `cameras_` renders every frame regardless of which one is active. `MultiCameraDemoScene` exercises this: a free-fly main camera plus a fixed picture-in-picture overview (`Camera::SetPosition`/`SetYawPitch`, added alongside this).
 
 ---
 
@@ -152,12 +160,11 @@ Independent of Steps 2–6 (textures and lighting don't depend on each other), b
 
 ---
 
-## Backlog — deferred, see `SCOPE.md`
+## Backlog — Tier 3 (see `SCOPE.md`), not gated on the TCG
 
-Neither of these is needed for the TCG; not gating v1. Left here rather than deleted in case a future 3D project revives them.
+- **Sub-mesh support** — one OBJ file produces N `(Mesh, Material)` pairs via `usemtl` groups. Requires Material system (done) + OBJ parser update + Scene/Layer wiring. The one Tier 3 item not started yet.
 
-- **Sub-mesh support** — one OBJ file produces N `(Mesh, Material)` pairs via `usemtl` groups. Requires Material system (done) + OBJ parser update + Scene/Layer wiring. Natural next feature after lighting, if this were still a 3D-demo-first project.
-- **Skybox / Skydome** — `DrawSkyboxBackground()` and `DrawSkydomeBackground()` are stubbed in `Scene`; finish after textures are working, if ever needed.
+Multi-camera/split-screen and Skybox/Skydome, formerly listed here, are both done — see Open Architecture and Completed above/below.
 
 ---
 
@@ -196,6 +203,13 @@ scene.
 
 ## Completed
 
+- **Skybox/Skydome implemented** — `Scene::DrawSkyboxBackground()`/`DrawSkydomeBackground()` (previously `// TODO` stubs) are real now, both procedural (no textures/cubemaps). Skybox: a hardcoded 36-vertex unit cube (`Mesh::Create` from raw floats, no OBJ), `shaders/skybox_vertex.glsl`/`skybox_fragment.glsl` — vertex shader strips the view matrix's translation (`mat3(view)`) so the cube always surrounds the camera, and pins depth to the far plane (`gl_Position = vec4(pos.xy, pos.w, pos.w)`); fragment shader is a zenith/horizon/ground gradient plus a sun disc aimed opposite the scene's directional light. Skydome: no mesh at all — `shaders/skydome_vertex.glsl` builds a full-screen triangle purely from `gl_VertexID`, `skydome_fragment.glsl` reconstructs the view ray per-pixel via `inverse(projection*view)`, independently-tuned gradient+horizon haze. Both wrapped in `glDepthFunc(GL_LEQUAL)`/`glDepthMask(GL_FALSE)`; skybox additionally disables face culling for its one draw (camera is inside the cube). `Scene` gained a real destructor to release the skydome's raw VAO. New public `Scene::SetSkyboxBackground()`/`SetSkydomeBackground()` setters alongside the existing `SetBackgroundColor()`.
+- **`Camera::SetPosition`/`SetYawPitch` added** — direct setters bypassing `CameraMove`/`Update`'s edge-triggered movement and `Rotate()`'s mouse-look path, for a fixed/scripted camera (e.g. a picture-in-picture overview) that never receives input.
+- **`LightDemoScene`/`MultiCameraDemoScene` content fully redesigned** — `LightDemoLayer` now builds a floor (hardcoded quad `Vertex` data, no OBJ, same "raw vertex array" pattern as the skybox cube) plus five "stations" laid out along it: one cube per Blinn-Phong preset (Gold/Silver/Ruby/Emerald), each paired with a dedicated light in `OnSceneBoot` positioned/aimed directly at it so that light's effect dominates its own station instead of five lights blending uniformly over a scattered pile, plus a fifth station for the textured crate. `LightDemoScene` uses the new Skybox; `MultiCameraDemoScene` (same `LightDemoLayer` content, two cameras) uses the new Skydome, and its picture-in-picture camera is now a genuinely different elevated overview (`SetPosition`/`SetYawPitch`) instead of sharing the main camera's default pose.
+- **`Engine::SetScene(GLint index)` + deferred scene switching** — bounds-checked, switches which registered scene is active; applied at the top of `Engine::Run()`'s loop via a `next_scene_` member (not immediately), so `current_scene_` can never change mid-frame between `Update()` and `RenderScene()`. `Tab` cycles scenes by default (`Engine::RaiseEvent`: `SetScene((current_scene_ + 1) % scenes_.size())`) — this is why `LightDemoLayer`'s own randomize-color handler moved off `Tab` onto `Q`.
+- **`Scene::ResetMouse()` added, fixes a real camera jerk on scene switch** — scenes aren't recreated on switch (each is constructed once by `AddScene` and lives forever in `scenes_`), so a scene's camera keeps whatever `last_x_`/`last_y_` mouse-tracking state it had the last time it was active — stale the moment a different scene has been active in the meantime. `ResetMouse()` (`final`, non-virtual on the base `Scene`, since the reset itself isn't scene-specific) resets the active camera's tracking; `Engine::Run()` calls it on the newly-active scene exactly when the deferred switch (above) is applied.
+- **`App` renamed to `Demo`, `Test` namespace renamed to `Demo`** — `include/App`→`include/Demo`, `src/App`→`src/Demo`, every `namespace Test`/`Test::`/`"App/...` reference. `TestScene`/`TestLayer` renamed to `LightDemoScene`/`LightDemoLayer` in the process (see the content-redesign entry above for what they do now); `MultiCameraDemoScene` added alongside them.
+- **`BUILD_DEMO` CMake option + `make demo`/`make lib`** — `option(BUILD_DEMO ... ON)` wraps the `OpenGL_App` target (default on, matching prior always-built behavior); `-DBUILD_DEMO=OFF` builds `libEngineCore.a` alone with zero demo-layer code compiled — the actual "just the library" path the `make lib` idea from earlier in this project's history had been parked on. Sticky like `SHOW_FPS`/`LOG_EVENTS` until toggled or `make clean`. `make demo` configures `BUILD_DEMO=ON`, builds, and runs `OpenGL_App`; `make lib` configures `BUILD_DEMO=OFF` and builds only `EngineCore`.
 - **Input events decoupled from GLFW** — `include/Forge/Keys.hpp` adds `Forge::Key`/`Forge::MouseButton`, replacing the raw GLFW key/button codes `KeyEvent`/`MouseButtonEvent` used to carry. Their values are deliberately wired to match GLFW's own `GLFW_KEY_*`/`GLFW_MOUSE_BUTTON_*` numbering (not derived from `<GLFW/glfw3.h>` — `Keys.hpp` itself has zero GLFW dependency), so `EventHandler` translates with a plain `static_cast` instead of a lookup table; `EventHandler` remains the one place in Forge allowed to know GLFW's numbering. `test/test_keys.cpp` guards every value against GLFW's real constants — caught a real bug immediately (`Tab`/`Enter`/`Escape`/`Backspace` had been set to their ASCII control-code values instead of GLFW's actual codes). Closes the last of the two closeable gaps found auditing `~/Solitaire` for raw OpenGL/GLFW leaking into app-facing code (the other, hand-authored `.glsl` shaders, is an accepted structural exception, not a gap).
 - **`Layer::Render()`/`OnRender()` split** — `Layer::Render()` (new, non-virtual, engine-owned) now does the material-bind + per-model `uModel`/`uNormalMatrix` upload + `Draw()` loop that used to live in `TestLayer::OnRender`; `OnRender()` is now just a per-layer hook for anything layer-specific, empty in `TestLayer`. Moves raw shader-uniform-name knowledge out of app code — the other closeable gap from the Solitaire audit.
 - **`debug_error` no longer discards the exception message** — `include/Utils.hpp`: builds the message into a local `std::ostringstream` and reuses it for both the console print and `std::runtime_error`'s constructor, instead of the message only ever reaching `std::cout` and the exception always carrying `""`. Fixes a real regression affecting every `catch (const std::exception&) { ...e.what()... }` call site (`Shader`/`Texture`/`Mesh`/`ResourceManager`/`Lights`/`Material`).
@@ -227,5 +241,5 @@ scene.
 - Double color-buffer clear per frame fixed
 - Camera jump on cursor recapture fixed
 - `WindowResizeEvent` firing and aspect ratio update fixed
-- `rctx_->aspect_ratio_` member ordering fix (was garbage on startup)
+- `fctx_->aspect_ratio_` member ordering fix (was garbage on startup)
 - `VSync` flag correctly applied after `glfwMakeContextCurrent`

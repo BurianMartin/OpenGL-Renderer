@@ -20,9 +20,9 @@
  * @namespace Forge
  * @brief Engine-side code: Engine, Scene/Layer, rendering, resources, input events, lights/materials.
  *
- * Forge has zero compile-time dependency on app-layer types — application-
- * specific code lives in the separate `Test` namespace instead
- * (`include/App/`, `src/App/`). See CLAUDE.md's "Forge/App separation" notes.
+ * Forge has zero compile-time dependency on demo-layer types — demo
+ * application code lives in the separate `Demo` namespace instead
+ * (`include/Demo/`, `src/Demo/`). See CLAUDE.md's "Forge/Demo separation" notes.
  */
 namespace Forge
 {
@@ -33,8 +33,9 @@ namespace Forge
      * -> `glfwSwapBuffers` -> `glfwPollEvents`. Scenes are constructed
      * outside Engine (typically in `main.cpp`, so core has zero
      * compile-time dependency on app-layer scene types) and registered via
-     * `AddScene`. `RaiseEvent` intercepts ESC (close the window) and the
-     * backtick key (toggle mouse capture) before forwarding anything else
+     * `AddScene`. `RaiseEvent` intercepts ESC (close the window), the
+     * backtick key (toggle mouse capture), and Tab (cycle to the next
+     * registered scene via `SetScene`) before forwarding anything else
      * to the active scene.
      *
      * @warning If `Init()` fails during construction, the constructor logs
@@ -56,6 +57,7 @@ namespace Forge
         std::vector<std::shared_ptr<Scene>> scenes_;
 
         GLint current_scene_ = -1;
+        GLint next_scene_ = -1;
         GLfloat last_frame_time_ = 0.0f;
 
         GLint cursor_mode_ = GLFW_CURSOR_DISABLED;
@@ -76,11 +78,14 @@ namespace Forge
         /// Runs the main loop until the window is closed. @warning Logs and returns immediately (via `debug_error`) if no scene has been added yet.
         void Run();
 
-        /// Dispatches an event: intercepts ESC/backtick, updates viewport on resize, then forwards to the active scene (suppressing `MouseMoved` while the cursor isn't captured).
+        /// Dispatches an event: intercepts ESC/backtick/Tab, updates viewport on resize, then forwards to the active scene (suppressing `MouseMoved` while the cursor isn't captured).
         void RaiseEvent(Event &event);
 
         /// Registers a scene, making it active if it's the first one, and calls its `OnLoad`.
         int AddScene(std::shared_ptr<Scene> scene); // Returns the scene ID in the vector of scenes
+
+        /// Switches the active scene by index (as returned by `AddScene`). Silently ignores an out-of-range index — `current_scene_` is left unchanged.
+        void SetScene(GLint index);
     };
 
 } // namespace Forge

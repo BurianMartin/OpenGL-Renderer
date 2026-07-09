@@ -1,14 +1,18 @@
 #include "Forge/Engine.hpp"
-#include "App/TestLayer.hpp"
-#include "App/TestScene.hpp"
+#include "Demo/LightDemoLayer.hpp"
+#include "Demo/LightDemoScene.hpp"
+#include "Demo/MultiCameraDemoScene.hpp"
 
 int main(void)
 {
-    Forge::Engine App;
+    Forge::Engine engine;
 
-    App.AddScene(std::make_shared<Test::TestScene>());
+    // The first scene added boots as active; press Tab at runtime to cycle to the next one
+    // (Engine::RaiseEvent -> SetScene((current_scene_ + 1) % scenes_.size())).
+    engine.AddScene(std::make_shared<Demo::LightDemoScene>());
+    engine.AddScene(std::make_shared<Demo::MultiCameraDemoScene>());
 
-    App.Run();
+    engine.Run();
 
     return 0;
 }

@@ -17,7 +17,7 @@ find_package(glm REQUIRED)
 # --- EngineCore: the reusable framework/engine layer ---
 # Everything under src/Forge (+ glad, which the engine depends on) lives here so it can be
 # linked by OpenGL_App, future engine consumers, and the test binary alike, without pulling
-# in main.cpp or app-layer (src/App) code.
+# in main.cpp or demo-layer (src/Demo) code.
 add_library(EngineCore STATIC
         src/glad/gl.c
 
@@ -57,22 +57,30 @@ if(LOG_EVENTS)
     target_compile_definitions(EngineCore PUBLIC LOG_EVENTS)
 endif()
 
-# --- OpenGL_App: the demo application layer (src/App + main.cpp) ---
-add_executable(OpenGL_App
-        src/main.cpp
+# --- OpenGL_App: the demo application layer (src/Demo + main.cpp) ---
+# Opt-out (default ON, matching the historical always-built behavior): -DBUILD_DEMO=OFF
+# builds EngineCore alone, with no demo-layer code compiled at all — the "just the library"
+# path for an external consumer project. Sticky like SHOW_FPS/LOG_EVENTS until toggled or
+# `make clean`.
+option(BUILD_DEMO "Build the Forge demo app (src/Demo + main.cpp)" ON)
+if(BUILD_DEMO)
+    add_executable(OpenGL_App
+            src/main.cpp
 
-        src/App/TestLayer.cpp
-        src/App/TestScene.cpp
+            src/Demo/LightDemoLayer.cpp
+            src/Demo/LightDemoScene.cpp
+            src/Demo/MultiCameraDemoScene.cpp
+        )
+
+    target_include_directories(OpenGL_App
+        PRIVATE
+            ${CMAKE_SOURCE_DIR}/include/Demo
+            ${CMAKE_SOURCE_DIR}/src/Demo
+            ${CMAKE_SOURCE_DIR}/src
     )
 
-target_include_directories(OpenGL_App
-    PRIVATE
-        ${CMAKE_SOURCE_DIR}/include/App
-        ${CMAKE_SOURCE_DIR}/src/App
-        ${CMAKE_SOURCE_DIR}/src
-)
-
-target_link_libraries(OpenGL_App PRIVATE EngineCore)
+    target_link_libraries(OpenGL_App PRIVATE EngineCore)
+endif()
 
 # --- Tests (opt-in: -DBUILD_TESTS=ON) ---
 option(BUILD_TESTS "Build the EngineCore test suite" OFF)

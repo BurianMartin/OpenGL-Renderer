@@ -37,7 +37,7 @@ namespace
 
 TEST(CameraTest, FovLowerBound)
 {
-    Forge::Camera test_cam(4.0f / 3.0f);
+    Forge::Camera test_cam(Forge::Viewport(0, 0, 1.0f, 1.0f, 1080, 1080));
     EXPECT_FLOAT_EQ(test_cam.GetFOV(), 45.0f);
     test_cam.Zoom(90.0f);
     EXPECT_FLOAT_EQ(test_cam.GetFOV(), 1.0f);
@@ -45,7 +45,7 @@ TEST(CameraTest, FovLowerBound)
 
 TEST(CameraTest, FovUpperBound)
 {
-    Forge::Camera test_cam(4.0f / 3.0f);
+    Forge::Camera test_cam(Forge::Viewport(0, 0, 1.0f, 1.0f, 1080, 1080));
     EXPECT_FLOAT_EQ(test_cam.GetFOV(), 45.0f);
     test_cam.Zoom(-90.0f);
     EXPECT_FLOAT_EQ(test_cam.GetFOV(), 45.0f);
@@ -53,7 +53,7 @@ TEST(CameraTest, FovUpperBound)
 
 TEST(CameraTest, FovZeroShift)
 {
-    Forge::Camera test_cam(4.0f / 3.0f);
+    Forge::Camera test_cam(Forge::Viewport(0, 0, 1.0f, 1.0f, 1080, 1080));
     EXPECT_FLOAT_EQ(test_cam.GetFOV(), 45.0f);
     test_cam.Zoom(0.0f);
     EXPECT_FLOAT_EQ(test_cam.GetFOV(), 45.0f);
@@ -61,14 +61,14 @@ TEST(CameraTest, FovZeroShift)
 
 TEST(CameraTest, FovWithinBoundsDecreasesByOffset)
 {
-    Forge::Camera test_cam(4.0f / 3.0f);
+    Forge::Camera test_cam(Forge::Viewport(0, 0, 1.0f, 1.0f, 1080, 1080));
     test_cam.Zoom(10.0f);
     EXPECT_FLOAT_EQ(test_cam.GetFOV(), 35.0f);
 }
 
 TEST(CameraTest, FovSequentialZoomsAccumulate)
 {
-    Forge::Camera test_cam(4.0f / 3.0f);
+    Forge::Camera test_cam(Forge::Viewport(0, 0, 1.0f, 1.0f, 1080, 1080));
     test_cam.Zoom(5.0f);
     test_cam.Zoom(5.0f);
     EXPECT_FLOAT_EQ(test_cam.GetFOV(), 35.0f);
@@ -79,7 +79,7 @@ TEST(CameraTest, FovSequentialZoomsAccumulate)
 // expected matrix can be hand-derived and checked exactly instead of just "did it change".
 TEST(CameraTest, ViewMatrixInitiallyPureTranslation)
 {
-    Forge::Camera test_cam(4.0f / 3.0f);
+    Forge::Camera test_cam(Forge::Viewport(0, 0, 1.0f, 1.0f, 1080, 1080));
     glm::mat4 expected = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
     ExpectMat4Near(test_cam.GetViewMatrix(), expected, 1e-5f);
 }
@@ -88,16 +88,16 @@ TEST(CameraTest, ViewMatrixInitiallyPureTranslation)
 // held constant, so doubling the aspect ratio must exactly halve it.
 TEST(CameraTest, ProjectionScalesInverselyWithAspectRatio)
 {
-    Forge::Camera test_cam(4.0f / 3.0f);
+    Forge::Camera test_cam(Forge::Viewport(0, 0, 1.0f, 1.0f, 1080, 1080));
     float before = test_cam.GetProjectionMatrix()[0][0];
-    test_cam.UpdateAspectRatio(8.0f / 3.0f);
+    test_cam.UpdateViewportSize(2160, 1080);
     float after = test_cam.GetProjectionMatrix()[0][0];
     EXPECT_NEAR(after, before / 2.0f, 1e-4f);
 }
 
 TEST(CameraTest, MoveForwardUpdatesPosition)
 {
-    Forge::Camera test_cam(4.0f / 3.0f);
+    Forge::Camera test_cam(Forge::Viewport(0, 0, 1.0f, 1.0f, 1080, 1080));
     test_cam.CameraMove(Forge::CamMove::FORWARD, true);
     test_cam.Update(1.0f);
     glm::vec3 position = test_cam.GetPosition();
@@ -109,7 +109,7 @@ TEST(CameraTest, MoveForwardUpdatesPosition)
 // cross(front, up) drives strafing; get the operand order backwards and this silently reverses.
 TEST(CameraTest, MoveRightUpdatesPositionViaCrossProduct)
 {
-    Forge::Camera test_cam(4.0f / 3.0f);
+    Forge::Camera test_cam(Forge::Viewport(0, 0, 1.0f, 1.0f, 1080, 1080));
     test_cam.CameraMove(Forge::CamMove::RIGHT, true);
     test_cam.Update(1.0f);
     glm::vec3 position = test_cam.GetPosition();
@@ -122,7 +122,7 @@ TEST(CameraTest, MoveRightUpdatesPositionViaCrossProduct)
 // directions at once must move diagonally, not just pick one.
 TEST(CameraTest, MoveForwardAndRightComposeDiagonally)
 {
-    Forge::Camera test_cam(4.0f / 3.0f);
+    Forge::Camera test_cam(Forge::Viewport(0, 0, 1.0f, 1.0f, 1080, 1080));
     test_cam.CameraMove(Forge::CamMove::FORWARD, true);
     test_cam.CameraMove(Forge::CamMove::RIGHT, true);
     test_cam.Update(1.0f);
@@ -134,7 +134,7 @@ TEST(CameraTest, MoveForwardAndRightComposeDiagonally)
 
 TEST(CameraTest, MoveStopsAfterDisablingFlag)
 {
-    Forge::Camera test_cam(4.0f / 3.0f);
+    Forge::Camera test_cam(Forge::Viewport(0, 0, 1.0f, 1.0f, 1080, 1080));
     test_cam.CameraMove(Forge::CamMove::FORWARD, true);
     test_cam.Update(1.0f);
     test_cam.CameraMove(Forge::CamMove::FORWARD, false);
@@ -149,7 +149,7 @@ TEST(CameraTest, MoveStopsAfterDisablingFlag)
 // it must not rotate the camera, or the very first frame of mouse capture would jump.
 TEST(CameraTest, FirstMouseCallOnlyPrimesTracking)
 {
-    Forge::Camera test_cam(4.0f / 3.0f);
+    Forge::Camera test_cam(Forge::Viewport(0, 0, 1.0f, 1.0f, 1080, 1080));
     glm::mat4 before = test_cam.GetViewMatrix();
     test_cam.ProcessMousePosition(100.0f, 100.0f);
     glm::mat4 after = test_cam.GetViewMatrix();
@@ -158,7 +158,7 @@ TEST(CameraTest, FirstMouseCallOnlyPrimesTracking)
 
 TEST(CameraTest, SecondMouseCallRotatesCamera)
 {
-    Forge::Camera test_cam(4.0f / 3.0f);
+    Forge::Camera test_cam(Forge::Viewport(0, 0, 1.0f, 1.0f, 1080, 1080));
     test_cam.ProcessMousePosition(100.0f, 100.0f); // primes tracking, no rotation yet
     glm::mat4 before = test_cam.GetViewMatrix();
     test_cam.ProcessMousePosition(150.0f, 100.0f); // real delta, must rotate
