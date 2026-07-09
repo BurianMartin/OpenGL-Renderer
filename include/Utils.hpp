@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include <sstream>
 #include <stdexcept>
 
 /*
@@ -15,10 +16,13 @@
     {                                                                     \
         std::cout << "\x1B[35m" << "Dbg - Warning: " << x << "\033[0m\n"; \
     }
-#define debug_error(x)                                                  \
-    {                                                                   \
-        std::cout << "\x1B[31m" << "Dbg - Error: " << x << "\033[0m\n"; \
-        throw std::runtime_error("");                                   \
+#define debug_error(x)                                                        \
+    {                                                                         \
+        std::ostringstream _dbg_oss;                                         \
+        _dbg_oss << x;                                                       \
+        std::string _dbg_msg = _dbg_oss.str();                               \
+        std::cout << "\x1B[31m" << "Dbg - Error: " << _dbg_msg << "\033[0m\n"; \
+        throw std::runtime_error(_dbg_msg);                                  \
     }
 #else
 #define debug_info(x)

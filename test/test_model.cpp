@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "Core/Model.hpp"
+#include "Forge/Model.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -30,13 +30,13 @@ namespace
 
 TEST(ModelTest, DefaultModelMatrixIsIdentity)
 {
-    Core::Model model(nullptr);
+    Forge::Model model(nullptr);
     ExpectMat4Near(model.GetModelMatrix(), glm::mat4(1.0f));
 }
 
 TEST(ModelTest, TranslationOnlyProducesTranslationMatrix)
 {
-    Core::Model model(nullptr);
+    Forge::Model model(nullptr);
     model.SetPosition(glm::vec3(2.0f, 3.0f, 4.0f));
     glm::mat4 expected = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 3.0f, 4.0f));
     ExpectMat4Near(model.GetModelMatrix(), expected);
@@ -44,7 +44,7 @@ TEST(ModelTest, TranslationOnlyProducesTranslationMatrix)
 
 TEST(ModelTest, UniformScaleOnlyProducesScaleMatrix)
 {
-    Core::Model model(nullptr);
+    Forge::Model model(nullptr);
     model.SetScale(2.0f);
     glm::mat4 expected = glm::scale(glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 2.0f));
     ExpectMat4Near(model.GetModelMatrix(), expected);
@@ -59,7 +59,7 @@ TEST(ModelTest, UniformScaleOnlyProducesScaleMatrix)
 // (0,1,0), an easily distinguishable wrong answer.
 TEST(ModelTest, ScaleIsAppliedBeforeRotationInLocalSpace)
 {
-    Core::Model model(nullptr);
+    Forge::Model model(nullptr);
     model.SetScale(glm::vec3(2.0f, 1.0f, 1.0f));
     model.SetRotation(glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 

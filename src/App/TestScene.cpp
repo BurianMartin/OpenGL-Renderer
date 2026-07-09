@@ -1,6 +1,6 @@
 #include "App/TestScene.hpp"
-#include "Core/Camera.hpp"
-#include "Core/Lights.hpp"
+#include "Forge/Camera.hpp"
+#include "Forge/Lights.hpp"
 
 namespace Test
 {
@@ -14,19 +14,19 @@ namespace Test
         cameras_[active_camera_].Update(delta_time);
     }
 
-    void TestScene::OnEvent(Core::Event &event)
+    void TestScene::OnEvent(Forge::Event &event)
     {
         // Optional Scene event consumption example:
 
         switch (event.GetEventType())
         {
-        case Core::EventType::KeyPressed:
+        case Forge::EventType::KeyPressed:
         {
-            auto ev = static_cast<Core::KeyPressedEvent &>(event);
+            auto ev = static_cast<Forge::KeyPressedEvent &>(event);
 
             switch (ev.GetKeyCode())
             {
-            case GLFW_KEY_LEFT_CONTROL:
+            case Forge::Key::LeftControl:
                 cameras_[active_camera_].SetBoost(3.0f);
                 return;
             }
@@ -39,13 +39,13 @@ namespace Test
             }
             break;
         }
-        case Core::EventType::KeyReleased:
+        case Forge::EventType::KeyReleased:
         {
-            auto ev = static_cast<Core::KeyReleasedEvent &>(event);
+            auto ev = static_cast<Forge::KeyReleasedEvent &>(event);
 
             switch (ev.GetKeyCode())
             {
-            case GLFW_KEY_LEFT_CONTROL:
+            case Forge::Key::LeftControl:
                 cameras_[active_camera_].SetBoost(0.0f);
                 return;
             }
@@ -58,21 +58,21 @@ namespace Test
             }
             break;
         }
-        case Core::EventType::MouseMoved:
+        case Forge::EventType::MouseMoved:
         {
-            auto ev = static_cast<Core::MouseMovedEvent &>(event);
+            auto ev = static_cast<Forge::MouseMovedEvent &>(event);
             cameras_[active_camera_].ProcessMousePosition(ev.GetX(), ev.GetY());
             return;
         }
-        case Core::EventType::MouseScrolled:
+        case Forge::EventType::MouseScrolled:
         {
-            auto ev = static_cast<Core::MouseScrolledEvent &>(event);
+            auto ev = static_cast<Forge::MouseScrolledEvent &>(event);
             cameras_[active_camera_].Zoom(ev.GetYOffset());
             return;
         }
-        case Core::EventType::WindowResize:
+        case Forge::EventType::WindowResize:
         {
-            auto ev = static_cast<Core::WindowResizeEvent &>(event);
+            auto ev = static_cast<Forge::WindowResizeEvent &>(event);
             rctx_->aspect_ratio_ = static_cast<float>(ev.GetWidth()) / static_cast<float>(ev.GetHeight());
             cameras_[active_camera_].UpdateAspectRatio(rctx_->aspect_ratio_);
             return;
@@ -82,7 +82,7 @@ namespace Test
             break;
         }
 
-        for (std::shared_ptr<Core::Layer> &layer : std::views::reverse(layers_))
+        for (std::shared_ptr<Forge::Layer> &layer : std::views::reverse(layers_))
         {
             if (!layer->OnEvent(event))
             {
@@ -100,13 +100,13 @@ namespace Test
 
         AddLayer(testLayer);
 
-        SetBackgroundColor(Core::Color_A1::Black);
+        SetBackgroundColor(Forge::Color_A1::Black);
 
         // Warm key light, plus two colorful rim lights either side of the scene.
-        AddLight(Core::PointLight::Create(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(1.0f, 0.95f, 0.85f), 1.0f));
-        AddLight(Core::PointLight::Create(glm::vec3(-3.0f, 1.0f, -1.0f), glm::vec3(1.0f, 0.95f, 0.85f), 0.8f));
-        AddLight(Core::PointLight::Create(glm::vec3(3.0f, 1.0f, -3.0f), glm::vec3(1.0f, 0.95f, 0.85f), 0.8f));
-        AddLight(Core::DirectionalLight::Create(glm::vec3(0.60f, -1.0f, 0.30f), glm::vec3(1.0f, 1.0f, 1.0f), 0.4f));
+        AddLight(Forge::PointLight::Create(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(1.0f, 0.95f, 0.85f), 1.0f));
+        AddLight(Forge::PointLight::Create(glm::vec3(-3.0f, 1.0f, -1.0f), glm::vec3(1.0f, 0.95f, 0.85f), 0.8f));
+        AddLight(Forge::PointLight::Create(glm::vec3(3.0f, 1.0f, -3.0f), glm::vec3(1.0f, 0.95f, 0.85f), 0.8f));
+        AddLight(Forge::DirectionalLight::Create(glm::vec3(0.60f, -1.0f, 0.30f), glm::vec3(1.0f, 1.0f, 1.0f), 0.4f));
     }
 
 } // namespace Test

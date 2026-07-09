@@ -15,35 +15,35 @@ find_package(glfw3 3.3 REQUIRED)
 find_package(glm REQUIRED)
 
 # --- EngineCore: the reusable framework/engine layer ---
-# Everything under src/Core (+ glad, which the engine depends on) lives here so it can be
+# Everything under src/Forge (+ glad, which the engine depends on) lives here so it can be
 # linked by OpenGL_App, future engine consumers, and the test binary alike, without pulling
 # in main.cpp or app-layer (src/App) code.
 add_library(EngineCore STATIC
         src/glad/gl.c
 
-        src/Core/Mesh.cpp
-        src/Core/Model.cpp
-        src/Core/Camera.cpp
-        src/Core/Shader.cpp
-        src/Core/Texture.cpp
-        src/Core/Material.cpp
-        src/Core/Colors.cpp
-        src/Core/Renderer.cpp
-        src/Core/Application.cpp
-        src/Core/EventHandler.cpp
-        src/Core/ResourceManager.cpp
-        src/Core/Scene.cpp
-        src/Core/Lights.cpp
+        src/Forge/Mesh.cpp
+        src/Forge/Model.cpp
+        src/Forge/Camera.cpp
+        src/Forge/Shader.cpp
+        src/Forge/Texture.cpp
+        src/Forge/Material.cpp
+        src/Forge/Colors.cpp
+        src/Forge/Renderer.cpp
+        src/Forge/Engine.cpp
+        src/Forge/EventHandler.cpp
+        src/Forge/ResourceManager.cpp
+        src/Forge/Scene.cpp
+        src/Forge/Lights.cpp
     )
 
 target_include_directories(EngineCore
     PUBLIC
         ${CMAKE_SOURCE_DIR}/include
-        ${CMAKE_SOURCE_DIR}/include/Core
+        ${CMAKE_SOURCE_DIR}/include/Forge
         ${CMAKE_SOURCE_DIR}/include/glad
 )
 
-# PUBLIC: Core headers expose GLFW/glm types (e.g. Application.hpp, EventHandler.hpp), so
+# PUBLIC: Forge headers expose GLFW/glm types (e.g. Engine.hpp, EventHandler.hpp), so
 # anything linking EngineCore needs these propagated too, not just EngineCore's own .cpp files.
 target_link_libraries(EngineCore PUBLIC glfw GL glm::glm)
 
