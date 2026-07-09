@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "Core/Lights.hpp"
+#include "Forge/Lights.hpp"
 
 namespace
 {
@@ -28,28 +28,28 @@ namespace
 
 TEST(LightsTest, DirectionalLightReportsCorrectType)
 {
-    auto light = Core::DirectionalLight::Create();
+    auto light = Forge::DirectionalLight::Create();
     ASSERT_NE(light, nullptr);
-    EXPECT_EQ(light->GetLightType(), Core::LightType::Directional);
-    EXPECT_EQ(Core::DirectionalLight::GetStaticType(), Core::LightType::Directional);
+    EXPECT_EQ(light->GetLightType(), Forge::LightType::Directional);
+    EXPECT_EQ(Forge::DirectionalLight::GetStaticType(), Forge::LightType::Directional);
     EXPECT_STREQ(light->GetName(), "Directional");
 }
 
 TEST(LightsTest, PointLightReportsCorrectType)
 {
-    auto light = Core::PointLight::Create();
+    auto light = Forge::PointLight::Create();
     ASSERT_NE(light, nullptr);
-    EXPECT_EQ(light->GetLightType(), Core::LightType::Point);
-    EXPECT_EQ(Core::PointLight::GetStaticType(), Core::LightType::Point);
+    EXPECT_EQ(light->GetLightType(), Forge::LightType::Point);
+    EXPECT_EQ(Forge::PointLight::GetStaticType(), Forge::LightType::Point);
     EXPECT_STREQ(light->GetName(), "Point");
 }
 
 TEST(LightsTest, SpotLightReportsCorrectType)
 {
-    auto light = Core::SpotLight::Create();
+    auto light = Forge::SpotLight::Create();
     ASSERT_NE(light, nullptr);
-    EXPECT_EQ(light->GetLightType(), Core::LightType::Spot);
-    EXPECT_EQ(Core::SpotLight::GetStaticType(), Core::LightType::Spot);
+    EXPECT_EQ(light->GetLightType(), Forge::LightType::Spot);
+    EXPECT_EQ(Forge::SpotLight::GetStaticType(), Forge::LightType::Spot);
     EXPECT_STREQ(light->GetName(), "Spot");
 }
 
@@ -61,21 +61,21 @@ TEST(LightsTest, SpotLightReportsCorrectType)
 
 TEST(LightsTest, DirectionalLightConstructorNormalizesDirection)
 {
-    auto light = Core::DirectionalLight::Create(glm::vec3(3.0f, 4.0f, 0.0f));
+    auto light = Forge::DirectionalLight::Create(glm::vec3(3.0f, 4.0f, 0.0f));
     ASSERT_NE(light, nullptr);
     ExpectVec3Near(light->GetDirection(), glm::vec3(0.6f, 0.8f, 0.0f));
 }
 
 TEST(LightsTest, DirectionalLightSetDirectionRenormalizes)
 {
-    auto light = Core::DirectionalLight::Create();
+    auto light = Forge::DirectionalLight::Create();
     light->SetDirection(glm::vec3(0.0f, 0.0f, 5.0f));
     ExpectVec3Near(light->GetDirection(), glm::vec3(0.0f, 0.0f, 1.0f));
 }
 
 TEST(LightsTest, SpotLightConstructorNormalizesDirection)
 {
-    auto light = Core::SpotLight::Create(glm::vec3(0.0f), glm::vec3(3.0f, 4.0f, 0.0f));
+    auto light = Forge::SpotLight::Create(glm::vec3(0.0f), glm::vec3(3.0f, 4.0f, 0.0f));
     ASSERT_NE(light, nullptr);
     ExpectVec3Near(light->GetDirection(), glm::vec3(0.6f, 0.8f, 0.0f));
 }
@@ -89,7 +89,7 @@ TEST(LightsTest, SpotLightConstructorNormalizesDirection)
 
 TEST(LightsTest, SpotLightZeroAndNinetyDegreeCutoffsConvertToCosine)
 {
-    auto spot = Core::SpotLight::Create(glm::vec3(0.0f), glm::vec3(0.0f, -1.0f, 0.0f),
+    auto spot = Forge::SpotLight::Create(glm::vec3(0.0f), glm::vec3(0.0f, -1.0f, 0.0f),
                                         glm::vec3(1.0f), 1.0f, 0.0f, 90.0f);
     ASSERT_NE(spot, nullptr);
     EXPECT_NEAR(spot->GetInnerCutoff(), 1.0f, 1e-5f); // cos(0°)
@@ -98,7 +98,7 @@ TEST(LightsTest, SpotLightZeroAndNinetyDegreeCutoffsConvertToCosine)
 
 TEST(LightsTest, SpotLightSixtyAndOneTwentyDegreeCutoffsConvertToCosine)
 {
-    auto spot = Core::SpotLight::Create(glm::vec3(0.0f), glm::vec3(0.0f, -1.0f, 0.0f),
+    auto spot = Forge::SpotLight::Create(glm::vec3(0.0f), glm::vec3(0.0f, -1.0f, 0.0f),
                                         glm::vec3(1.0f), 1.0f, 60.0f, 120.0f);
     ASSERT_NE(spot, nullptr);
     EXPECT_NEAR(spot->GetInnerCutoff(), 0.5f, 1e-5f);  // cos(60°)
@@ -113,9 +113,9 @@ TEST(LightsTest, SpotLightSixtyAndOneTwentyDegreeCutoffsConvertToCosine)
 
 TEST(LightsTest, DirectionalLightPacksIntoGPULightLayout)
 {
-    auto light = Core::DirectionalLight::Create(glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 2.0f);
+    auto light = Forge::DirectionalLight::Create(glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 2.0f);
     ASSERT_NE(light, nullptr);
-    Core::GPULight gpu = light->ToGPULight();
+    Forge::GPULight gpu = light->ToGPULight();
 
     ExpectVec4Near(gpu.position, glm::vec4(0.0f, 0.0f, 0.0f, 0.0f));   // w = LightType::Directional (0)
     ExpectVec4Near(gpu.direction, glm::vec4(0.0f, 0.0f, -1.0f, 2.0f)); // xyz = direction, w = intensity
@@ -126,10 +126,10 @@ TEST(LightsTest, DirectionalLightPacksIntoGPULightLayout)
 
 TEST(LightsTest, PointLightPacksIntoGPULightLayout)
 {
-    auto light = Core::PointLight::Create(glm::vec3(1.0f, 2.0f, 3.0f), glm::vec3(0.0f, 1.0f, 0.0f), 3.0f,
+    auto light = Forge::PointLight::Create(glm::vec3(1.0f, 2.0f, 3.0f), glm::vec3(0.0f, 1.0f, 0.0f), 3.0f,
                                           1.0f, 0.09f, 0.032f);
     ASSERT_NE(light, nullptr);
-    Core::GPULight gpu = light->ToGPULight();
+    Forge::GPULight gpu = light->ToGPULight();
 
     ExpectVec4Near(gpu.position, glm::vec4(1.0f, 2.0f, 3.0f, 1.0f));   // w = LightType::Point (1)
     ExpectVec4Near(gpu.direction, glm::vec4(0.0f, 0.0f, 0.0f, 3.0f));  // xyz unused, w = intensity
@@ -140,11 +140,11 @@ TEST(LightsTest, PointLightPacksIntoGPULightLayout)
 
 TEST(LightsTest, SpotLightPacksIntoGPULightLayout)
 {
-    auto light = Core::SpotLight::Create(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f),
+    auto light = Forge::SpotLight::Create(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f),
                                          glm::vec3(0.0f, 0.0f, 1.0f), 1.5f,
                                          0.0f, 90.0f, 1.0f, 0.09f, 0.032f);
     ASSERT_NE(light, nullptr);
-    Core::GPULight gpu = light->ToGPULight();
+    Forge::GPULight gpu = light->ToGPULight();
 
     ExpectVec4Near(gpu.position, glm::vec4(1.0f, 0.0f, 0.0f, 2.0f));    // w = LightType::Spot (2)
     ExpectVec4Near(gpu.direction, glm::vec4(0.0f, -1.0f, 0.0f, 1.5f));  // xyz = direction, w = intensity

@@ -1,10 +1,10 @@
-#include "Core/Application.hpp"
+#include "Forge/Engine.hpp"
 #include "App/TestLayer.hpp"
 #include "App/TestScene.hpp"
 
 int main(void)
 {
-    Core::Application App;
+    Forge::Engine App;
 
     App.AddScene(std::make_shared<Test::TestScene>());
 

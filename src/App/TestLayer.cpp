@@ -1,17 +1,17 @@
 #include "App/TestLayer.hpp"
-#include "Core/Material.hpp"
-#include "Core/Light.hpp"
+#include "Forge/Material.hpp"
+#include "Forge/Light.hpp"
 namespace Test
 {
-    TestLayer::TestLayer(std::shared_ptr<Core::ResourceManager> resourceManager)
+    TestLayer::TestLayer(std::shared_ptr<Forge::ResourceManager> resourceManager)
     {
         auto testMesh = resourceManager->LoadMesh("models/cube.obj");
 
         if (!testMesh)
             debug_error("Failed to create TestMesh");
 
-        auto GoldCube1 = std::make_shared<Core::Model>(testMesh);
-        auto GoldCube2 = std::make_shared<Core::Model>(testMesh);
+        auto GoldCube1 = std::make_shared<Forge::Model>(testMesh);
+        auto GoldCube2 = std::make_shared<Forge::Model>(testMesh);
 
         // The OBJ is in raw Tinkercad units: bounding box center ≈ (-11.09, 1.0, 5.0),
         // width ≈ 36 units. Scale to 0.05 first, then translate to bring the scaled
@@ -25,9 +25,9 @@ namespace Test
 
         // A few more cubes scattered around, each with a different preset material,
         // so there's an actual scene to test the multi-light shader loop against.
-        auto silverCube = std::make_shared<Core::Model>(testMesh);
-        auto rubyCube = std::make_shared<Core::Model>(testMesh);
-        auto emeraldCube = std::make_shared<Core::Model>(testMesh);
+        auto silverCube = std::make_shared<Forge::Model>(testMesh);
+        auto rubyCube = std::make_shared<Forge::Model>(testMesh);
+        auto emeraldCube = std::make_shared<Forge::Model>(testMesh);
 
         silverCube->SetScale(0.025f);
         silverCube->SetPosition(glm::vec3(-2.2f, 0.05f, -1.0f));
@@ -43,27 +43,27 @@ namespace Test
             debug_error("Failed to create Solid shader");
 
         /*
-        auto material1 = Core::Material::Create(solidColorShader, "Changing");
-        auto material2 = Core::Material::Create(solidColorShader, "Solid");
+        auto material1 = Forge::Material::Create(solidColorShader, "Changing");
+        auto material2 = Forge::Material::Create(solidColorShader, "Solid");
         */
 
         auto crateMesh = resourceManager->LoadMesh("models/crate.obj");
-        auto crateMat = Core::Material::Create(solidColorShader, "Crate");
+        auto crateMat = Forge::Material::Create(solidColorShader, "Crate");
         crateMat->SetTexture(resourceManager->LoadTexture("textures/crate_diffuse.png"));
         crateMat->SetSpecularTexture(resourceManager->LoadTexture("textures/crate_specular.png"));
 
-        auto crateModel = std::make_shared<Core::Model>(crateMesh);
+        auto crateModel = std::make_shared<Forge::Model>(crateMesh);
         materialModels_[crateMat].push_back(crateModel);
         materials_.push_back(crateMat);
 
         crateModel->SetScale(0.8);
         crateModel->SetPosition(glm::vec3(2.2f, 0.05f, -1.0f));
 
-        auto material1 = Core::Material::Gold(solidColorShader);
-        auto material2 = Core::Material::Gold(solidColorShader);
-        auto material3 = Core::Material::Silver(solidColorShader);
-        auto material4 = Core::Material::Ruby(solidColorShader);
-        auto material5 = Core::Material::Emerald(solidColorShader);
+        auto material1 = Forge::Material::Gold(solidColorShader);
+        auto material2 = Forge::Material::Gold(solidColorShader);
+        auto material3 = Forge::Material::Silver(solidColorShader);
+        auto material4 = Forge::Material::Ruby(solidColorShader);
+        auto material5 = Forge::Material::Emerald(solidColorShader);
 
         materialModels_[material2].push_back(GoldCube1);
         materialModels_[material1].push_back(GoldCube2);
@@ -79,18 +79,18 @@ namespace Test
         srand(time(NULL));
     }
 
-    bool TestLayer::OnEvent(Core::Event &event)
+    bool TestLayer::OnEvent(Forge::Event &event)
     {
         switch (event.GetEventType())
         {
-        case Core::EventType::KeyPressed:
+        case Forge::EventType::KeyPressed:
         {
-            Core::KeyPressedEvent ev = static_cast<Core::KeyPressedEvent &>(event);
+            Forge::KeyPressedEvent ev = static_cast<Forge::KeyPressedEvent &>(event);
             switch (ev.GetKeyCode())
             {
-            case GLFW_KEY_TAB:
+            case Forge::Key::Tab:
             {
-                materials_[1]->SetColor(Core::Color_A1::RandomColor());
+                materials_[1]->SetColor(Forge::Color_A1::RandomColor());
                 return true;
             }
             default:
@@ -100,7 +100,7 @@ namespace Test
             break;
         }
 
-        case Core::EventType::MouseButtonPressed:
+        case Forge::EventType::MouseButtonPressed:
             // Handle mouse button pressed event like:
 
             return true;
@@ -124,22 +124,7 @@ namespace Test
     {
     }
 
-    void TestLayer::OnRender(std::shared_ptr<Core::RenderContext> ctx) const
+    void TestLayer::OnRender(std::shared_ptr<Forge::FrameContext> ctx) const
     {
-        for (const auto &[material, models] : materialModels_)
-        {
-            material->Bind(ctx);
-
-            for (const auto &model : models)
-            {
-                glm::mat4 modelMatrix = model->GetModelMatrix();
-                glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(modelMatrix)));
-
-                material->GetShader()->SetMat4("uModel", modelMatrix);
-                material->GetShader()->SetMat3("uNormalMatrix", normalMatrix);
-
-                model->Draw();
-            }
-        }
     }
 } // namespace Test

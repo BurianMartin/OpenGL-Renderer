@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "Core/Mesh.hpp"
+#include "Forge/Mesh.hpp"
 
 #include <sstream>
 
@@ -7,10 +7,10 @@ namespace
 {
     // Every test below builds a tiny in-memory OBJ file instead of a real one on disk -
     // ParseObjFile only needs a stream, so a plain string literal is enough.
-    Core::ParsedMeshData ParseObjString(const std::string &objText, const std::string &sourceName = "test.obj")
+    Forge::ParsedMeshData ParseObjString(const std::string &objText, const std::string &sourceName = "test.obj")
     {
         std::istringstream stream(objText);
-        return Core::Mesh::ParseObjFile(stream, sourceName);
+        return Forge::Mesh::ParseObjFile(stream, sourceName);
     }
 
     void ExpectVec3Eq(const glm::vec3 &actual, const glm::vec3 &expected)
@@ -30,18 +30,18 @@ namespace
 TEST(MeshTest, CreateObjFromFile)
 {
     std::ifstream crateFile("models/crate.obj");
-    auto crate1 = Core::Mesh::ParseObjFile(crateFile, "models/crate.obj");
+    auto crate1 = Forge::Mesh::ParseObjFile(crateFile, "models/crate.obj");
 
     crateFile.clear();
     crateFile.seekg(0);
-    auto crate2 = Core::Mesh::ParseObjFile(crateFile, "models/crate.obj");
+    auto crate2 = Forge::Mesh::ParseObjFile(crateFile, "models/crate.obj");
 
     EXPECT_EQ(crate1, crate2);
     EXPECT_EQ(crate1.indices, crate2.indices);
     EXPECT_EQ(crate1.vertices, crate2.vertices);
 
     std::ifstream starFile("models/star.obj");
-    auto star = Core::Mesh::ParseObjFile(starFile, "models/star.obj");
+    auto star = Forge::Mesh::ParseObjFile(starFile, "models/star.obj");
 
     EXPECT_NE(star, crate1);
     EXPECT_NE(star, crate2);

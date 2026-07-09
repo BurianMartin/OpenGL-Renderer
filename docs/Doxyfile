@@ -15,7 +15,7 @@
 # Project
 # ---------------------------------------------------------------------------
 PROJECT_NAME            = "OpenGL Renderer"
-PROJECT_BRIEF           = "A small C++20 OpenGL rendering engine (Application -> Scene -> Layer)"
+PROJECT_BRIEF           = "A small C++20 OpenGL rendering engine (Engine -> Scene -> Layer)"
 PROJECT_LOGO            = docs/logo.svg
 OUTPUT_DIRECTORY        = docs/generated
 

@@ -1,4 +1,4 @@
-# 🎮 OpenGL Renderer Core
+# 🔨 Forge
 
 ![Language](https://img.shields.io/badge/language-C%2FC%2B%2B-blue)
 ![API](https://img.shields.io/badge/API-OpenGL-green)
@@ -6,43 +6,55 @@
 ![Status](https://img.shields.io/badge/status-Work%20in%20Progress-orange)
 ![License](https://img.shields.io/badge/license-Open%20Source-purple)
 
-# OpenGL Renderer Core
+A C++20 OpenGL engine built around an `Engine → Scene → Layer` architecture: a
+consumer defines their own `Scene`/`Layer` objects — game state, rendering, input
+handling — and `Forge` owns the window/GL context, the render loop, resource
+caching, and event dispatch.
 
-A lightweight, extensible OpenGL rendering framework designed to be 
-the foundation for any OpenGL-based application or game.
+## Why this exists
 
-## Vision
+`Forge` is being built toward one concrete goal: a digital version of a trading
+card game that friends can actually play online. It's not a general-purpose public
+library — no public API contract, no semver, no back-compat promises — it only has
+to be good enough for that project and whatever comes after it. See `SCOPE.md` for
+the full reasoning, and `ROADMAP.md` for the open work tracked against it.
 
-The goal is a clean core architecture where you bring your models and 
-shaders — and the renderer handles the rest. Built around a layered 
-scene system:
+## Current status
 
-- **App** → contains **Scenes** → contain **Layers**
-- Movement, rendering loop, and event handling managed by the core
-- Drop in your assets and build on top
+The core rendering pipeline is done: scene/layer architecture, OBJ mesh loading,
+Blinn-Phong lighting (directional/point/spot, multi-light UBO), diffuse + specular
+texture mapping, and a deduplicating resource cache. The known-bug backlog and
+architecture cleanup (`Tier 1` in `SCOPE.md`) are closed out. What's left is
+net-new: text/UI rendering, a clickable-region abstraction, 2D/orthographic camera
+support, and client-server networking — see `SCOPE.md`'s Tier 2 for the full list.
 
-## Current Status
-🚧 Work in progress — core architecture and basic rendering implemented.
-Lighting and textures coming next.
+## What's implemented
 
-## What's working
-- Core renderer architecture
-- Scene and layer system
-- Basic geometry rendering
-- Camera and movement
+- `Engine → Scene → Layer` architecture, fully decoupled from app-layer code
+- Perspective camera with WASD + mouse-look
+- OBJ mesh loading (fan-triangulated n-gons, flat-normal generation when a model has no `vn` data)
+- Blinn-Phong lighting via a `std140` UBO, with classic-OpenGL material presets (`Gold`, `Silver`, `Emerald`, ...)
+- Diffuse + specular texture mapping
+- `ResourceManager` — weak_ptr-cached loading for meshes, shaders, textures, and materials
+- Doxygen-generated API docs (`make doc`)
+- A GTest suite covering the GL-independent logic (`make test`)
 
-## Roadmap
-- [ ] Texture support
-- [ ] Lighting system
-- [ ] Model loading
-- [ ] Solitaire (first demo app built on the core)
+## Build
+
+```bash
+make          # configure + build
+make run      # build then run from project root
+make test     # build and run the test suite
+make doc      # generate Doxygen docs
+```
+
+See `CLAUDE.md` for the full build/test/architecture reference, `ROADMAP.md` for
+open bugs and in-progress work, and `SCOPE.md` for why this exists and how much of
+the roadmap is actually in scope.
 
 ## Tech
-- C++
-- OpenGL
-- GLFW
-- GLEW / GLAD
 
-## Why open source?
-This started as a solitaire game but evolved into something more useful — 
-a reusable renderer anyone can build on top of.
+- C++20
+- OpenGL (via glad)
+- GLFW
+- GLM

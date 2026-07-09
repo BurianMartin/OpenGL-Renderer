@@ -16,18 +16,20 @@ entire reason this is worth building.
 The SDL2 philosophy: a consumer defines their own `Scene`/`Layer` objects — game state,
 rendering, input handling — and the framework owns the window/GL context, the render
 loop, resource caching, and event dispatch. That structure already exists
-(`Application → Scene → Layer`, `ResourceManager`). v1.0 is that structure being *capable
+(`Engine → Scene → Layer`, `ResourceManager`). v1.0 is that structure being *capable
 and trustworthy enough that building the TCG on it is faster than starting from scratch*
 — not matching SDL2's actual scope, which is a multi-decade, many-contributor project
 this doesn't need to be.
 
 ## Definition of done — Framework v1.0
 
-**Tier 1 — close the existing gap** (tracked in `ROADMAP.md`/Redline; Steps 6–7 done)
-- [ ] Known-bug backlog (Redline Phase C — ~2.5–3.5 hrs)
-- [ ] `ResourceManager::LoadMaterial` (Redline Phase D)
-- [ ] Rename `RenderContext` → `FrameContext` (Redline Phase D)
-- [x] Doxygen pass over `Core` — done, and extended to cover `App/` too (`TestLayer`/`TestScene`/`InputConfig`), which the original pass had explicitly left undocumented (see `ROADMAP.md`'s Completed section)
+**Tier 1 — done** (tracked in `ROADMAP.md`/Redline; Steps 6–7 done)
+- [x] Known-bug backlog (Redline Phase C — ~2.5–3.5 hrs)
+- [x] `ResourceManager::LoadMaterial` (Redline Phase D)
+- [x] Rename `RenderContext` → `FrameContext` (Redline Phase D) — struct, file, and the `Renderer::GetFrameContext()`/`Scene::UpdateFrameContext()` accessor names are all renamed
+- [x] Doxygen pass over `Forge` — done, and extended to cover `App/` too (`TestLayer`/`TestScene`/`InputConfig`), which the original pass had explicitly left undocumented (see `ROADMAP.md`'s Completed section)
+
+Tier 1 is closed — everything below is what's actually left for v1.0.
 
 **Tier 2 — net-new, driven by exactly what the TCG needs, nothing more**
 - [ ] **Text/UI rendering.** The most-flagged gap across every retrospective so far. A
@@ -54,12 +56,12 @@ this doesn't need to be.
     home VPN. No STUN/TURN, no peer discovery, no NAT traversal code of any kind — the
     server's address is fixed and known.
   - Architecture consequence: the TCG's own rules/state layer must be written the same
-    way Solitaire's `Game` namespace was — pure C++, zero dependency on `Core` or GL.
+    way Solitaire's `Game` namespace was — pure C++, zero dependency on `Forge` or GL.
     That's what makes a **headless server build** possible: the same rules/state code,
     compiled into a separate server executable with no window, no GPU, no rendering at
     all, just network I/O and move validation. This doesn't exist yet in this engine —
     it's a pattern to repeat, not code to reuse — but it's proven to work by Solitaire's
-    `Game`/`Core` split.
+    `Game`/`Forge` split.
 
 ## Explicitly out of scope for v1.0 (maybe ever)
 
@@ -78,10 +80,10 @@ this doesn't need to be.
 
 ## Path
 
-1. Finish Tier 1 (mechanical, already estimated in Redline).
+1. ~~Finish Tier 1 (mechanical, already estimated in Redline).~~ Done.
 2. Build Tier 2, text/UI first — nothing else is even visible to a player without it.
 3. Build the TCG's rules/state layer the way Solitaire's `Game` namespace was built:
-   pure C++, zero `Core`/GL dependency. This unlocks the headless server for free.
+   pure C++, zero `Forge`/GL dependency. This unlocks the headless server for free.
 4. Build the headless server + ENet client integration.
 5. Build the TCG itself on top of all of the above — the integration test of the
    framework, the same role Solitaire played for the 2D/picking work. Expect it to
