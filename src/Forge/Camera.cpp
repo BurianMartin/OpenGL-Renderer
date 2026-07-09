@@ -4,7 +4,7 @@
 namespace Forge
 {
 
-    Camera::Camera(GLfloat aspect_ratio) : aspect_ratio_(aspect_ratio)
+    Camera::Camera(Viewport viewport) : viewport_(viewport)
     {
         position_ = glm::vec3(0.0f, 0.0f, 3.0f); // 3 units back from origin
         front_ = glm::vec3(0.0f, 0.0f, -1.0f);   // looking into the screen
@@ -28,7 +28,7 @@ namespace Forge
 
     glm::mat4 Camera::GetProjectionMatrix() const
     {
-        return glm::perspective(glm::radians(fov_), aspect_ratio_, near_plane_, far_plane_);
+        return glm::perspective(glm::radians(fov_), viewport_.GetAspectRatio(), near_plane_, far_plane_);
     }
 
     void Camera::MoveForward(GLfloat delta_time)
@@ -51,14 +51,30 @@ namespace Forge
         position_ += up_ * (speed_ + boost_) * delta_time;
     }
 
+    void Camera::UpdateViewportPosition(GLfloat x, GLfloat y)
+    {
+        viewport_.SetViewportPos(x, y);
+    }
+
+    void Camera::UpdateViewport(Viewport viewport)
+    {
+        viewport_ = viewport;
+    }
+
+    void Camera::UpdateViewport(GLfloat x, GLfloat y, GLfloat width, GLfloat height)
+    {
+        viewport_.SetViewportPos(x, y);
+        viewport_.SetSize(width, height);
+    }
+
     void Camera::ResetMouseTracking()
     {
         first_mouse_ = true;
     }
 
-    void Camera::UpdateAspectRatio(float aspect_ratio)
+    void Camera::UpdateViewportSize(GLint width, GLint height)
     {
-        aspect_ratio_ = aspect_ratio;
+        viewport_.SetWindowSize(width, height);
     }
 
     void Camera::ProcessMousePosition(float xpos, float ypos)
@@ -111,6 +127,11 @@ namespace Forge
             fov_ = 1.0f;
         if (fov_ > 45.0f)
             fov_ = 45.0f;
+    }
+
+    void Camera::ApplyViewport()
+    {
+        viewport_.Apply();
     }
 
     glm::vec3 Camera::GetPosition() const
@@ -177,6 +198,18 @@ namespace Forge
     void Camera::SetBoost(GLfloat boost)
     {
         boost_ = boost;
+    }
+
+    void Camera::SetPosition(const glm::vec3 &position)
+    {
+        position_ = position;
+    }
+
+    void Camera::SetYawPitch(GLfloat yaw, GLfloat pitch)
+    {
+        yaw_ = yaw;
+        pitch_ = pitch;
+        UpdateFront();
     }
 
     void Camera::UpdateFront()

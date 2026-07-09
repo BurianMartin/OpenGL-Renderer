@@ -3,6 +3,8 @@
 #include "Forge/Layer.hpp"
 #include "Forge/Lights.hpp"
 #include "Forge/Camera.hpp"
+#include "Forge/Mesh.hpp"
+#include "Forge/Shader.hpp"
 #include "Forge/InputEvents.hpp"
 #include "Forge/ResourceManager.hpp"
 
@@ -11,7 +13,7 @@
 
 namespace Forge
 {
-    /// Which DrawBackground() strategy is active; set indirectly via SetBackgroundColor() (Skybox/Skydome have no public setter yet — see their TODOs).
+    /// Which DrawBackground() strategy is active; set via SetBackgroundColor()/SetSkyboxBackground()/SetSkydomeBackground().
     enum class Background_Type
     {
         Solid,
@@ -37,10 +39,16 @@ namespace Forge
         void DrawSkyboxBackground();
         void DrawSkydomeBackground();
 
-        /// Refreshes `rctx_`'s camera-derived fields from the active Camera. Logs and returns early (via `debug_error`) if `cameras_` is empty, rather than asserting — this check survives in release builds.
-        void UpdateFrameContext();
-
         void LoadLights();
+
+        /// Refreshes `fctx_`'s camera-derived fields from the active Camera. Logs and returns early (via `debug_error`) if `cameras_` is empty, rather than asserting — this check survives in release builds.
+        void UpdateFrameContext(GLint camera_index);
+
+        // Lazily created on first use by DrawSkyboxBackground/DrawSkydomeBackground.
+        std::shared_ptr<Shader> skyboxShader_;
+        std::shared_ptr<Mesh> skyboxMesh_;
+        std::shared_ptr<Shader> skydomeShader_;
+        GLuint skydomeVAO_ = 0; // intentionally has no bound attributes/buffers — see DrawSkydomeBackground
 
     protected:
         glm::vec4 backgroundColor_ = glm::vec4(0);
@@ -50,14 +58,16 @@ namespace Forge
         std::vector<std::shared_ptr<Light>> lights_;
         GLint active_camera_ = 0; // index in the cameras vector
 
-        std::shared_ptr<FrameContext> rctx_;
+        std::shared_ptr<FrameContext> fctx_;
         std::shared_ptr<ResourceManager> rmanager_;
 
         void AddLight(std::shared_ptr<Light> light);
 
     public:
         Scene() = default;
-        virtual ~Scene() = default;
+
+        /// Releases `skydomeVAO_` if `DrawSkydomeBackground` ever lazily created one.
+        virtual ~Scene();
 
         /// Handle input and forward to layers as appropriate; called by Engine for every raised Event.
         virtual void OnEvent(Event &event) = 0;
@@ -77,7 +87,7 @@ namespace Forge
         /// Dispatches to the active Background_Type's draw routine.
         void DrawBackground();
 
-        /// Refreshes the render context from the active camera, then calls every layer's OnRender() in order.
+        /// Loops over every camera in `cameras_` — ApplyViewport, UpdateFrameContext, a scissored depth clear, DrawBackground, then every layer's Render() — wrapped in glEnable/glDisable(GL_SCISSOR_TEST) so one camera's clear can't bleed into another's viewport.
         void Render();
 
         /// Appends a layer to the render/event-dispatch list; order matters (see Layer). Only ever called by subclasses from OnSceneBoot(), never externally.
@@ -86,10 +96,22 @@ namespace Forge
         /// Sets a solid background color and switches `backgroundType_` to `Solid`. Only ever called by subclasses from OnSceneBoot(), never externally.
         void SetBackgroundColor(glm::vec4 color);
 
+        /// Switches `backgroundType_` to `Skybox` — a hardcoded, position-only unit cube with a procedural gradient+sun shader, forced to the far plane. No texture/cubemap needed. Only ever called by subclasses from OnSceneBoot(), never externally.
+        void SetSkyboxBackground();
+
+        /// Switches `backgroundType_` to `Skydome` — a screen-space full-screen triangle reconstructing the view ray per-pixel; a different technique from Skybox (no mesh/vertex buffer at all), same visual idea. Only ever called by subclasses from OnSceneBoot(), never externally.
+        void SetSkydomeBackground();
+
         /// Calls OnUpdate(delta_time), then every layer's OnUpdate(). Called once per frame.
         void Update(float delta_time);
 
         /// Calls Destroy() on every layer, ahead of scene teardown.
         void Destroy();
+
+        /// Applies `cameras_[camera_index]`'s Viewport as both the GL viewport and scissor rect (forwards to Camera::ApplyViewport).
+        void ApplyViewport(GLint camera_index);
+
+        /// Resets the active camera's mouse tracking (see Camera::ResetMouseTracking) so its next ProcessMousePosition call primes instead of jumping. Call whenever this scene becomes newly active — e.g. on a scene switch — since its camera's last-known cursor position may be stale from whenever it was last active.
+        void ResetMouse();
     };
 } // namespace Forge

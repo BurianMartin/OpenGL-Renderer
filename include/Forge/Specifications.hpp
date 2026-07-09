@@ -17,7 +17,7 @@ namespace Forge
      */
     struct WindowSpecification
     {
-        std::string Title = "OpenGL App";
+        std::string Title = "Forge";
         uint32_t width = 1080;
         uint32_t height = 1080;
         bool isResizable = true;

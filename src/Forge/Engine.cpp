@@ -1,9 +1,10 @@
 #include "Forge/Engine.hpp"
+#include "Engine.hpp"
 
 namespace Forge
 {
     Engine::Engine(ApplicationSpecification specification)
-        : specification_(specification), renderer_((float)specification_.windowSpec.width / (float)specification_.windowSpec.height),
+        : specification_(specification), renderer_(specification_.windowSpec.width, specification_.windowSpec.height),
           rmanager_(std::make_shared<Forge::ResourceManager>())
     {
         if (!Init())
@@ -91,7 +92,11 @@ namespace Forge
                 fps_accum = 0.0f;
             }
 #endif
-
+            if (current_scene_ != next_scene_)
+            {
+                current_scene_ = next_scene_;
+                scenes_[current_scene_]->ResetMouse();
+            }
             scenes_[current_scene_]->Update(delta_time);
             renderer_.RenderScene(scenes_[current_scene_], delta_time);
             glfwSwapBuffers(window_);
@@ -124,11 +129,20 @@ namespace Forge
     {
         if (scenes_.empty())
         {
-            current_scene_ = 0;
+            next_scene_ = 0;
         }
         scenes_.push_back(scene);
         scene->OnLoad(rmanager_, renderer_.GetFrameContext());
         return scenes_.size() - 1;
+    }
+
+    void Engine::SetScene(GLint index)
+    {
+        if (index >= 0 && index < static_cast<GLint>(scenes_.size()))
+        {
+            debug_info("Switching to scene " << index);
+            next_scene_ = index;
+        }
     }
 
     void Engine::RaiseEvent(Event &event)
@@ -145,6 +159,11 @@ namespace Forge
                 glfwSetWindowShouldClose(window_, true); // Close the app with esc key press
                 return;
                 break;
+
+            case Forge::Key::Tab:
+                SetScene((current_scene_ + 1) % scenes_.size());
+                break;
+
             case Forge::Key::GraveAccent: // Basicalyl a semicolon key, changing the cursor mode from captured to free
                 if (cursor_mode_ == GLFW_CURSOR_NORMAL)
                 {
@@ -177,6 +196,9 @@ namespace Forge
         {
             auto ev = static_cast<WindowResizeEvent &>(event);
             glViewport(0, 0, ev.GetWidth(), ev.GetHeight());
+            auto fctx = renderer_.GetFrameContext();
+            fctx->window_width_ = ev.GetWidth();
+            fctx->window_height_ = ev.GetHeight();
             break; // forward to scene so it can update aspect ratio
         }
 

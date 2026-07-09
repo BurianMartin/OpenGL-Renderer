@@ -63,15 +63,24 @@ Tier 1 is closed — everything below is what's actually left for v1.0.
     it's a pattern to repeat, not code to reuse — but it's proven to work by Solitaire's
     `Game`/`Forge` split.
 
+**Tier 3 — engine capability, not gated on the TCG at all.** Not required for v1.0 the
+way Tier 2 is; these were revived as their own learning-exercise track independent of the
+TCG critical path, after `SCOPE.md` had originally filed all three under "explicitly out
+of scope." Kept as their own tier rather than silently folded into Tier 2 so that
+distinction — genuinely useful engine work vs. TCG-required work — stays visible.
+- [x] Multiple cameras / split-screen — done, see `ROADMAP.md`'s Open Architecture section
+- [x] Skybox / Skydome — done, both implemented (procedural, no textures), see `ROADMAP.md`'s Completed section
+- [ ] Sub-mesh support — the one item here not started yet, see `ROADMAP.md`'s Backlog section
+
 ## Explicitly out of scope for v1.0 (maybe ever)
 
 - ImGui / editor tooling — a separate project with its own UX design work, not a bolt-on
   feature.
 - Matching SDL2's actual scope — multi-OS platform hardening, audio, gamepad support.
   GLFW already covers what this needs. **No audio.**
-- 3D-only backlog items a flat card game doesn't need: skybox/skydome, sub-mesh support,
-  area lights, multi-camera/split-screen. Left on `ROADMAP.md`/Redline as deferred, not
-  deleted — revisit only if a future 3D project actually needs them, not for this one.
+- Area lights — never implemented, `LightType::Area` was dropped from the enum entirely
+  (see `ROADMAP.md`'s Known Bugs). The only formerly-3D-only item genuinely staying out of
+  scope — skybox/skydome, sub-mesh, and multi-camera moved to Tier 3 above instead.
 - Being a public, general-purpose library for other people — no public API contract, no
   semver, no back-compat promises. It only has to be good enough for this project and
   whatever comes after it.

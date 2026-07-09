@@ -14,8 +14,8 @@
 # ---------------------------------------------------------------------------
 # Project
 # ---------------------------------------------------------------------------
-PROJECT_NAME            = "OpenGL Renderer"
-PROJECT_BRIEF           = "A small C++20 OpenGL rendering engine (Engine -> Scene -> Layer)"
+PROJECT_NAME            = "Forge"
+PROJECT_BRIEF           = "A C++20 OpenGL engine (Engine -> Scene -> Layer), built toward a networked TCG for friends"
 PROJECT_LOGO            = docs/logo.svg
 OUTPUT_DIRECTORY        = docs/generated
 
