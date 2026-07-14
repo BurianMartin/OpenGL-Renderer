@@ -48,5 +48,9 @@ namespace Demo
 
         /// Creates the scene's camera, adds `LightDemoLayer`, sets the Skybox background, and adds one light per station (see `OnSceneBoot`'s own comments for which light pairs with which object).
         virtual void OnSceneBoot() override;
+
+        virtual void OnResume(std::shared_ptr<Forge::FrameContext> fctx);
+
+        // virtual void Suspend() override;
     };
 }

@@ -94,7 +94,9 @@ namespace Forge
 #endif
             if (current_scene_ != next_scene_)
             {
+                scenes_[current_scene_]->Suspend();
                 current_scene_ = next_scene_;
+                scenes_[current_scene_]->Resume();
                 scenes_[current_scene_]->ResetMouse();
             }
             scenes_[current_scene_]->Update(delta_time);
@@ -130,6 +132,7 @@ namespace Forge
         if (scenes_.empty())
         {
             next_scene_ = 0;
+            current_scene_ = 0;
         }
         scenes_.push_back(scene);
         scene->OnLoad(rmanager_, renderer_.GetFrameContext());
@@ -138,7 +141,7 @@ namespace Forge
 
     void Engine::SetScene(GLint index)
     {
-        if (index >= 0 && index < static_cast<GLint>(scenes_.size()))
+        if (index >= 0 && index < static_cast<GLint>(scenes_.size()) && index != current_scene_)
         {
             debug_info("Switching to scene " << index);
             next_scene_ = index;
@@ -147,7 +150,6 @@ namespace Forge
 
     void Engine::RaiseEvent(Event &event)
     {
-
         switch (event.GetEventType())
         {
         case Forge::EventType::KeyPressed:

@@ -43,6 +43,45 @@ is optional. Full detail and reasoning in `SCOPE.md`.
 
 ---
 
+## 🐛 Known bugs — 2026-07-13 audit pass (unfixed, ranked by severity)
+
+A full pass over every `Forge`/`Demo` source file, each finding verified against the
+actual code (and in two cases against actual compiled behavior) before being logged here.
+Nothing in this section has been fixed yet — this is the starting punch list for whoever
+picks it up next.
+
+**High — visibly wrong or crash-risk today**
+
+- [ ] **Ruby cube's "spin" orbits instead of spinning in place** (`models/cube.obj`, `Model.cpp:30-37`, `LightDemoLayer.cpp:104-107`) — `cube.obj`'s vertices span `z ∈ [0,20]`, so its local origin sits on one face, not the centroid. `GetModelMatrix()` rotates before translating, so `SetSpin` sweeps the cube's visual center in a circle instead of rotating it in place. Visible in every demo scene right now.
+- [x] **Sprint boost doesn't apply to strafing** (`Camera.cpp:117-125`) — fixed: `MoveLeft`/`MoveRight` now scale by `(speed_ + boost_)` like the other four movement methods.
+- [x] **Window resize only reaches the active scene** (`Engine.cpp:219`) — fixed, indirectly: `WindowResize` still only updates the shared `FrameContext`'s window size and forwards to the active scene, but `Scene::Resume()` (see the new Suspend/Resume scene-switch lifecycle) now re-syncs every camera's `Viewport` from that shared `FrameContext` whenever a scene becomes active again, so a scene that missed a resize while inactive catches up the moment it's switched back to.
+- [ ] **Texture loader picks the wrong GL format for grayscale images** (`Texture.cpp:30`) — any non-4-channel image is treated as `GL_RGB`; a 1- or 2-channel image (e.g. a grayscale roughness map) was only allocated 1–2 bytes/pixel by `stbi_load`, so `glTexImage2D` reads past the buffer.
+- [ ] **`debug_error` is a silent no-op in Release builds** (`Utils.hpp:19-31`) — bundled into the same `#ifndef NDEBUG` block as `debug_info`/`debug_warn`, contradicting the documented "always throws" contract. In Release, a missing shader/texture file silently proceeds with `nrChannels`/`width_`/`height_` uninitialized.
+- [x] **No cap on light count vs. the UBO's fixed 32-slot capacity** (`Scene.cpp:144-163`, `FrameContext.hpp:38`) — fixed: `AddLight` now checks `lights_.size()` against `fctx_->MAX_LIGHTS` and drops (with a `debug_warn`) instead of pushing past capacity. Unexercised today (every demo scene uses 5 lights).
+
+**Medium — real, latent, or contract-violating**
+
+- [ ] **Shader compile/link failure leaks GL shader objects** (`Shader.cpp:27-49`) — `glDeleteShader`/`glDeleteProgram` cleanup only runs on the success path.
+- [ ] **`Material`/`LoadMaterial` never null-check the injected shader** (`Material.cpp:19-26`, `ResourceManager.cpp:48-57`) — a failed shader load cascades into a null-pointer crash far away, inside `Material::Bind()`.
+- [ ] **Double-Tab within one frame collapses to a single scene advance** (`Engine.cpp:164`) — `SetScene((current_scene_+1)%...)` reads the stale `current_scene_`, not the already-pending `next_scene_`.
+- [ ] **Tab/backtick aren't actually intercepted before reaching the scene** (`Engine.cpp:163-187, 219`) — contradicts the documented "intercepted before forwarding" contract; both fall through to `scene->OnEvent()` like any other key. Harmless today since nothing downstream binds those keys.
+- [ ] **`LoadMaterial`'s cache is keyed only by tag, not `(shader, tag)`** (`ResourceManager.cpp:48-57`) — two different shaders sharing a tag string silently collide.
+- [ ] **A tween finish-callback that chains `AddTween` would invalidate `UpdateTweens`'s iterators mid-loop** (`Layer.hpp:39-47`, `Tweens.hpp:53`) — latent; nothing calls `SetFinishFunction` yet.
+- [ ] **`Viewport::RecomputeAspectRatio` divides by zero on a 0×0 resize** (`Camera.hpp:35-38`) — GLFW can legitimately deliver this on minimize; produces NaN/Inf straight into the projection matrix.
+
+**Low — real but narrow/cosmetic**
+
+- [ ] **`Mesh::Create(filename)` throws instead of returning `nullptr`** (`Mesh.cpp:31-40`) — contradicts its own doc comment and its two sibling `Create()` overloads. Masked today because its one caller (`ResourceManager::LoadMesh`) happens to catch it.
+- [ ] **OBJ parser doesn't support negative/relative face indices** (`Mesh.cpp:127-136`) — silently collapses that vertex to the origin instead of resolving it; a whole-face collapse can further produce a NaN normal.
+- [ ] **Skydome shader failing to compile leaks one VAO/frame in Debug builds** (`Scene.cpp:95-99`) — never triggered by shaders currently in the repo.
+- [ ] **`Shader`/`Texture` own a raw GL handle but never disable copy** (`Shader.hpp`, `Texture.hpp`) — an accidental copy would double-free. Never triggered today (both only ever used via `shared_ptr`).
+- [ ] **`LightDemoLayer`'s Q-key handler indexes `materials_[1]` directly instead of a tag lookup** (`LightDemoLayer.cpp:132`) — works today only by `push_back` order coincidence (already flagged in a comment there).
+- [ ] **`LoadShader`'s cache key could theoretically collide** (`ResourceManager.cpp:29`) — `vertPath + "||" + fragPath`; no current shader path contains `"||"`.
+- [ ] **Malformed `v`/`vn`/`vt` lines silently default missing components to `0.0`** (`Mesh.cpp:69-84`) — no warning, unlike `f` lines which do get a token-count check.
+- [ ] **`SetOrthographic`/`SetBoost` accept invalid values with no validation** (`Camera.cpp`) — zero/negative half-height, negative boost. Not hit by any current call site.
+
+---
+
 ## Known bugs / issues found in audit
 
 - [x] **Normal matrix computed on GPU** (`vertex.glsl:18`) — fixed: computed once per draw on the CPU (`glm::transpose(glm::inverse(modelMatrix))`) and uploaded as `uniform mat3 uNormalMatrix`; the vertex shader just does `vNormal = uNormalMatrix * aNormal` now. Originally landed in `TestLayer::OnRender`, later moved into base `Layer::Render()` — see the Completed section.

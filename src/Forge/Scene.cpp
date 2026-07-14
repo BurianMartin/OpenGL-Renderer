@@ -159,6 +159,11 @@ namespace Forge
 
     void Scene::AddLight(std::shared_ptr<Light> light)
     {
+        if (static_cast<GLint>(lights_.size()) >= fctx_->MAX_LIGHTS)
+        {
+            debug_warn("Scene::AddLight: at MAX_LIGHTS (" << fctx_->MAX_LIGHTS << "), dropping light");
+            return;
+        }
         lights_.push_back(light);
     }
 

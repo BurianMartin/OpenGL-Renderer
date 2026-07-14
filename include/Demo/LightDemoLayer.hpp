@@ -37,8 +37,7 @@ namespace Demo
         bool OnEvent(Forge::Event &e) override;
         /// No-op — this demo layer has no per-frame logic of its own.
         void OnUpdate() override;
-        // void Transition() override;
-        // void Suspend() const override;
+
         /// Binds each material once, then sets `uModel`/`uNormalMatrix` and draws every model in its bucket.
         void OnRender(std::shared_ptr<Forge::FrameContext> ctx) const override;
         /// No-op — this demo layer owns no resources beyond what `shared_ptr` already manages.

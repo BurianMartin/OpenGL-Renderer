@@ -116,12 +116,12 @@ namespace Forge
 
     void Camera::MoveLeft(GLfloat delta_time)
     {
-        position_ -= glm::normalize(glm::cross(front_, up_)) * speed_ * delta_time;
+        position_ -= glm::normalize(glm::cross(front_, up_)) * (speed_ + boost_) * delta_time;
     }
 
     void Camera::MoveRight(GLfloat delta_time)
     {
-        position_ += glm::normalize(glm::cross(front_, up_)) * speed_ * delta_time;
+        position_ += glm::normalize(glm::cross(front_, up_)) * (speed_ + boost_) * delta_time;
     }
 
     void Camera::Rotate(GLfloat x_offset, GLfloat y_offset)
