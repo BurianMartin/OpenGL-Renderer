@@ -113,5 +113,19 @@ namespace Forge
 
         /// Resets the active camera's mouse tracking (see Camera::ResetMouseTracking) so its next ProcessMousePosition call primes instead of jumping. Call whenever this scene becomes newly active — e.g. on a scene switch — since its camera's last-known cursor position may be stale from whenever it was last active.
         void ResetMouse();
+
+        /// Scene-switch hook: called by Resume() whenever this scene becomes active through Engine::SetScene (e.g. Tab-cycling). Deliberately NOT called for the first scene's initial activation at startup — AddScene marks the first registered scene active immediately, so Run()'s switch branch never fires on frame one. Put initial-activation work in OnSceneBoot(); use this hook for work needed whenever the engine switches (back) to this scene. See CLAUDE.md's Engine bullet for the full lifecycle note.
+        virtual void OnResume(std::shared_ptr<Forge::FrameContext> fctx) = 0;
+        /// Scene-switch hook: called on the outgoing scene just before the incoming scene's Resume(). Default is a no-op. Same startup caveat as OnResume — never runs at startup, and the scene active at window close gets Destroy() only, never a final Suspend().
+        virtual void Suspend() {}
+
+        /// Called by Engine::Run when a pending scene switch lands (never for the first scene at startup — see OnResume): resets the GL viewport to the full window, re-syncs every camera's stored window size (resize events only reach the active scene, so an inactive scene's cameras go stale across resizes), then calls the OnResume hook.
+        void Resume()
+        {
+            glViewport(0, 0, fctx_->window_width_, fctx_->window_height_);
+            for (auto &camera : cameras_)
+                camera.UpdateViewportSize(fctx_->window_width_, fctx_->window_height_);
+            OnResume(fctx_);
+        }
     };
 } // namespace Forge

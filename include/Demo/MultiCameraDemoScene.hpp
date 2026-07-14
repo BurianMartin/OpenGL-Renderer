@@ -49,5 +49,7 @@ namespace Demo
 
         /// Creates and positions the main + picture-in-picture cameras, adds a `LightDemoLayer`, sets the Skydome background, and adds one light per station (same layout as `LightDemoScene`).
         virtual void OnSceneBoot() override;
+
+        virtual void OnResume(std::shared_ptr<Forge::FrameContext> fctx) override {}
     };
 }

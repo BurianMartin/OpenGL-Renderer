@@ -3,6 +3,7 @@
 #include "Forge/Light.hpp"
 
 #include <glm/gtc/constants.hpp>
+#include "LightDemoLayer.hpp"
 namespace Demo
 {
     namespace
@@ -95,6 +96,8 @@ namespace Demo
 
         materialModels_[crateMat].push_back(crateModel);
         materials_.push_back(crateMat);
+
+        // auto hello = Forge::Text::Create("Hello world", 400, 350, 22, Forge::Color::White);
 
         // --- Tween demo: the Ruby cube spins 360° forever. SetSpin builds the rotation directly
         // from a continuously growing angle instead of slerping between two fixed quaternions —

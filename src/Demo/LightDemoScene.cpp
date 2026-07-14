@@ -1,6 +1,7 @@
 #include "Demo/LightDemoScene.hpp"
 #include "Forge/Camera.hpp"
 #include "Forge/Lights.hpp"
+#include "LightDemoScene.hpp"
 
 namespace Demo
 {
@@ -109,15 +110,19 @@ namespace Demo
         // Point-light attenuation (default range ~50 units) means neighboring stations still
         // get some spill; that's realistic, not a bug — each station is *dominated* by its
         // own light, not exclusively lit by it.
-        AddLight(Forge::PointLight::Create(glm::vec3(-2.5f, 2.0f, -1.0f), glm::vec3(1.0f, 0.85f, 0.6f), 2.0f));  // Station 1 — warm key, over the Gold cube
-        AddLight(Forge::PointLight::Create(glm::vec3(2.5f, 2.0f, -3.5f), glm::vec3(0.75f, 0.85f, 1.0f), 2.0f));  // Station 2 — cool rim, over the Silver cube
-        AddLight(Forge::PointLight::Create(glm::vec3(-2.5f, 2.0f, -6.0f), glm::vec3(1.0f, 0.6f, 0.65f), 2.0f));  // Station 3 — warm rim, over the Ruby cube
+        AddLight(Forge::PointLight::Create(glm::vec3(-2.5f, 2.0f, -1.0f), glm::vec3(1.0f, 0.85f, 0.6f), 2.0f)); // Station 1 — warm key, over the Gold cube
+        AddLight(Forge::PointLight::Create(glm::vec3(2.5f, 2.0f, -3.5f), glm::vec3(0.75f, 0.85f, 1.0f), 2.0f)); // Station 2 — cool rim, over the Silver cube
+        AddLight(Forge::PointLight::Create(glm::vec3(-2.5f, 2.0f, -6.0f), glm::vec3(1.0f, 0.6f, 0.65f), 2.0f)); // Station 3 — warm rim, over the Ruby cube
         AddLight(Forge::SpotLight::Create(glm::vec3(2.5f, 3.5f, -8.5f), glm::vec3(0.0f, -1.0f, 0.0f),
-                                           glm::vec3(0.75f, 1.0f, 0.85f), 2.5f, 12.5f, 20.0f)); // Station 4 — spot, aimed straight down at the Emerald cube
+                                          glm::vec3(0.75f, 1.0f, 0.85f), 2.5f, 12.5f, 20.0f)); // Station 4 — spot, aimed straight down at the Emerald cube
 
         // "Sun" — illuminates every station (and the floor) uniformly regardless of position;
         // the skybox's own sun disc is aimed opposite this direction, so the two agree.
         AddLight(Forge::DirectionalLight::Create(glm::vec3(0.60f, -1.0f, 0.30f), glm::vec3(1.0f, 1.0f, 1.0f), 0.5f));
+    }
+
+    void LightDemoScene::OnResume(std::shared_ptr<Forge::FrameContext> fctx)
+    {
     }
 
 } // namespace Demo

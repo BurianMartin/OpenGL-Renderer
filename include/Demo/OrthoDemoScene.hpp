@@ -43,5 +43,7 @@ namespace Demo
 
         /// Creates the fixed top-down orthographic camera, adds a `LightDemoLayer`, a solid background, and one light per station (same layout as the other demo scenes).
         virtual void OnSceneBoot() override;
+
+        virtual void OnResume(std::shared_ptr<Forge::FrameContext> fctx) override {}
     };
 }

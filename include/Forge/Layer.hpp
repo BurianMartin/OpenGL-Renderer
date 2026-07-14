@@ -68,7 +68,6 @@ namespace Forge
         /// Per-frame logic, called once per frame before rendering.
         virtual void OnUpdate() = 0;
         // virtual void Transition() = 0;
-        // virtual void Suspend() const = 0;
 
         /// Is called before rendering the layer's objects
         virtual void OnRender(std::shared_ptr<FrameContext> ctx) const = 0;
