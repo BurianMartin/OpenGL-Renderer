@@ -91,9 +91,12 @@ if(BUILD_TESTS)
 
     add_executable(EngineCore_tests
         test/test_camera.cpp
+        test/test_viewport.cpp
         test/test_mesh.cpp
         test/test_lights.cpp
         test/test_model.cpp
+        test/test_tweens.cpp
+        test/test_prop.cpp
         test/test_colors.cpp
         test/test_keys.cpp
     )

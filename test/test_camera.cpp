@@ -188,6 +188,48 @@ TEST(CameraTest, OrthographicProjectionScalesWidthWithAspectRatio)
     ExpectMat4Near(test_cam.GetProjectionMatrix(), expected, 1e-5f);
 }
 
+// SetBoost adds to speed_ across every movement direction (see Camera.cpp's MoveForward/
+// MoveLeft/etc., all scaling by (speed_ + boost_)) - a sprint key should cover more ground
+// per frame than the same held direction without it. Default speed_ is 1.0 (see
+// MoveForwardUpdatesPosition's unboosted z delta of 1.0).
+TEST(CameraTest, SetBoostIncreasesForwardMovementDistance)
+{
+    Forge::Camera test_cam(Forge::Viewport(0, 0, 1.0f, 1.0f, 1080, 1080));
+    test_cam.SetBoost(2.0f);
+    test_cam.CameraMove(Forge::CamMove::FORWARD, true);
+    test_cam.Update(1.0f);
+    glm::vec3 position = test_cam.GetPosition();
+    // speed 1.0 + boost 2.0 = 3.0 units forward (front_ is (0,0,-1) initially, start z=3)
+    EXPECT_FLOAT_EQ(position.x, 0.0f);
+    EXPECT_FLOAT_EQ(position.y, 0.0f);
+    EXPECT_FLOAT_EQ(position.z, 0.0f);
+}
+
+TEST(CameraTest, ZeroBoostMatchesUnboostedMovement)
+{
+    Forge::Camera test_cam(Forge::Viewport(0, 0, 1.0f, 1.0f, 1080, 1080));
+    test_cam.SetBoost(0.0f);
+    test_cam.CameraMove(Forge::CamMove::FORWARD, true);
+    test_cam.Update(1.0f);
+    EXPECT_FLOAT_EQ(test_cam.GetPosition().z, 2.0f); // matches MoveForwardUpdatesPosition's unboosted result
+}
+
+// Regression guard: MoveLeft/MoveRight previously didn't apply boost_ at all (fixed in
+// commit 01d67cd) - this exercises a strafe direction specifically, unlike the forward-only
+// tests above, so a future regression on this exact bug would be caught here.
+TEST(CameraTest, SetBoostAppliesToStrafingToo)
+{
+    Forge::Camera test_cam(Forge::Viewport(0, 0, 1.0f, 1.0f, 1080, 1080));
+    test_cam.SetBoost(2.0f);
+    test_cam.CameraMove(Forge::CamMove::RIGHT, true);
+    test_cam.Update(1.0f);
+    glm::vec3 position = test_cam.GetPosition();
+    // speed 1.0 + boost 2.0 = 3.0 units strafed right (cross(front,up) is (1,0,0) initially)
+    EXPECT_FLOAT_EQ(position.x, 3.0f);
+    EXPECT_FLOAT_EQ(position.y, 0.0f);
+    EXPECT_FLOAT_EQ(position.z, 3.0f);
+}
+
 // Regression guard for the documented straight-down degeneracy: with the default up (0,1,0),
 // pitch -90 makes front_ nearly antiparallel to up_, collapsing glm::lookAt's internal
 // cross(front, up) toward zero and corrupting the view matrix's rotation basis. SetUp must fix

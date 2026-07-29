@@ -159,4 +159,21 @@ namespace Forge
         EVENT_CLASS_TYPE(WindowResize);
     };
 
+    class WindowLostFocusEvent : public Event
+    {
+
+    public:
+        WindowLostFocusEvent() {}
+
+        std::string ToString() const { return "WindowLostFocusEvent"; }
+
+        EVENT_CLASS_TYPE(WindowLostFocus);
+    };
+
+    enum class CursorMode
+    {
+        Captured = 212995,
+        Normal = 212993
+    };
+
 } // namespace Forge

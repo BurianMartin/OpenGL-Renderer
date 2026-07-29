@@ -22,7 +22,8 @@ namespace Forge
         MouseButtonPressed,
         MouseButtonReleased,
         MouseMoved,
-        MouseScrolled
+        MouseScrolled,
+        WindowLostFocus
     };
 
     /**

@@ -42,6 +42,25 @@ namespace Forge
         }
     };
 
+    /// One `usemtl` group's worth of parsed OBJ geometry (see `Mesh::ParseObjFileGroups`).
+    /// `materialName` is the raw `usemtl` name as written in the file (empty string for
+    /// faces that appear before the first `usemtl` line, or in a file with none at all) —
+    /// it's a lookup key for the caller to resolve into a real Material, not a Material itself.
+    struct ParsedMeshGroup
+    {
+        std::string materialName;
+        ParsedMeshData mesh;
+    };
+
+    class Mesh;
+
+    /// One `usemtl` group's worth of GPU-ready geometry (see `Mesh::CreateGroups`).
+    struct MeshGroup
+    {
+        std::string materialName;
+        std::shared_ptr<Mesh> mesh;
+    };
+
     /**
      * @brief Owns a GPU vertex/index buffer set (VAO/VBO/EBO) for one drawable mesh.
      *
@@ -83,18 +102,52 @@ namespace Forge
         static std::shared_ptr<Mesh> Create(const std::string &filename, GLenum drawMode = GL_TRIANGLES);
 
         /**
+         * @brief Loads a Wavefront OBJ file that uses `usemtl` to mark multiple material
+         *        groups, producing one GPU Mesh per group instead of one for the whole file.
+         *
+         * The referenced `mtllib`, if any, is never opened — a `usemtl` name is only used
+         * as a grouping/lookup key here, not resolved into real material parameters; the
+         * caller maps each returned `materialName` to an actual `Material` itself (e.g. via
+         * `ResourceManager::LoadMaterial`). Faces before the first `usemtl` line (or every
+         * face, in a file with none at all) land in a single group keyed by an empty string.
+         * @param filename Path to the `.obj` file, resolved relative to the process's working directory (run from the project root).
+         * @return One `MeshGroup` per distinct `usemtl` name, in first-appearance order; empty if the file couldn't be opened or produced no vertices.
+         */
+        static std::vector<MeshGroup> CreateGroups(const std::string &filename, GLenum drawMode = GL_TRIANGLES);
+
+        /**
          * @brief Parses Wavefront OBJ geometry from a stream into vertex/index data, generating
          *        flat per-face normals if the source has none.
          *
          * Pure CPU logic - touches no GPU resources - split out of `Create(filename)` specifically
          * so it can be unit tested without a GL context. Takes a stream rather than a filename so
          * tests can pass an in-memory `std::istringstream` instead of a real file on disk.
+         *
+         * Implemented in terms of `ParseObjFileGroups`: if the source has more than one
+         * `usemtl` group, they're merged back into a single combined vertex/index buffer
+         * (material boundaries are dropped) so this function's return type/behavior stays
+         * exactly what it was before group support existed.
          * @param input Stream containing OBJ-format text.
          * @param sourceName Used only for warning/log messages (e.g. the original filename).
          * @return Parsed vertex/index data.
          * @throws std::runtime_error if the stream produced no vertices.
          */
         static ParsedMeshData ParseObjFile(std::istream &input, const std::string &sourceName);
+
+        /**
+         * @brief Parses Wavefront OBJ geometry from a stream into one `ParsedMeshGroup` per
+         *        `usemtl` name, generating flat per-face normals (per group) if the source
+         *        has no `vn` data at all.
+         *
+         * Pure CPU logic, same rationale as `ParseObjFile` (unit-testable without a GL
+         * context). `v`/`vn`/`vt` indexing is shared across the whole file as normal OBJ
+         * semantics require — only face-to-material association is grouped.
+         * @param input Stream containing OBJ-format text.
+         * @param sourceName Used only for warning/log messages (e.g. the original filename).
+         * @return One group per distinct `usemtl` name, in first-appearance order.
+         * @throws std::runtime_error if the stream produced no vertices.
+         */
+        static std::vector<ParsedMeshGroup> ParseObjFileGroups(std::istream &input, const std::string &sourceName);
 
         ~Mesh();
 

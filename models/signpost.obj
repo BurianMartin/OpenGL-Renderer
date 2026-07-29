@@ -1,0 +1,33 @@
+# Two-part sub-mesh demo asset: a wooden post + a metal sign board, one usemtl group
+# each. Deliberately has no vn/vt data at all so loading this exercises Mesh::ParseObjFileGroups'
+# per-group flat-normal-generation path, not just the "vn present" path.
+usemtl wood
+v -0.15 0.0 -0.15
+v  0.15 0.0 -0.15
+v  0.15 0.0  0.15
+v -0.15 0.0  0.15
+v -0.15 2.0 -0.15
+v  0.15 2.0 -0.15
+v  0.15 2.0  0.15
+v -0.15 2.0  0.15
+f 1 2 3 4
+f 5 8 7 6
+f 4 3 7 8
+f 2 1 5 6
+f 3 2 6 7
+f 1 4 8 5
+usemtl metal
+v -0.5 2.0 -0.05
+v  0.5 2.0 -0.05
+v  0.5 2.0  0.05
+v -0.5 2.0  0.05
+v -0.5 2.6 -0.05
+v  0.5 2.6 -0.05
+v  0.5 2.6  0.05
+v -0.5 2.6  0.05
+f 9 10 11 12
+f 13 16 15 14
+f 12 11 15 16
+f 10 9 13 14
+f 11 10 14 15
+f 9 12 16 13

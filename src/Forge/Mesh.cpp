@@ -39,7 +39,60 @@ namespace Forge
         return std::shared_ptr<Mesh>(new Mesh(filename, parsed.vertices, parsed.indices, drawMode));
     }
 
+    std::vector<MeshGroup> Mesh::CreateGroups(const std::string &filename, GLenum drawMode)
+    {
+        std::ifstream file(filename);
+        if (!file.is_open())
+        {
+            debug_warn("Failed to open OBJ file: " << filename);
+            return {};
+        }
+
+        std::vector<ParsedMeshGroup> parsedGroups;
+        try
+        {
+            parsedGroups = ParseObjFileGroups(file, filename);
+        }
+        catch (const std::exception &e)
+        {
+            debug_warn("Failed to parse OBJ file groups: " << e.what());
+            return {};
+        }
+
+        std::vector<MeshGroup> groups;
+        groups.reserve(parsedGroups.size());
+        for (auto &parsedGroup : parsedGroups)
+        {
+            auto mesh = Create(filename + "#" + parsedGroup.materialName, parsedGroup.mesh.vertices, parsedGroup.mesh.indices, drawMode);
+            if (mesh)
+                groups.push_back(MeshGroup{parsedGroup.materialName, mesh});
+        }
+
+        return groups;
+    }
+
     ParsedMeshData Mesh::ParseObjFile(std::istream &input, const std::string &sourceName)
+    {
+        std::vector<ParsedMeshGroup> groups = ParseObjFileGroups(input, sourceName);
+
+        if (groups.size() == 1)
+            return std::move(groups[0].mesh);
+
+        // More than one usemtl group but the caller only wants one mesh (this function's
+        // contract predates group support): merge every group back into a single combined
+        // vertex/index buffer, dropping material boundaries entirely.
+        ParsedMeshData merged;
+        for (auto &group : groups)
+        {
+            unsigned int base = static_cast<unsigned int>(merged.vertices.size());
+            merged.vertices.insert(merged.vertices.end(), group.mesh.vertices.begin(), group.mesh.vertices.end());
+            for (unsigned int index : group.mesh.indices)
+                merged.indices.push_back(base + index);
+        }
+        return merged;
+    }
+
+    std::vector<ParsedMeshGroup> Mesh::ParseObjFileGroups(std::istream &input, const std::string &sourceName)
     {
         if (!std::filesystem::exists(sourceName))
         {
@@ -51,8 +104,17 @@ namespace Forge
         std::vector<glm::vec2> texCoords;
 
         std::vector<Vertex> vertices;
-        std::vector<unsigned int> indices;
         std::unordered_map<std::string, unsigned int> uniqueVertices;
+
+        // Faces are bucketed by whichever `usemtl` name was most recently seen; faces
+        // before the first `usemtl` line (or every face, in a file with none at all) land
+        // in the default "" group. `groupOrder` preserves first-appearance order since
+        // `unordered_map` doesn't.
+        std::unordered_map<std::string, std::vector<unsigned int>> groupIndices;
+        std::vector<std::string> groupOrder;
+        std::string currentMaterial; // default "" group
+        groupIndices[currentMaterial] = {};
+        groupOrder.push_back(currentMaterial);
 
         std::string line;
         while (std::getline(input, line))
@@ -82,6 +144,15 @@ namespace Forge
                 ss >> uv.x >> uv.y;
                 uv.y = 1.0f - uv.y; // flip Y for OpenGL
                 texCoords.push_back(uv);
+            }
+            else if (token == "usemtl")
+            {
+                ss >> currentMaterial;
+                if (groupIndices.count(currentMaterial) == 0)
+                {
+                    groupIndices[currentMaterial] = {};
+                    groupOrder.push_back(currentMaterial);
+                }
             }
             else if (token == "f")
             {
@@ -143,11 +214,12 @@ namespace Forge
 
                 // Fan-triangulate: assumes a convex, planar face (true for Blender's
                 // default export). indices[0] anchors every triangle in the fan.
+                std::vector<unsigned int> &currentGroupIndices = groupIndices[currentMaterial];
                 for (size_t i = 1; i + 1 < faceIndices.size(); ++i)
                 {
-                    indices.push_back(faceIndices[0]);
-                    indices.push_back(faceIndices[i]);
-                    indices.push_back(faceIndices[i + 1]);
+                    currentGroupIndices.push_back(faceIndices[0]);
+                    currentGroupIndices.push_back(faceIndices[i]);
+                    currentGroupIndices.push_back(faceIndices[i + 1]);
                 }
             }
         }
@@ -155,23 +227,37 @@ namespace Forge
         if (vertices.empty())
             throw std::runtime_error("OBJ file produced no vertices: " + sourceName);
 
-        if (normals.empty())
-        {
+        bool needsFlatNormals = normals.empty();
+        if (needsFlatNormals)
             debug_info("No normals found in " << sourceName << " — generating flat normals");
 
-            // Expand to one vertex per index so each triangle gets its own
-            // unshared vertices — shared vertices would get overwritten by the
-            // last face that touches them, giving wrong normals at edges/corners.
+        std::vector<ParsedMeshGroup> result;
+        for (const auto &materialName : groupOrder)
+        {
+            const std::vector<unsigned int> &sourceIndices = groupIndices[materialName];
+            if (sourceIndices.empty())
+                continue; // e.g. the default "" group when every face has a usemtl
+
+            if (!needsFlatNormals)
+            {
+                result.push_back(ParsedMeshGroup{materialName, ParsedMeshData{vertices, sourceIndices}});
+                continue;
+            }
+
+            // Expand to one vertex per index so each triangle gets its own unshared
+            // vertices — shared vertices would get overwritten by the last face that
+            // touches them, giving wrong normals at edges/corners. Done per group so
+            // each group's ParsedMeshData stays self-contained.
             std::vector<Vertex> flat;
             std::vector<unsigned int> flatIndices;
-            flat.reserve(indices.size());
-            flatIndices.reserve(indices.size());
+            flat.reserve(sourceIndices.size());
+            flatIndices.reserve(sourceIndices.size());
 
-            for (size_t i = 0; i < indices.size(); i += 3)
+            for (size_t i = 0; i < sourceIndices.size(); i += 3)
             {
-                Vertex v0 = vertices[indices[i]];
-                Vertex v1 = vertices[indices[i + 1]];
-                Vertex v2 = vertices[indices[i + 2]];
+                Vertex v0 = vertices[sourceIndices[i]];
+                Vertex v1 = vertices[sourceIndices[i + 1]];
+                Vertex v2 = vertices[sourceIndices[i + 2]];
 
                 glm::vec3 normal = glm::normalize(glm::cross(v1.position - v0.position, v2.position - v0.position));
                 v0.normal = v1.normal = v2.normal = normal;
@@ -185,13 +271,12 @@ namespace Forge
                 flatIndices.push_back(base + 2);
             }
 
-            vertices = std::move(flat);
-            indices = std::move(flatIndices);
+            result.push_back(ParsedMeshGroup{materialName, ParsedMeshData{std::move(flat), std::move(flatIndices)}});
         }
 
-        debug_info("Loaded OBJ: " << sourceName << " — " << vertices.size() << " vertices, " << indices.size() / 3 << " triangles");
+        debug_info("Loaded OBJ: " << sourceName << " — " << vertices.size() << " vertices, " << result.size() << " material group(s)");
 
-        return ParsedMeshData{std::move(vertices), std::move(indices)};
+        return result;
     }
 
     Mesh::Mesh(const std::string &tag, const std::vector<Vertex> &vertices, const std::vector<unsigned int> &indices, GLenum drawMode)
