@@ -41,7 +41,7 @@ namespace Forge
         }
 
         // Capture and hide the mouse
-        glfwSetInputMode(window_, GLFW_CURSOR, cursor_mode_);
+        glfwSetInputMode(window_, GLFW_CURSOR, static_cast<int>(cursor_mode_));
 
         glfwMakeContextCurrent(window_);
 
@@ -148,64 +148,61 @@ namespace Forge
         }
     }
 
+    bool Engine::HandleEvent(Event &event)
+    {
+        if (event_handler_)
+        {
+            return event_handler_(event);
+        }
+        return false;
+    }
+
+    bool Engine::IsPressed(Forge::Key key)
+    {
+        return key_states_[static_cast<size_t>(key)] == KeyState::Pressed || key_states_[static_cast<size_t>(key)] == KeyState::Repeat;
+    }
+
+    bool Engine::IsRepeat(Forge::Key key)
+    {
+        return key_states_[static_cast<size_t>(key)] == KeyState::Repeat;
+    }
+
     void Engine::RaiseEvent(Event &event)
     {
-        switch (event.GetEventType())
+        if (event.GetEventType() == Forge::EventType::WindowLostFocus)
         {
-        case Forge::EventType::KeyPressed:
-        {
-            auto ev = static_cast<KeyPressedEvent &>(event);
-            switch (ev.GetKeyCode())
-            {
-            case Forge::Key::Escape:
-                glfwSetWindowShouldClose(window_, true); // Close the app with esc key press
-                return;
-                break;
-
-            case Forge::Key::Tab:
-                SetScene((current_scene_ + 1) % scenes_.size());
-                break;
-
-            case Forge::Key::GraveAccent: // Basicalyl a semicolon key, changing the cursor mode from captured to free
-                if (cursor_mode_ == GLFW_CURSOR_NORMAL)
-                {
-                    cursor_mode_ = GLFW_CURSOR_DISABLED;
-
-                    if (current_scene_ != -1)
-                    {
-                        scenes_[current_scene_]->OnMouseCapture();
-                    }
-                }
-                else
-                {
-                    cursor_mode_ = GLFW_CURSOR_NORMAL;
-                }
-                glfwSetInputMode(window_, GLFW_CURSOR, cursor_mode_);
-
-                break;
-            default:
-                break;
-            }
-            break;
-        }
-        case Forge::EventType::WindowClose:
-        {
-            glfwSetWindowShouldClose(window_, true);
+            key_states_.fill(KeyState::Released);
             return;
-            break;
         }
-        case Forge::EventType::WindowResize:
+        else if (event.GetEventType() == Forge::EventType::KeyPressed)
         {
-            auto ev = static_cast<WindowResizeEvent &>(event);
-            glViewport(0, 0, ev.GetWidth(), ev.GetHeight());
-            auto fctx = renderer_.GetFrameContext();
-            fctx->window_width_ = ev.GetWidth();
-            fctx->window_height_ = ev.GetHeight();
-            break; // forward to scene so it can update aspect ratio
+            auto ev = static_cast<Forge::KeyPressedEvent &>(event);
+            if (ev.GetKeyCode() == Forge::Key::Unknown)
+            {
+                return;
+            }
+            else if (ev.IsRepeat())
+            {
+                key_states_[static_cast<size_t>(ev.GetKeyCode())] = KeyState::Repeat;
+            }
+            else
+            {
+                key_states_[static_cast<size_t>(ev.GetKeyCode())] = KeyState::Pressed;
+            }
+        }
+        else if (event.GetEventType() == Forge::EventType::KeyReleased)
+        {
+            auto ev = static_cast<Forge::KeyReleasedEvent &>(event);
+            if (ev.GetKeyCode() == Forge::Key::Unknown)
+            {
+                return;
+            }
+            key_states_[static_cast<size_t>(ev.GetKeyCode())] = KeyState::Released;
         }
 
-        default:
-            break;
+        if (!HandleEvent(event))
+        {
+            return;
         }
 
         if (current_scene_ == -1)
@@ -215,10 +212,53 @@ namespace Forge
         }
 
         // Only rotate camera when cursor is captured
-        if (event.GetEventType() == Forge::EventType::MouseMoved && cursor_mode_ != GLFW_CURSOR_DISABLED)
+        if (event.GetEventType() == Forge::EventType::MouseMoved && cursor_mode_ != Forge::CursorMode::Captured)
             return;
 
         scenes_[current_scene_]->OnEvent(event);
+    }
+
+    void Engine::AdjustViewport(GLint width, GLint height)
+    {
+        glViewport(0, 0, width, height);
+        auto fctx = renderer_.GetFrameContext();
+        fctx->window_width_ = width;
+        fctx->window_height_ = height;
+    }
+
+    void Engine::CloseWindow()
+    {
+        glfwSetWindowShouldClose(window_, true);
+    }
+
+    void Engine::NextScene()
+    {
+        SetScene((current_scene_ + 1) % scenes_.size());
+    }
+    void Engine::PrevScene()
+    {
+        SetScene((current_scene_ - 1 + scenes_.size()) % scenes_.size());
+    }
+
+    void Engine::SetCursorMode(Forge::CursorMode mode)
+    {
+        cursor_mode_ = mode;
+        if (current_scene_ != -1)
+        {
+            scenes_[current_scene_]->OnMouseCapture();
+        }
+
+        glfwSetInputMode(window_, GLFW_CURSOR, static_cast<int>(cursor_mode_));
+    }
+
+    Forge::CursorMode Engine::GetCursorMode() const
+    {
+        return cursor_mode_;
+    }
+
+    void Engine::SetEventHandler(std::function<bool(Event &)> handler)
+    {
+        event_handler_ = handler;
     }
 
 } // namespace Forge

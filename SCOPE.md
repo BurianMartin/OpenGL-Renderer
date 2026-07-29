@@ -70,7 +70,9 @@ of scope." Kept as their own tier rather than silently folded into Tier 2 so tha
 distinction — genuinely useful engine work vs. TCG-required work — stays visible.
 - [x] Multiple cameras / split-screen — done, see `ROADMAP.md`'s Open Architecture section
 - [x] Skybox / Skydome — done, both implemented (procedural, no textures), see `ROADMAP.md`'s Completed section
-- [ ] Sub-mesh support — the one item here not started yet, see `ROADMAP.md`'s Backlog section
+- [x] Sub-mesh support — done, see `ROADMAP.md`'s Open Architecture section
+
+All three Tier 3 items are now done.
 
 ## Explicitly out of scope for v1.0 (maybe ever)
 

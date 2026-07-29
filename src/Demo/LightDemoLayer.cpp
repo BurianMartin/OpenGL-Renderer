@@ -1,6 +1,7 @@
 #include "Demo/LightDemoLayer.hpp"
 #include "Forge/Material.hpp"
 #include "Forge/Light.hpp"
+#include "Forge/Prop.hpp"
 
 #include <glm/gtc/constants.hpp>
 #include "LightDemoLayer.hpp"
@@ -96,6 +97,34 @@ namespace Demo
 
         materialModels_[crateMat].push_back(crateModel);
         materials_.push_back(crateMat);
+
+        // --- Sixth station: a sub-meshed signpost — one OBJ file, two `usemtl` groups
+        // (a wooden post + a metal board), loaded as two separate Meshes via CreateGroups
+        // and held together in a Prop so one SetPosition call places both parts as a
+        // single object instead of the caller having to move each Model by hand. ---
+        auto signpostGroups = Forge::Mesh::CreateGroups("models/signpost.obj");
+        if (signpostGroups.empty())
+            debug_error("Failed to load models/signpost.obj");
+
+        auto signpostWoodMat = Forge::Material::Create(solidColorShader, "SignpostWood",
+                                                        glm::vec3(0.1f, 0.06f, 0.03f), glm::vec3(0.45f, 0.28f, 0.14f),
+                                                        glm::vec3(0.1f, 0.08f, 0.06f), 8.0f);
+        auto signpostMetalMat = Forge::Material::Create(solidColorShader, "SignpostMetal",
+                                                         glm::vec3(0.1f, 0.1f, 0.11f), glm::vec3(0.4f, 0.4f, 0.45f),
+                                                         glm::vec3(0.7f, 0.7f, 0.75f), 64.0f);
+
+        Forge::Prop signpost;
+        for (const auto &group : signpostGroups)
+        {
+            auto material = group.materialName == "metal" ? signpostMetalMat : signpostWoodMat;
+            auto model = std::make_shared<Forge::Model>(group.mesh);
+            signpost.AddPart(model);
+            materialModels_[material].push_back(model);
+        }
+        signpost.SetPosition(glm::vec3(0.0f, -1.2f, -13.0f)); // Station 6 — lit only by the directional "sun" + ambient spill, same as the crate
+
+        materials_.push_back(signpostWoodMat);
+        materials_.push_back(signpostMetalMat);
 
         // auto hello = Forge::Text::Create("Hello world", 400, 350, 22, Forge::Color::White);
 

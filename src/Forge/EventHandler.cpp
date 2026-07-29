@@ -85,6 +85,15 @@ namespace Forge
             EventHandler *handler = static_cast<Forge::EventHandler *>(glfwGetWindowUserPointer(win));
             MouseScrolledEvent event(xoffset, yoffset);
             handler->RaiseEvent(event); });
+
+        glfwSetWindowFocusCallback(window_, [](GLFWwindow *win, int focused)
+                                   {
+            EventHandler *handler = static_cast<Forge::EventHandler *>(glfwGetWindowUserPointer(win));
+            if (!focused) 
+                {
+                    WindowLostFocusEvent event;
+                    handler->RaiseEvent(event);
+                } });
     }
 
     void EventHandler::RaiseEvent(Event &e)

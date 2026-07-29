@@ -13,6 +13,12 @@ namespace
         return Forge::Mesh::ParseObjFile(stream, sourceName);
     }
 
+    std::vector<Forge::ParsedMeshGroup> ParseObjStringGroups(const std::string &objText, const std::string &sourceName = "test.obj")
+    {
+        std::istringstream stream(objText);
+        return Forge::Mesh::ParseObjFileGroups(stream, sourceName);
+    }
+
     void ExpectVec3Eq(const glm::vec3 &actual, const glm::vec3 &expected)
     {
         EXPECT_FLOAT_EQ(actual.x, expected.x);
@@ -182,8 +188,11 @@ TEST(MeshTest, DegenerateFaceIsSkippedButParsingContinues)
     EXPECT_EQ(result.indices, expectedIndices);
 }
 
-// Real OBJ files carry keywords this parser doesn't implement (o/g/s/usemtl/mtllib). None of
-// them match "v"/"vn"/"vt"/"f", so they must fall through silently rather than corrupt parsing.
+// Real OBJ files carry keywords this parser doesn't implement (o/g/s/mtllib) alongside
+// "usemtl", which it does now (see the "Material grouping" section further down) - none of
+// o/g/s/mtllib match "v"/"vn"/"vt"/"f"/"usemtl" and must still fall through silently rather
+// than corrupt parsing. This file only ever names one material, so ParseObjFile's
+// single-mesh view is unaffected either way: usemtl still ends up invisible to it.
 TEST(MeshTest, UnknownKeywordLinesAreIgnored)
 {
     auto result = ParseObjString(
@@ -269,6 +278,115 @@ TEST(MeshTest, NoNormalsExpandsToUnsharedFlatVertices)
     ASSERT_EQ(result.vertices.size(), 6u);
     for (const auto &vertex : result.vertices)
         ExpectVec3Eq(vertex.normal, glm::vec3(0.0f, 0.0f, 1.0f));
+}
+
+// --- Material grouping (usemtl) -----------------------------------------------------------
+//
+// ParseObjFileGroups buckets faces by whichever "usemtl" name was last seen, while v/vn/vt
+// parsing stays shared across the whole file (real OBJ semantics: usemtl only affects
+// face-to-material association, never vertex/texcoord/normal indexing). ParseObjFile is
+// defined in terms of it and merges every group back into one combined mesh, so its own
+// long-standing single-mesh contract is unaffected by any of this.
+
+TEST(MeshTest, NoUsemtlProducesOneUnnamedGroup)
+{
+    auto groups = ParseObjStringGroups(
+        "v 0 0 0\n"
+        "v 1 0 0\n"
+        "v 0 1 0\n"
+        "vn 0 0 1\n"
+        "f 1//1 2//1 3//1\n");
+
+    ASSERT_EQ(groups.size(), 1u);
+    EXPECT_EQ(groups[0].materialName, "");
+    std::vector<unsigned int> expectedIndices = {0, 1, 2};
+    EXPECT_EQ(groups[0].mesh.indices, expectedIndices);
+}
+
+TEST(MeshTest, UsemtlSplitsFacesIntoSeparateGroupsInFirstSeenOrder)
+{
+    auto groups = ParseObjStringGroups(
+        "v 0 0 0\n"
+        "v 1 0 0\n"
+        "v 0 1 0\n"
+        "v 5 5 5\n"
+        "vn 0 0 1\n"
+        "usemtl Wood\n"
+        "f 1//1 2//1 3//1\n"
+        "usemtl Metal\n"
+        "f 2//1 3//1 4//1\n");
+
+    ASSERT_EQ(groups.size(), 2u);
+    EXPECT_EQ(groups[0].materialName, "Wood");
+    std::vector<unsigned int> woodIndices = {0, 1, 2};
+    EXPECT_EQ(groups[0].mesh.indices, woodIndices);
+
+    EXPECT_EQ(groups[1].materialName, "Metal");
+    std::vector<unsigned int> metalIndices = {1, 2, 3};
+    EXPECT_EQ(groups[1].mesh.indices, metalIndices);
+
+    // Both groups share the same underlying vertex pool - usemtl never affects v/vn/vt indexing.
+    EXPECT_EQ(groups[0].mesh.vertices, groups[1].mesh.vertices);
+}
+
+TEST(MeshTest, FacesBeforeFirstUsemtlLandInDefaultGroup)
+{
+    auto groups = ParseObjStringGroups(
+        "v 0 0 0\n"
+        "v 1 0 0\n"
+        "v 0 1 0\n"
+        "v 5 5 5\n"
+        "vn 0 0 1\n"
+        "f 1//1 2//1 3//1\n" // before any usemtl line -> default "" group
+        "usemtl Metal\n"
+        "f 2//1 3//1 4//1\n");
+
+    ASSERT_EQ(groups.size(), 2u);
+    EXPECT_EQ(groups[0].materialName, "");
+    EXPECT_EQ(groups[1].materialName, "Metal");
+}
+
+TEST(MeshTest, FlatNormalGenerationRunsIndependentlyPerGroup)
+{
+    // No "vn" data at all: flat normal generation must run per group, not once globally,
+    // so each group's ParsedMeshData stays self-contained with its own unshared vertices.
+    auto groups = ParseObjStringGroups(
+        "v 0 0 0\n"
+        "v 1 0 0\n"
+        "v 1 1 0\n"
+        "v 0 1 0\n"
+        "usemtl A\n"
+        "f 1 2 3\n"
+        "usemtl B\n"
+        "f 1 3 4\n");
+
+    ASSERT_EQ(groups.size(), 2u);
+    EXPECT_EQ(groups[0].mesh.vertices.size(), 3u); // one triangle, expanded to 3 unshared vertices
+    EXPECT_EQ(groups[1].mesh.vertices.size(), 3u);
+    for (const auto &vertex : groups[0].mesh.vertices)
+        ExpectVec3Eq(vertex.normal, glm::vec3(0.0f, 0.0f, 1.0f));
+    for (const auto &vertex : groups[1].mesh.vertices)
+        ExpectVec3Eq(vertex.normal, glm::vec3(0.0f, 0.0f, 1.0f));
+}
+
+TEST(MeshTest, ParseObjFileMergesMultipleGroupsIntoOneCombinedMesh)
+{
+    // ParseObjFile predates group support and still returns exactly one mesh - a
+    // multi-material file must come back as every group combined, indices renumbered to
+    // point into the merged vertex buffer rather than just whichever group came first.
+    auto result = ParseObjString(
+        "v 0 0 0\n"
+        "v 1 0 0\n"
+        "v 1 1 0\n"
+        "v 0 1 0\n"
+        "usemtl A\n"
+        "f 1 2 3\n"
+        "usemtl B\n"
+        "f 1 3 4\n");
+
+    EXPECT_EQ(result.vertices.size(), 6u); // 3 + 3 flat-expanded vertices, both groups combined
+    std::vector<unsigned int> expectedIndices = {0, 1, 2, 3, 4, 5};
+    EXPECT_EQ(result.indices, expectedIndices);
 }
 
 TEST(MeshTest, EmptyInputThrows)

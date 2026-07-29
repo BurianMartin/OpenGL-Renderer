@@ -17,13 +17,15 @@ namespace Demo
     /**
      * @brief Demo `Forge::Layer` used to exercise the rendering/lighting pipeline against a real scene.
      *
-     * Builds a floor (hardcoded quad, no OBJ) plus five "stations" laid out along it — one
+     * Builds a floor (hardcoded quad, no OBJ) plus six "stations" laid out along it — one
      * cube per Blinn-Phong preset (Gold/Silver/Ruby/Emerald), each paired with a dedicated
      * light in `LightDemoScene::OnSceneBoot` so that light's effect dominates its own station,
-     * plus a fifth station for the textured crate (diffuse+specular mapping, as opposed to
-     * the flat presets). Populates `materialModels_`/`materials_` so `OnRender` has something
-     * to draw against the multi-light shader loop. `Q` (not `Tab` — `Tab` is reserved by
-     * `Engine` for scene switching) randomizes the Gold material's flat color via
+     * a fifth station for the textured crate (diffuse+specular mapping, as opposed to
+     * the flat presets), and a sixth for a sub-meshed signpost (`models/signpost.obj`, two
+     * `usemtl` groups loaded via `Mesh::CreateGroups` into a `Forge::Prop` so its post and
+     * board move as one object). Populates `materialModels_`/`materials_` so `OnRender` has
+     * something to draw against the multi-light shader loop. `Q` (not `Tab` — `Tab` is
+     * reserved by `Engine` for scene switching) randomizes the Gold material's flat color via
      * `Forge::Material::SetColor`.
      */
     class LightDemoLayer : public Forge::Layer

@@ -60,7 +60,11 @@ namespace Forge
         GLint next_scene_ = -1;
         GLfloat last_frame_time_ = 0.0f;
 
-        GLint cursor_mode_ = GLFW_CURSOR_DISABLED;
+        Forge::CursorMode cursor_mode_ = Forge::CursorMode::Captured;
+
+        std::array<KeyState, 348> key_states_{};
+
+        std::function<bool(Event &)> event_handler_ = nullptr;
 
         /// Initializes GLFW, creates the window, wires up EventHandler, loads GLAD, and enables depth testing + back-face culling. @return False if any step failed.
         bool Init();
@@ -86,6 +90,26 @@ namespace Forge
 
         /// Switches the active scene by index (as returned by `AddScene`). Silently ignores an out-of-range index — `current_scene_` is left unchanged.
         void SetScene(GLint index);
+
+        bool HandleEvent(Event &event);
+
+        void AdjustViewport(GLint width, GLint height);
+
+        void CloseWindow();
+
+        void NextScene();
+
+        void PrevScene();
+
+        bool IsPressed(Forge::Key key);
+
+        bool IsRepeat(Forge::Key key);
+
+        void SetCursorMode(Forge::CursorMode mode);
+
+        Forge::CursorMode GetCursorMode() const;
+
+        void SetEventHandler(std::function<bool(Event &)> handler);
     };
 
 } // namespace Forge

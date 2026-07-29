@@ -128,4 +128,11 @@ namespace Forge
         Button4 = 3,
         Button5 = 4,
     };
+
+    enum class KeyState
+    {
+        Released = 0,
+        Pressed = 1,
+        Repeat = 2
+    };
 } // namespace Forge
