@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "Forge/Prop.hpp"
+#include "Forge/Rendering/Prop.hpp"
 
 #include <glm/gtc/quaternion.hpp>
 

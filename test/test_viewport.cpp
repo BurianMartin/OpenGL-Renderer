@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "Forge/Camera.hpp"
+#include "Forge/Rendering/Camera.hpp"
 
 // GetAspectRatio() = (window_width * width_fraction) / (window_height * height_fraction),
 // recomputed by RecomputeAspectRatio() whenever the window size or the viewport's own

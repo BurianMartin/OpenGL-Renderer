@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "Forge/Lights.hpp"
+#include "Forge/Lighting/Lights.hpp"
 
 namespace
 {

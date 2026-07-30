@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "Forge/Tweens.hpp"
+#include "Forge/Rendering/Tweens.hpp"
 
 #include <glm/gtc/constants.hpp>
 
