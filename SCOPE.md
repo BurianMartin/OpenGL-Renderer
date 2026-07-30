@@ -37,11 +37,25 @@ Tier 1 is closed — everything below is what's actually left for v1.0.
   single biggest chunk of remaining work — see Redline Phase F.
 - [ ] **A real clickable-region/UI-element abstraction.** Diagnosed via Solitaire;
   needed for any button or menu, not just cards. Redline Phase F.
-- [ ] **`Layer` access to per-frame context in `OnEvent`/`OnUpdate`.** Diagnosed via
-  Solitaire; a TCG's interactions (drag, targeting, hover previews) lean on this harder
-  than a solitaire game did. Redline Phase F.
-- [ ] **2D/orthographic camera mode + picking primitives.** Already built once for
-  Solitaire, needs porting back into this engine. Redline Phase F.
+- [ ] **`Layer` access to per-frame context in `OnUpdate`.** Diagnosed via Solitaire; a
+  TCG's interactions (drag, targeting, hover previews) lean on this harder than a
+  solitaire game did. Half done: `Layer::OnEvent` now takes a `shared_ptr<FrameContext>`
+  (landed alongside the picking work below — it's what lets a click be turned into a
+  world-space ray without the Layer needing its own Camera reference). `OnUpdate()` still
+  doesn't receive one. Redline Phase F.
+- [x] **2D/orthographic camera mode + picking primitives.** Orthographic mode was already
+  done (`Camera::SetOrthographic`/`SetUp`, `OrthoDemoScene`); picking is done now too —
+  `Forge::Ray`/`Forge::AABB` (`include/Forge/RayCast.hpp`), `UnprojectScreenPoint`,
+  `IntersectRayAABB`, `Model::GetWorldBounds()`, `Camera::ScreenPointToRay()`, and
+  `Layer::GetClickedObj()`/`GetClickedOnObj()` (walks a Layer's own `materialModels_`,
+  no scene-wide broad-phase needed at this object count). `IntersectRayPlane` exists
+  too but has no caller yet — it's there for the click-and-drag-along-a-plane case
+  Solitaire also needed, not exercised by anything yet. Click-to-pick is intentionally
+  AABB-only (not OBB) — a rotating object's axis-aligned box visibly grows/shrinks as it
+  turns (see `ROADMAP.md`'s Open Architecture note); accepted as fine for a TCG's mostly-
+  flat, rarely-spinning cards, revisit only if something actually needs a tight fit under
+  rotation. The still-open half of the *original* bullet — a reusable clickable-region/UI
+  abstraction (buttons, not just 3D objects) — stays its own separate bullet above.
 - [ ] **Networking — client-server, this engine's home server as the always-on
   authoritative host.** Resolved design, not open:
   - Architecture: client-server, not peer-to-peer. One instance — the home server, not

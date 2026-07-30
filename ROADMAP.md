@@ -35,11 +35,12 @@ Architecture below and the Completed section.
 ## 🔜 Next up — per `SCOPE.md`: Tier 2
 
 **Tier 2 (net-new, required for v1 — the real remaining work):** text/UI rendering, a
-clickable-region abstraction, threading `FrameContext` into `Layer::OnEvent`/`OnUpdate`,
-the 2D/orthographic + picking primitives ported back from Solitaire, and networking
-(client-server, home-server-hosted, ENet, ported over the existing home VPN). All of
-this used to live under Redline's "optional, not on the roadmap" Phase F — it no longer
-is optional. Full detail and reasoning in `SCOPE.md`.
+clickable-region abstraction, threading `FrameContext` into `Layer::OnUpdate` (`OnEvent`
+already gets one — see Open Architecture below), and networking (client-server,
+home-server-hosted, ENet, ported over the existing home VPN). The 2D/orthographic +
+picking primitives bullet that used to be listed here is done — see Open Architecture.
+All of this used to live under Redline's "optional, not on the roadmap" Phase F — it no
+longer is optional. Full detail and reasoning in `SCOPE.md`.
 
 ---
 
@@ -114,6 +115,81 @@ Fixed in this audit:
 - [x] **Held-key table + `WindowLostFocusEvent`** — done: `Engine::IsPressed(Key)`/`IsRepeat(Key)` read a `std::array<KeyState, 348>` kept live by `RaiseEvent` on every real `KeyPressedEvent`/`KeyReleasedEvent`, for input a single edge-triggered event can't express alone (e.g. checking a modifier is held from inside a different key's handler, for a shortcut like Alt+G). `KeyState::Released` is the enum's `0` value, so the zero-initialized array starts every key correctly not-held — an earlier version of this only initialized index 0 via brace-init and left every other key reading as permanently "pressed" until touched, caught before landing. `Key::Unknown` (`-1`) is explicitly skipped on both press and release, since casting it to an array index would wrap to a huge unsigned value and write out of bounds — also caught before landing (initially only guarded on the press path). `WindowLostFocusEvent` (new `EventType`, no payload) is raised by `EventHandler`'s `glfwSetWindowFocusCallback` only on the losing transition (an earlier version raised it on both directions, wiping the table every time focus was regained too — fixed); `RaiseEvent` clears the whole table on it, since GLFW never sends a `KeyReleased` for a key let go while the window was unfocused.
 
 - [x] **Sub-mesh support** — done (Tier 3, see `SCOPE.md`): `Mesh::ParseObjFileGroups` buckets faces by whichever `usemtl` name was last seen (v/vn/vt parsing/indexing stays shared across the whole file, matching real OBJ semantics — only face-to-material association is grouped), returning one `ParsedMeshGroup` per distinct name in first-appearance order; per-group flat-normal generation runs independently so a `vn`-less multi-material file still gets correct per-face normals in every group. `usemtl` names are never resolved against a referenced `mtllib` — they're just a lookup key the caller maps to a real `Material` itself. `Mesh::CreateGroups(filename)` is the GPU-touching convenience wrapper (mirrors `Mesh::Create(filename)`), returning one `MeshGroup` (`materialName` + `shared_ptr<Mesh>`) per group. `Mesh::ParseObjFile`'s long-standing single-mesh contract is preserved exactly — it's now defined in terms of `ParseObjFileGroups`, merging multiple groups back into one combined vertex/index buffer (renumbered) when called directly, so existing callers/tests are unaffected. `Forge::Prop` (`include/Forge/Prop.hpp`) is the accompanying transform-sync piece: owns `vector<shared_ptr<Model>>` and forwards `SetPosition`/`SetScale`/`SetRotation` to every part, so a multi-`Model` object (e.g. the demo's `models/signpost.obj`, a post + board in two `usemtl` groups) moves as one rigid body without the caller hand-syncing N transforms — deliberately not a rendering concept, every part still registers into `Layer::materialModels_`/`materials_` exactly like any other `Model`. `LightDemoLayer`'s sixth station exercises both together.
+
+- [x] **Click-to-pick / ray-casting primitives** — done (Tier 2, see `SCOPE.md`):
+  `include/Forge/RayCast.hpp` (header-only, mirrors `Prop.hpp`'s shape) adds `Ray`
+  (origin+direction) and `AABB` (min+max) as their own small types — not because either
+  needs to be a type, but because both cross a producer/consumer boundary (a ray built in
+  one place, tested in another) where two loose `vec3`s could get silently swapped —
+  plus `IntersectRayAABB` (the slab method, `tMin` clamped to 0 so a box behind the ray's
+  origin never counts as a hit), `IntersectRayPlane` (built for the click-and-drag-along-
+  a-plane case Solitaire also needed; no caller yet), and `UnprojectScreenPoint` (screen
+  pixel → NDC → `inverse(projection * view)` at both the near and far plane, dividing out
+  `w` by hand since the GPU's own perspective divide doesn't happen for you going
+  backward). `Mesh` gained a local-space AABB (`boundsMin`/`boundsMax`, computed once in
+  `ComputeBounds()` from both GPU-mesh constructors, exposed via `GetLowerBounds()`/
+  `GetUpperBounds()`); `Model::GetWorldBounds()` pushes that box's **8 corners** (not just
+  the 2) through `GetModelMatrix()` and re-min/maxes them, since a rotated box's tightest
+  axis-aligned fit isn't found from its min/max corners alone. `Camera::ScreenPointToRay()`
+  is a thin wrapper pulling the camera's own `Viewport::GetPixelRect()` (new — `Apply()`
+  now shares the same math instead of duplicating it) into `UnprojectScreenPoint`.
+  `Layer::GetClickedObj(Ray)` walks the layer's own `materialModels_` (not the whole
+  `Scene` — no broad-phase needed, ray/AABB is cheap enough to brute-force at TCG-scale
+  object counts) and returns the closest hit as `(Material, Model)`; `Layer::GetClickedOnObj
+  (MouseButtonPressedEvent&, FrameContext)` builds the ray for it — aiming from the actual
+  cursor position in `Normal` cursor mode, or from the window's center pixel when
+  `Captured` (FPS-style mouse-look reports a virtual, unbounded cursor position while
+  disabled, not a real screen point — centering matches how a captured-cursor game like
+  Minecraft always aims from its crosshair; unprojecting NDC `(0,0)` produces the same
+  ray a dedicated "camera position + forward vector" path would, for any symmetric
+  frustum). Needed `FrameContext::cursor_mode_` (mirrors `Engine`'s, kept in sync by
+  `Engine::SetCursorMode`) and `MouseButtonEvent`/`MouseButtonPressedEvent`/
+  `MouseButtonReleasedEvent` gaining `GetX()`/`GetY()` (GLFW's mouse-button callback
+  doesn't hand you a position — `EventHandler.cpp` now calls `glfwGetCursorPos` itself).
+  `Layer::OnEvent` changed signature to `(Event&, shared_ptr<FrameContext>)` to make any
+  of this possible from inside a Layer at all (see the next bullet). Deliberately
+  AABB-only, not OBB: a rotating object's tightest *axis-aligned* box necessarily grows
+  and shrinks as it turns (up to ~1.73x at a cube's worst angle) rather than turning with
+  it — that's the "AA" in AABB, not a bug. Accepted as fine for a TCG's mostly-flat,
+  rarely-spinning cards; an OBB (tight at any angle, but a genuinely different, pricier
+  intersection test — transform the ray into the box's local space first, or a full
+  separating-axis test) is a "build it when something actually needs the tight fit"
+  addition, not a gap to close now. `LightDemoLayer`'s left-click handler exercises the
+  whole path: click a station,
+  `GetClickedObj`'s hit material gets recolored, same as the `Q` handler but targeted.
+
+- [x] **`Layer::OnEvent` gains `FrameContext`; `Layer` gains a name + show/hide** — done:
+  `Layer::OnEvent(Event&, shared_ptr<FrameContext>)` is the `OnEvent`-half of the
+  `SCOPE.md` Tier 2 "per-frame context in `OnEvent`/`OnUpdate`" item (`OnUpdate()` still
+  doesn't receive one — that half is still open). Every `Scene::OnEvent` now forwards its
+  own `fctx_` when dispatching to layers. Separately, `Layer` also gained a required
+  constructor argument (`Layer(std::string name)` — every subclass must now pass one),
+  `GetName()`, and `show_`/`Show()`/`Hide()`/`SetShow(bool)`/`IsShown()` — `Layer::Render()`
+  now checks `show_` and skips a hidden layer's draw entirely (it didn't at first; the
+  flag existed for one commit with no actual effect on rendering before this was wired
+  in). `Scene::GetLayerByName(string)` does a by-name lookup (linear scan, matches
+  `materials_`'s existing by-tag lookup pattern) — used by every demo scene's `F3` handler
+  below. `Layer::GetAllModels()` flattens `materialModels_` into a plain list for anything
+  outside a `Layer` that needs to see what it's drawing without reaching into its private
+  buckets (its one caller so far is `DebugOverlayLayer`, next).
+
+- [x] **`Forge::DebugOverlayLayer`** — done: a real engine-level debug-draw layer, not a
+  demo-only hack (`include/Forge/DebugOverlayLayer.hpp`/`.cpp`), since there's no text/UI
+  yet to build a numeric HUD with (`SCOPE.md` Tier 2) but a *visual* debug aid doesn't
+  need text. Given a list of `Layer`s to watch, it snapshots every `Model` across them
+  (via `GetAllModels()`, above) and draws a live wireframe box around each one's
+  `Model::GetWorldBounds()` — the exact AABB click-to-pick relies on, finally visible
+  instead of trusted blindly. One shared unit wireframe cube `Mesh` (`GL_LINES`, corners
+  at ±0.5) is built once; `OnUpdate()` re-fits each tracked box's position/scale to its
+  source model's current world AABB every frame via plain `SetPosition`/`SetScale` (no
+  rotation — see the AABB-vs-OBB note in the click-to-pick bullet above for why a
+  spinning object's box visibly grows/shrinks rather than turning with it). New minimal `shaders/debug_overlay_fragment.glsl`
+  (pairs with the existing shared `vertex.glsl`) just outputs `uBaseColor`, unlit — proof
+  that a `Material`/shader doesn't need to declare every uniform `Material::Bind()`
+  uploads (`glGetUniformLocation` returning -1 for an unused name is a defined no-op, not
+  an error). All three demo scenes construct one named `"Overlay"`, hidden by default,
+  watching their `LightDemoLayer`, toggled by a new `F3` handler
+  (`GetLayerByName("Overlay")` + `SetShow(!IsShown())`) in each scene's `OnEvent`.
 
 ---
 
@@ -227,11 +303,11 @@ that copy needed patched or worked around that weren't visible from a 3D-only de
 scene.
 
 - **No 2D/orthographic support at all** — `Camera` only ever did perspective. A flat/UI-style scene needs `SetOrthographic(halfHeight)`, and the default `lookAt` world-up `(0,1,0)` degenerates for a straight-down camera (front vector nearly parallel to up, cross product ~0) — needed a `SetUp(vec3)` override to supply a horizontal reference instead.
-- **No picking primitives** — click-and-drag needs a screen-to-world ray (`Camera::ScreenPointToRay`, via `inverse(projection * view)`) and ray/AABB + ray/plane intersection tests. None of that existed; `Model` also needed a world-space bounding box (`GetWorldBounds()`) to intersect against.
+- **No picking primitives** — click-and-drag needs a screen-to-world ray (`Camera::ScreenPointToRay`, via `inverse(projection * view)`) and ray/AABB + ray/plane intersection tests. None of that existed; `Model` also needed a world-space bounding box (`GetWorldBounds()`) to intersect against. **Done** — see Open Architecture's "Click-to-pick / ray-casting primitives" entry. Ray/AABB and click-to-pick specifically are exercised (`LightDemoLayer`'s left-click handler); ray/plane exists but nothing calls it yet — click-and-*drag* itself still isn't built.
 - **`Mesh` had no way to address a sub-rect of a texture** — needed a `CreateQuad(tag, uvMin, uvMax)` overload for texture-atlas sprites (52 playing cards sharing one atlas image, one quad per card pointing at its own cell).
 - **`GL_BLEND` is never enabled anywhere in `Engine::Init`** — real alpha transparency (e.g. a translucent UI overlay/outline) silently does nothing until it's turned on. Costs nothing for existing fully-opaque textures, so there's no real downside to just always enabling it.
 - **No animation/tweening utility** — ended up writing a small `Vec3Tween`/`EaseOutQuad` helper (lerp position A→B over a duration, with easing) from scratch for a card-slide animation. Small, generic, reusable — worth having in `Forge` rather than re-deriving per-project.
-- **`Layer::OnEvent`/`OnUpdate` aren't given the camera/frame data (`FrameContext`)** — only `OnRender` gets it. Anything that needs view/projection for picking, or delta-time for animation, outside of `OnRender` has to cache whatever `OnRender` last saw. Works fine for a static camera; would break the moment the camera moves and an event fires between frames.
+- **`Layer::OnEvent`/`OnUpdate` aren't given the camera/frame data (`FrameContext`)** — only `OnRender` gets it. Anything that needs view/projection for picking, or delta-time for animation, outside of `OnRender` has to cache whatever `OnRender` last saw. Works fine for a static camera; would break the moment the camera moves and an event fires between frames. **Half done** — `OnEvent` now takes a `shared_ptr<FrameContext>` (see Open Architecture); `OnUpdate()` still doesn't.
 - **No text/UI rendering system** — this is why the current engine has no on-screen score/HUD/prompt of any kind, and Solitaire had to cut scoring/timer features and use a card "bounce" animation instead of a win banner. Worth keeping in mind as a real, currently-missing capability, not just a Solitaire-specific gap.
 - **Orthographic cameras have a genuine invisible axis** — animating an object purely along the camera's own view direction is a real position change with *zero* visible pixels under orthographic projection (no perspective falloff to reveal it). Bit a "victory bounce" animation that moved along the wrong axis; only caught by actually looking at a rendered frame, not by checking the position math. Worth remembering for *any* animation added to an orthographic scene later.
 - **Coincident flat quads z-fight** — two quads at the exact same depth (e.g. an animated sprite passing through a static marker at the same position) flicker unpredictably. Needed a small manual depth offset to fix; a proper convention (consistent tiny Z-bias for "decorative overlay" quads, or explicit draw-order control) would avoid needing to hand-fix this per case.
@@ -240,7 +316,7 @@ scene.
 **Update — more lessons from a later Solitaire session**, adding undo/redo, a solver-backed "always deal a winnable game" guarantee, on-table icon buttons, and a couple of art/rendering fixes. These weren't visible in the first pass because that pass never resized the window, never added a second interactive UI element, and never needed real alpha edges on non-rectangular art:
 
 - **Window resize is a silent trap the first pass never hit.** `Scene::ResizeCameras()` already exists (built for split-screen — recomputes every camera's aspect ratio from its viewport rect and the window's current size) but nothing calls it automatically; a `Scene` subclass has to remember to call it itself on `WindowResize`. Solitaire's scene never did. It compiled fine, ran fine, looked correct at whatever size it happened to boot at — and only visibly stretched every card the moment a user actually dragged a window corner. Two legitimate fixes exist depending on what a scene wants: auto-reflow (call `ResizeCameras()`) for something split-screen-like, or lock the window itself to a fixed ratio for a fixed-layout 2D scene (added `WindowSpecification::lockAspectRatio`, wired via `glfwSetWindowAspectRatio` in `Engine::Init`, opt-in and off by default). Worth considering whether `Scene`'s own resize handling should default to calling `ResizeCameras()` unless a subclass opts out, rather than requiring every subclass to remember to opt in — doing neither is the current silent default.
-- **Still no reusable "clickable region" concept, even after building actual UI buttons.** Every hit-test in Solitaire — the stock pile, then an Undo button, then a Reset button — is the same hand-written "is this world point within half-width/half-height of this center" check, copy-pasted with new numbers each time. Sharpens the earlier "no text/UI system" lesson: the gap isn't just text rendering, it's that there's no lightweight "clickable sprite" or hit-region abstraction at all, so every new interactive element means re-deriving the same fixed-rect logic by hand.
+- **Still no reusable "clickable region" concept, even after building actual UI buttons.** Every hit-test in Solitaire — the stock pile, then an Undo button, then a Reset button — is the same hand-written "is this world point within half-width/half-height of this center" check, copy-pasted with new numbers each time. Sharpens the earlier "no text/UI system" lesson: the gap isn't just text rendering, it's that there's no lightweight "clickable sprite" or hit-region abstraction at all, so every new interactive element means re-deriving the same fixed-rect logic by hand. The underlying primitive this would be built on now exists (`Layer::GetClickedObj`/`GetClickedOnObj`, ray/AABB against `Model::GetWorldBounds()`) — but that's 3D-object picking, not a 2D UI-button/clickable-region abstraction; this bullet's actual ask is still open, and is `SCOPE.md` Tier 2's separate "clickable-region/UI-element abstraction" line item.
 - **`GL_BLEND` being on doesn't mean transparency is fully safe — depth writes are a separate, still-open trap.** A blended fragment still writes its own depth to the depth buffer by default, alpha or no alpha, unless a draw explicitly disables depth writes for that pass. This didn't visibly break anything in Solitaire only by luck of geometry (new transparent card corners are small and rarely overlap another sprite that needed to show through at that exact pixel) — a scene with denser overlapping transparency (particles, layered UI) would hit real occlusion bugs from this. Distinct from the z-fight lesson above (that's two coincident depths flickering; this is occlusion ordering from a depth *write* that alpha doesn't suppress).
 - **(Process, not code) Same-hue backgrounds can hide a broken alpha mask.** Solitaire's card atlas had solid green squares baked into its rounded corners, left over from the source art's own canvas color — unnoticed for a while because the table felt is *also* green, so a broken opaque corner and a correctly transparent one looked nearly identical in ad hoc testing. Worth a habit for any future art-import pipeline: preview a new alpha texture against a deliberately mismatched color before trusting it, not against the color it'll actually ship over.
 

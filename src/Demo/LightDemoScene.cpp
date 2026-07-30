@@ -1,6 +1,7 @@
 #include "Demo/LightDemoScene.hpp"
 #include "Forge/Camera.hpp"
 #include "Forge/Lights.hpp"
+#include "Forge/DebugOverlayLayer.hpp"
 #include "LightDemoScene.hpp"
 
 namespace Demo
@@ -30,6 +31,19 @@ namespace Demo
             case Forge::Key::LeftControl:
                 cameras_[active_camera_].SetBoost(3.0f);
                 return;
+            case Forge::Key::F3:
+            {
+                GLint layerIndex = GetLayerByName("Overlay");
+                if (layerIndex == -1)
+                {
+                    debug_warn("Layer 'Overlay' not found");
+                    return;
+                }
+                auto layer = layers_[layerIndex];
+
+                layer->SetShow(!layer->IsShown());
+                return;
+            }
             }
 
             auto it = key_map.find(ev.GetKeyCode());
@@ -84,7 +98,7 @@ namespace Demo
 
         for (std::shared_ptr<Forge::Layer> &layer : std::views::reverse(layers_))
         {
-            if (!layer->OnEvent(event))
+            if (!layer->OnEvent(event, fctx_))
             {
                 // Event was consumed by this layer
                 return;
@@ -96,9 +110,16 @@ namespace Demo
     {
         cameras_.emplace_back(Forge::Viewport(0.0f, 0.0f, 1.0f, 1.0f, fctx_->window_width_, fctx_->window_height_));
 
-        auto lightDemoLayer = std::make_shared<Demo::LightDemoLayer>(rmanager_);
+        auto lightDemoLayer = std::make_shared<Demo::LightDemoLayer>("LightDemoLayer", rmanager_);
 
         AddLayer(lightDemoLayer);
+
+        // F3-toggled wireframe-AABB debug overlay (Forge::DebugOverlayLayer) — off by default,
+        // named "Overlay" to match OnEvent's GetLayerByName("Overlay") lookup above.
+        auto debugOverlay = std::make_shared<Forge::DebugOverlayLayer>(
+            "Overlay", rmanager_, std::vector<std::shared_ptr<Forge::Layer>>{lightDemoLayer});
+        debugOverlay->Hide();
+        AddLayer(debugOverlay);
 
         // Real sky instead of a flat color — also lets the directional light below read as
         // actual "sunlight" rather than an arbitrary vector.

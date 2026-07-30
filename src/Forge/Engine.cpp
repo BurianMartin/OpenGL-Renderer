@@ -243,6 +243,7 @@ namespace Forge
     void Engine::SetCursorMode(Forge::CursorMode mode)
     {
         cursor_mode_ = mode;
+        renderer_.GetFrameContext()->cursor_mode_ = mode;
         if (current_scene_ != -1)
         {
             scenes_[current_scene_]->OnMouseCapture();

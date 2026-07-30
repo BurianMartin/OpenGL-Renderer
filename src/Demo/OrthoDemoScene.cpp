@@ -1,6 +1,7 @@
 #include "Demo/OrthoDemoScene.hpp"
 #include "Forge/Camera.hpp"
 #include "Forge/Lights.hpp"
+#include "Forge/DebugOverlayLayer.hpp"
 
 namespace Demo
 {
@@ -22,6 +23,24 @@ namespace Demo
                 camera.UpdateViewportSize(fctx_->window_width_, fctx_->window_height_);
             return;
         }
+        case Forge::EventType::KeyPressed:
+        {
+            auto ev = static_cast<Forge::KeyPressedEvent &>(event);
+
+            if (ev.GetKeyCode() == Forge::Key::F3)
+            {
+                GLint layerIndex = GetLayerByName("Overlay");
+                if (layerIndex == -1)
+                {
+                    debug_warn("Layer 'Overlay' not found");
+                    return;
+                }
+                auto layer = layers_[layerIndex];
+
+                layer->SetShow(!layer->IsShown());
+                return;
+            }
+        }
 
         default:
             break;
@@ -29,7 +48,7 @@ namespace Demo
 
         for (std::shared_ptr<Forge::Layer> &layer : std::views::reverse(layers_))
         {
-            if (!layer->OnEvent(event))
+            if (!layer->OnEvent(event, fctx_))
             {
                 // Event was consumed by this layer
                 return;
@@ -48,8 +67,16 @@ namespace Demo
         cameras_[0].SetUp(glm::vec3(0.0f, 0.0f, -1.0f)); // world -Z as screen "up" — (0,1,0) degenerates looking straight down
         cameras_[0].SetOrthographic(10.0f);              // half-height fits the floor's full ~18-unit depth (and, x aspect, its ~12-unit width) at 1:1 aspect
 
-        auto lightDemoLayer = std::make_shared<Demo::LightDemoLayer>(rmanager_);
+        auto lightDemoLayer = std::make_shared<Demo::LightDemoLayer>("LightDemoLayer", rmanager_);
+
         AddLayer(lightDemoLayer);
+
+        // F3-toggled wireframe-AABB debug overlay (Forge::DebugOverlayLayer) — off by default,
+        // named "Overlay" to match OnEvent's GetLayerByName("Overlay") lookup above.
+        auto debugOverlay = std::make_shared<Forge::DebugOverlayLayer>(
+            "Overlay", rmanager_, std::vector<std::shared_ptr<Forge::Layer>>{lightDemoLayer});
+        debugOverlay->Hide();
+        AddLayer(debugOverlay);
 
         SetBackgroundColor(glm::vec4(0.05f, 0.05f, 0.08f, 1.0f));
 

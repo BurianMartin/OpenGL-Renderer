@@ -26,7 +26,8 @@ namespace Demo
         }
     }
 
-    LightDemoLayer::LightDemoLayer(std::shared_ptr<Forge::ResourceManager> resourceManager)
+    LightDemoLayer::LightDemoLayer(std::string name, std::shared_ptr<Forge::ResourceManager> resourceManager)
+        : Layer(name)
     {
         auto solidColorShader = resourceManager->LoadShader("shaders/vertex.glsl", "shaders/fragment.glsl", "Uber");
         if (!solidColorShader)
@@ -107,11 +108,11 @@ namespace Demo
             debug_error("Failed to load models/signpost.obj");
 
         auto signpostWoodMat = Forge::Material::Create(solidColorShader, "SignpostWood",
-                                                        glm::vec3(0.1f, 0.06f, 0.03f), glm::vec3(0.45f, 0.28f, 0.14f),
-                                                        glm::vec3(0.1f, 0.08f, 0.06f), 8.0f);
+                                                       glm::vec3(0.1f, 0.06f, 0.03f), glm::vec3(0.45f, 0.28f, 0.14f),
+                                                       glm::vec3(0.1f, 0.08f, 0.06f), 8.0f);
         auto signpostMetalMat = Forge::Material::Create(solidColorShader, "SignpostMetal",
-                                                         glm::vec3(0.1f, 0.1f, 0.11f), glm::vec3(0.4f, 0.4f, 0.45f),
-                                                         glm::vec3(0.7f, 0.7f, 0.75f), 64.0f);
+                                                        glm::vec3(0.1f, 0.1f, 0.11f), glm::vec3(0.4f, 0.4f, 0.45f),
+                                                        glm::vec3(0.7f, 0.7f, 0.75f), 64.0f);
 
         Forge::Prop signpost;
         for (const auto &group : signpostGroups)
@@ -148,7 +149,7 @@ namespace Demo
         srand(time(NULL));
     }
 
-    bool LightDemoLayer::OnEvent(Forge::Event &event)
+    bool LightDemoLayer::OnEvent(Forge::Event &event, std::shared_ptr<Forge::FrameContext> ctx)
     {
         switch (event.GetEventType())
         {
@@ -170,11 +171,20 @@ namespace Demo
         }
 
         case Forge::EventType::MouseButtonPressed:
-            // Handle mouse button pressed event like:
+        {
+            auto ev = static_cast<Forge::MouseButtonPressedEvent &>(event);
+
+            debug_info(std::format("Mouse button pressed at ({}, {})", ev.GetX(), ev.GetY()));
+
+            auto obj = GetClickedOnObj(ev, ctx);
+
+            if (obj.has_value())
+            {
+                obj->first->SetColor(Forge::Color_A1::RandomColor());
+            }
 
             return true;
-            // OnMouseButtonPressed(event);
-            break;
+        }
 
             // ... More event types, maybe even handle mouse movement here ?
 

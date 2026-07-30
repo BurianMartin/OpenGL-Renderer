@@ -49,16 +49,21 @@ namespace Forge
             // MouseButton's values are wired to match GLFW_MOUSE_BUTTON_* directly (see Keys.hpp) — no translation table needed.
             MouseButton translatedButton = static_cast<MouseButton>(button);
 
+            // GLFW's mouse-button callback doesn't hand you a position — grab it explicitly,
+            // so a click carries the screen point it happened at (needed for click-to-pick).
+            double xpos, ypos;
+            glfwGetCursorPos(win, &xpos, &ypos);
+
                     switch (action)
                     {
                     case GLFW_PRESS:{
-                        MouseButtonPressedEvent event(translatedButton);
+                        MouseButtonPressedEvent event(translatedButton, xpos, ypos);
                         handler->RaiseEvent(event);
                         break;}
 
                     case GLFW_RELEASE:
                         {
-                        MouseButtonReleasedEvent event(translatedButton);
+                        MouseButtonReleasedEvent event(translatedButton, xpos, ypos);
                         handler->RaiseEvent(event);
                         break;
                         }
