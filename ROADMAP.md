@@ -193,6 +193,106 @@ Fixed in this audit:
 
 ---
 
+## 🚧 Next: Text/UI Rendering
+
+Scaffolding landed, logic didn't — this is the actual pick-up-here plan. Design already
+settled (don't re-litigate these, just implement them):
+
+- `Text` bypasses `Material`/`Layer::materialModels_` entirely. `Material::Bind()` always
+  uploads the *active camera's* view/projection from `FrameContext`; text needs a fixed
+  screen-space orthographic projection instead, independent of whatever 3D camera the
+  scene is using. So `Text::Draw()` drives its own shader/texture/GL state directly —
+  same pattern `Scene::DrawSkyboxBackground()`/`DrawSkydomeBackground()` already use for
+  their own non-standard rendering needs.
+- The text shader pair is deliberately minimal: vertex needs only `uProjection` (no
+  `uModel`/`uView` — the pen position is already baked into each glyph quad's vertex data
+  in pixel space); fragment needs only `uAtlas` + `uColor` (no `uMaterial`, no
+  `uHasTexture`, no `uCameraPos`/`uTime`). Already written this way in
+  `shaders/text_vertex.glsl`/`text_fragment.glsl` — don't add more uniforms there without
+  a real reason to.
+
+Already in place: `include/stb_truetype/stb_truetype.h` (vendored), `fonts/DejaVuSans.ttf`
++ `fonts/DejaVuSans-LICENSE.txt`, `shaders/text_vertex.glsl`/`text_fragment.glsl`,
+`include/Forge/Rendering/Font.hpp`/`Text.hpp` (full declarations, doc comments explain
+what each method is for), `ResourceManager::LoadFont()` declared (and a `fonts_` cache
+map added) in `ResourceManager.hpp` — none of it implemented yet.
+
+### Step 1 — `Font.cpp`
+
+- [ ] `#define STB_TRUETYPE_IMPLEMENTATION` + `#include "stb_truetype/stb_truetype.h"` in
+      exactly this one file — same rule as `Texture.cpp`'s `STB_IMAGE_IMPLEMENTATION`. Get
+      this wrong and it's either "undefined reference" (never defined) or "duplicate
+      symbol" (defined twice) at link time.
+- [ ] `Font::Create(ttfPath, pixelHeight)`: read the `.ttf` into a byte buffer (plain file
+      I/O — `stb_truetype` never touches files itself); allocate an atlas bitmap buffer
+      (single-channel, e.g. 512x512 to start); call
+      `stbtt_BakeFontBitmap(data, 0, pixelHeight, bitmap, pw, ph, Font::kFirstChar, Font::kNumChars, chars_.data())`;
+      fail (`debug_warn` + `nullptr`) if the return is `<= 0`; otherwise upload the bitmap
+      as a `GL_RED` texture (`glPixelStorei(GL_UNPACK_ALIGNMENT, 1)` first — single-channel,
+      don't assume 4-byte row alignment) with `GL_LINEAR`/`GL_CLAMP_TO_EDGE` params. Private
+      constructor — build via `std::shared_ptr<Font>(new Font())` inside `Create()`, same
+      as `Mesh`/`Shader`/`Texture`.
+- [ ] `Font::~Font()`: `glDeleteTextures` if `atlasTexture_ != 0`.
+- [ ] `Font::GetGlyph(char c) const`: bounds-check `c - kFirstChar` against
+      `[0, kNumChars)`, fall back to `'?'`'s index if out of range (already promised by
+      the header's doc comment).
+
+### Step 2 — `Text.cpp`
+
+- [ ] Constructor + `Destroy()`: `glGenVertexArrays`/`glGenBuffers` for a VAO/VBO/EBO
+      (constructor), matching teardown in `Destroy()`/`~Text()` — same shape as `Mesh`'s
+      own GPU resource ownership, just without `Mesh` itself (text rebuilds its buffers
+      wholesale too often to justify going through it).
+- [ ] `Rebuild()`: walk `text_` character by character, look up each glyph's
+      `stbtt_bakedchar` via `font_->GetGlyph()`, compute its quad corners + UVs (mirrors
+      `stbtt_GetBakedQuad`'s own math — round the pen position, offset by `xoff`/`yoff`,
+      size by `x1-x0`/`y1-y0`; UVs are the glyph's `x0/atlasWidth` etc.), advance the pen
+      by `xadvance`, then upload the accumulated vertex/index buffers with
+      `GL_DYNAMIC_DRAW` (rebuilt wholesale every call, not patched). Track min/max corners
+      for `GetSize()`. Only bind attribute locations 0 (`aPos`) and 2 (`aTexCoords`) —
+      text has no use for a normal, so location 1 stays untouched even though every other
+      `Mesh` always binds it.
+- [ ] `Draw()`: build `glm::ortho(0, windowWidth, windowHeight, 0, -1, 1)` (top-left
+      origin, y down — matches `stb_truetype`'s own coordinate convention), bind the
+      shader + atlas texture, set `uProjection`/`uColor`/`uAtlas`, draw. **Watch for two
+      real bugs already hit building this once**: (1) `Layer::Render()` calls `OnRender()`
+      *before* that layer's own 3D models, so text drawn from a content layer's own
+      `OnRender()` gets painted over immediately — draw it from a layer registered *after*
+      whatever it should sit on top of. (2) The projection above has a negative y-scale
+      relative to standard NDC orientation (needed to match `stb_truetype`'s convention),
+      which reverses every glyph quad's winding — if `Engine::Init` ever enables
+      back-face culling (worth checking), this silently culls every glyph with zero
+      errors and zero visible symptoms beyond "nothing draws." Disable `GL_CULL_FACE` for
+      the duration of the draw call (save/restore, same as depth test) if so — same fix
+      `Scene::DrawSkyboxBackground()` needed for its own inside-out geometry.
+- [ ] `SetString()`/`SetPosition()`: update the member, call `Rebuild()`. `SetColor()`:
+      just update the member, no rebuild needed.
+
+### Step 3 — `ResourceManager::LoadFont`
+
+- [ ] Same weak_ptr caching shape as `LoadMesh`/`LoadShader`/`LoadTexture`: key by
+      `ttfPath + "@" + std::to_string(pixelHeight)` (deliberately part of the key — the
+      same font baked at two different sizes is two distinct atlases, not a bug), return
+      the cached `shared_ptr` if still alive, otherwise call `Font::Create` and cache the
+      result.
+
+### Step 4 — `CMakeLists.txt`
+
+- [ ] Add `src/Forge/Rendering/Font.cpp` and `src/Forge/Rendering/Text.cpp` to
+      `EngineCore`'s source list. Needs a reconfigure (`cmake -S . -B build`), not just a
+      rebuild, since the source list itself changed.
+
+### Step 5 — wire a demo usage
+
+- [ ] Prove it end-to-end with something visible — e.g. a HUD label in `DebugOverlayLayer`
+      (careful: draw it from a layer/hook that runs *after* the 3D content it should sit
+      on top of, per Step 2's ordering note) or a plain `Forge::Text` dropped into a demo
+      scene. Verifying "it compiles" is not verifying "it renders correctly" — if a visual
+      check isn't possible in whatever environment this gets built in, say so explicitly
+      rather than assuming success from a clean build.
+
+---
+
 ## Next: Shaders + Lighting
 
 To be done in order — vertex shader first (independent), then light struct design, then fragment shader and C++ lights together.

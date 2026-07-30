@@ -34,7 +34,11 @@ Tier 1 is closed — everything below is what's actually left for v1.0.
 **Tier 2 — net-new, driven by exactly what the TCG needs, nothing more**
 - [ ] **Text/UI rendering.** The most-flagged gap across every retrospective so far. A
   card game with no on-screen text for names/costs/life totals isn't shippable. The
-  single biggest chunk of remaining work — see Redline Phase F.
+  single biggest chunk of remaining work — see Redline Phase F. **In progress**:
+  scaffolding is in (vendored `stb_truetype.h`, `fonts/DejaVuSans.ttf`, the text shader
+  pair, `Font.hpp`/`Text.hpp` declarations, `ResourceManager::LoadFont` declared) but none
+  of the actual logic is written yet — see `ROADMAP.md`'s "Next: Text/UI Rendering"
+  section for the concrete build order.
 - [ ] **A real clickable-region/UI-element abstraction.** Diagnosed via Solitaire;
   needed for any button or menu, not just cards. Redline Phase F.
 - [ ] **`Layer` access to per-frame context in `OnUpdate`.** Diagnosed via Solitaire; a
