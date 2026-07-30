@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Utils.hpp"
+#include "Forge/RayCast.hpp"
 
 #include <glad/gl.h>
 #include <glm/glm.hpp>
@@ -80,12 +81,19 @@ namespace Forge
         /// Converts this viewport's normalized rect to pixels against the window's current size and applies it as both the GL viewport and scissor rect.
         void Apply() const
         {
-            GLint x = static_cast<GLint>(x_ * window_width_);
-            GLint y = static_cast<GLint>(y_ * window_height_);
-            GLint width = static_cast<GLint>(width_ * window_width_);
-            GLint height = static_cast<GLint>(height_ * window_height_);
+            GLint x, y, width, height;
+            GetPixelRect(x, y, width, height);
             glViewport(x, y, width, height);
             glScissor(x, y, width, height);
+        }
+
+        /// This viewport's on-screen pixel rect, derived from its normalized fractions and the window's current size — the same math Apply() uses, exposed for callers (e.g. Camera::ScreenPointToRay) that need the rect without touching GL state.
+        void GetPixelRect(GLint &outX, GLint &outY, GLint &outWidth, GLint &outHeight) const
+        {
+            outX = static_cast<GLint>(x_ * window_width_);
+            outY = static_cast<GLint>(y_ * window_height_);
+            outWidth = static_cast<GLint>(width_ * window_width_);
+            outHeight = static_cast<GLint>(height_ * window_height_);
         }
     };
 
@@ -181,6 +189,12 @@ namespace Forge
         void SetUp(const glm::vec3 &up);
 
         void SetOrthographic(GLfloat half_height);
+
+        /// @brief Builds a world-space Ray from a screen-space pixel, for mouse-picking.
+        /// @param screenX,screenY Pixel coordinates (origin top-left, y down — same convention as MouseMovedEvent).
+        /// @param outRay Set to the resulting ray on success; untouched otherwise.
+        /// @return False if the point falls outside this camera's own Viewport rect.
+        bool ScreenPointToRay(GLfloat screenX, GLfloat screenY, Ray &outRay) const;
 
     private:
         bool move_up_ = false;

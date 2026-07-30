@@ -9,6 +9,7 @@
 
 #include <memory>
 #include <vector>
+#include <limits>
 #include <fstream>
 #include <sstream>
 #include <filesystem>
@@ -169,6 +170,9 @@ namespace Forge
         unsigned int getTriangleCount() const { return indexCount / 3; }
         GLenum getDrawMode() const { return drawMode; }
 
+        glm::vec3 GetLowerBounds() const { return boundsMin; }
+        glm::vec3 GetUpperBounds() const { return boundsMax; }
+
     private:
         Mesh(const std::string &tag, const std::vector<Vertex> &vertices, const std::vector<unsigned int> &indices, GLenum drawMode);
         Mesh(const std::string &tag, const std::vector<GLfloat> &vertices, const std::vector<GLuint> &indices, GLenum drawMode);
@@ -182,8 +186,13 @@ namespace Forge
         GLuint VBO = 0;
         GLuint EBO = 0;
 
+        glm::vec3 boundsMin = glm::vec3(std::numeric_limits<float>::max());
+        glm::vec3 boundsMax = glm::vec3(std::numeric_limits<float>::lowest());
+
         unsigned int vertexCount = 0;
         unsigned int indexCount = 0;
         GLenum drawMode = GL_TRIANGLES;
+
+        void ComputeBounds(const std::vector<Vertex> &vertices);
     };
 }

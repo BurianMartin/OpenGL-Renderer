@@ -283,6 +283,7 @@ namespace Forge
         : drawMode(drawMode)
     {
         this->tag_ = tag;
+        ComputeBounds(vertices);
         setup(vertices, indices);
     }
 
@@ -298,6 +299,7 @@ namespace Forge
         {
             Vertex v;
             v.position = {vertices[i], vertices[i + 1], vertices[i + 2]};
+
             v.normal = {0.0f, 0.0f, 0.0f};
             v.texCoords = {0.0f, 0.0f};
             vertexData.push_back(v);
@@ -314,6 +316,8 @@ namespace Forge
             vertexData[indices[i + 1]].normal += n;
             vertexData[indices[i + 2]].normal += n;
         }
+
+        ComputeBounds(vertexData);
 
         for (auto &v : vertexData)
         {
@@ -441,4 +445,14 @@ namespace Forge
         glDeleteBuffers(1, &VBO);
         glDeleteBuffers(1, &EBO);
     }
+
+    void Mesh::ComputeBounds(const std::vector<Vertex> &vertices)
+    {
+        for (const Vertex &v : vertices)
+        {
+            boundsMin = glm::min(boundsMin, v.position);
+            boundsMax = glm::max(boundsMax, v.position);
+        }
+    }
+
 } // namespace Forge

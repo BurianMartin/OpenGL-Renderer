@@ -88,26 +88,32 @@ namespace Forge
         EVENT_CLASS_TYPE(MouseScrolled)
     };
 
-    /// Common base for MouseButtonPressedEvent/MouseButtonReleasedEvent — carries the engine's own MouseButton, not a windowing-library code.
+    /// Common base for MouseButtonPressedEvent/MouseButtonReleasedEvent — carries the engine's own MouseButton (not a windowing-library code) plus the cursor position at the time of the event, for click-to-pick (screen coordinates, same convention as MouseMovedEvent: pixels, origin top-left, y down).
     class MouseButtonEvent : public Event
     {
     protected:
         MouseButton Button_;
-        MouseButtonEvent(MouseButton button) : Button_(button) {}
+        double XPos_, YPos_;
+        MouseButtonEvent(MouseButton button, double xpos, double ypos) : Button_(button), XPos_(xpos), YPos_(ypos) {}
 
     public:
         /// @return The MouseButton this event refers to.
         inline MouseButton GetMouseButton() const { return Button_; }
+
+        /// @return Cursor X, in screen-space pixels, at the moment this event was raised.
+        inline double GetX() const { return XPos_; }
+        /// @return Cursor Y, in screen-space pixels, at the moment this event was raised.
+        inline double GetY() const { return YPos_; }
     };
 
     /// Raised on mouse-button-down.
     class MouseButtonPressedEvent : public MouseButtonEvent
     {
     public:
-        MouseButtonPressedEvent(MouseButton button) : MouseButtonEvent(button) {}
+        MouseButtonPressedEvent(MouseButton button, double xpos, double ypos) : MouseButtonEvent(button, xpos, ypos) {}
         ~MouseButtonPressedEvent() = default;
 
-        std::string ToString() const { return std::format("MouseButtonPressedEvent: {}", static_cast<int>(Button_)); }
+        std::string ToString() const { return std::format("MouseButtonPressedEvent: {} ({}, {})", static_cast<int>(Button_), XPos_, YPos_); }
 
         EVENT_CLASS_TYPE(MouseButtonPressed);
     };
@@ -116,10 +122,10 @@ namespace Forge
     class MouseButtonReleasedEvent : public MouseButtonEvent
     {
     public:
-        MouseButtonReleasedEvent(MouseButton button) : MouseButtonEvent(button) {}
+        MouseButtonReleasedEvent(MouseButton button, double xpos, double ypos) : MouseButtonEvent(button, xpos, ypos) {}
         ~MouseButtonReleasedEvent() = default;
 
-        std::string ToString() const { return std::format("MouseButtonReleasedEvent: {}", static_cast<int>(Button_)); }
+        std::string ToString() const { return std::format("MouseButtonReleasedEvent: {} ({}, {})", static_cast<int>(Button_), XPos_, YPos_); }
 
         EVENT_CLASS_TYPE(MouseButtonReleased);
     };

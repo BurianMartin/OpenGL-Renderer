@@ -34,6 +34,7 @@ add_library(EngineCore STATIC
         src/Forge/ResourceManager.cpp
         src/Forge/Scene.cpp
         src/Forge/Lights.cpp
+        src/Forge/DebugOverlayLayer.cpp
     )
 
 target_include_directories(EngineCore

@@ -1,6 +1,8 @@
 #include "Forge/Model.hpp"
 #include "Forge/Material.hpp"
 
+#include <limits>
+
 namespace Forge
 {
     Model::Model(std::shared_ptr<Mesh> mesh) : mesh_(mesh)
@@ -34,5 +36,36 @@ namespace Forge
         m = m * glm::mat4_cast(rotation_);
         m = glm::scale(m, scale_);
         return m;
+    }
+
+    Forge::AABB Model::GetWorldBounds() const
+    {
+        glm::vec3 localMin = mesh_->GetLowerBounds();
+        glm::vec3 localMax = mesh_->GetUpperBounds();
+        glm::mat4 modelMatrix = GetModelMatrix();
+
+        glm::vec3 corners[8] = {
+            {localMin.x, localMin.y, localMin.z},
+            {localMax.x, localMin.y, localMin.z},
+            {localMin.x, localMax.y, localMin.z},
+            {localMax.x, localMax.y, localMin.z},
+            {localMin.x, localMin.y, localMax.z},
+            {localMax.x, localMin.y, localMax.z},
+            {localMin.x, localMax.y, localMax.z},
+            {localMax.x, localMax.y, localMax.z},
+        };
+
+        Forge::AABB world;
+        world.min = glm::vec3(std::numeric_limits<float>::max());
+        world.max = glm::vec3(std::numeric_limits<float>::lowest());
+
+        for (const glm::vec3 &corner : corners)
+        {
+            glm::vec3 worldCorner = glm::vec3(modelMatrix * glm::vec4(corner, 1.0f));
+            world.min = glm::min(world.min, worldCorner);
+            world.max = glm::max(world.max, worldCorner);
+        }
+
+        return world;
     }
 } // namespace Forge

@@ -63,6 +63,8 @@ namespace Forge
 
         void AddLight(std::shared_ptr<Light> light);
 
+        GLint GetLayerByName(std::string name);
+
     public:
         Scene() = default;
 

@@ -1,6 +1,7 @@
 #include "Demo/MultiCameraDemoScene.hpp"
 #include "Forge/Camera.hpp"
 #include "Forge/Lights.hpp"
+#include "Forge/DebugOverlayLayer.hpp"
 
 namespace Demo
 {
@@ -27,6 +28,20 @@ namespace Demo
             case Forge::Key::LeftControl:
                 cameras_[active_camera_].SetBoost(3.0f);
                 return;
+
+            case Forge::Key::F3:
+            {
+                GLint layerIndex = GetLayerByName("Overlay");
+                if (layerIndex == -1)
+                {
+                    debug_warn("Layer 'Overlay' not found");
+                    return;
+                }
+                auto layer = layers_[layerIndex];
+
+                layer->SetShow(!layer->IsShown());
+                return;
+            }
             }
 
             auto it = key_map.find(ev.GetKeyCode());
@@ -81,7 +96,7 @@ namespace Demo
 
         for (std::shared_ptr<Forge::Layer> &layer : std::views::reverse(layers_))
         {
-            if (!layer->OnEvent(event))
+            if (!layer->OnEvent(event, fctx_))
             {
                 // Event was consumed by this layer
                 return;
@@ -104,8 +119,15 @@ namespace Demo
         cameras_[1].SetPosition(glm::vec3(0.0f, 5.0f, 5.0f));
         cameras_[1].SetYawPitch(-90.0f, -35.0f);
 
-        auto lightDemoLayer = std::make_shared<Demo::LightDemoLayer>(rmanager_);
+        auto lightDemoLayer = std::make_shared<Demo::LightDemoLayer>("LightDemoLayer", rmanager_);
         AddLayer(lightDemoLayer);
+
+        // F3-toggled wireframe-AABB debug overlay (Forge::DebugOverlayLayer) — off by default,
+        // named "Overlay" to match OnEvent's GetLayerByName("Overlay") lookup above.
+        auto debugOverlay = std::make_shared<Forge::DebugOverlayLayer>(
+            "Overlay", rmanager_, std::vector<std::shared_ptr<Forge::Layer>>{lightDemoLayer});
+        debugOverlay->Hide();
+        AddLayer(debugOverlay);
 
         // Skydome here instead of Skybox (LightDemoScene already exercises that one) — both
         // techniques get used somewhere, and the two very different camera angles are a good

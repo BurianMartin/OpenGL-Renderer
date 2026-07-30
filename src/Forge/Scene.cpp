@@ -167,6 +167,13 @@ namespace Forge
         lights_.push_back(light);
     }
 
+    GLint Scene::GetLayerByName(std::string name)
+    {
+        auto it = std::find_if(layers_.begin(), layers_.end(), [&name](const std::shared_ptr<Layer> &layer)
+                               { return layer->GetName() == name; });
+        return it != layers_.end() ? static_cast<GLint>(std::distance(layers_.begin(), it)) : -1;
+    }
+
     void Scene::OnLoad(std::shared_ptr<ResourceManager> rmanager, std::shared_ptr<FrameContext> rctx)
     {
         rmanager_ = rmanager;

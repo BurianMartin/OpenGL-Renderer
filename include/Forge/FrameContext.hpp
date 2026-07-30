@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Forge/Light.hpp"
+#include "Forge/InputEvents.hpp"
 
 #include <glad/gl.h>
 #include <glm/glm.hpp>
@@ -30,6 +31,12 @@ namespace Forge
         GLfloat time_ = 0.0f; // for animated shaders
         GLint window_width_;
         GLint window_height_;
+
+        /// Mirrors Engine's own cursor mode (kept in sync by Engine::SetCursorMode), so
+        /// anything holding a FrameContext — e.g. Layer::GetClickedOnObj — can tell whether
+        /// the cursor is a free on-screen point or a captured/FPS-style one without needing
+        /// its own separate channel back to Engine.
+        CursorMode cursor_mode_ = CursorMode::Captured;
 
         /// GL buffer object ID for the lights UBO; 0 until CreateLightBuffer() has been called.
         GLuint lightBufferId_ = 0;

@@ -1,6 +1,7 @@
 #pragma once
 #include "Utils.hpp"
 #include "Mesh.hpp"
+#include "Forge/RayCast.hpp"
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -50,6 +51,14 @@ namespace Forge
         /// Sets the convenience material reference (see class note — does not affect actual render dispatch).
         void SetMaterial(std::shared_ptr<Material> material);
         std::shared_ptr<Material> GetMaterial() const;
+
+        /// @brief World-space axis-aligned bounding box of this instance, for ray-casting/picking.
+        ///
+        /// Transforms the mesh's local-space bounds (Mesh::GetLowerBounds()/GetUpperBounds())
+        /// through GetModelMatrix() — but not just the two corner points: a rotated box's
+        /// tightest axis-aligned box isn't found by transforming its min/max corners alone,
+        /// so all 8 corners are transformed and re-min/maxed. See Forge::IntersectRayAABB.
+        Forge::AABB GetWorldBounds() const;
 
         /// @param mesh Geometry this instance draws; may be shared with other Models.
         Model(std::shared_ptr<Mesh> mesh);

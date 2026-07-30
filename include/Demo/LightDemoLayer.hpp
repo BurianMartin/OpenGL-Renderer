@@ -32,11 +32,11 @@ namespace Demo
     {
     public:
         /// Builds the demo scene's models/materials via `resourceManager`, seeding `materialModels_`/`materials_`.
-        LightDemoLayer(std::shared_ptr<Forge::ResourceManager> resourceManager);
+        LightDemoLayer(std::string name, std::shared_ptr<Forge::ResourceManager> resourceManager);
         ~LightDemoLayer() = default;
 
         /// Handles Q (randomize the Gold material's color); consumes every event (always returns `true`, i.e. never blocks propagation to layers below).
-        bool OnEvent(Forge::Event &e) override;
+        bool OnEvent(Forge::Event &e, std::shared_ptr<Forge::FrameContext> ctx) override;
         /// No-op — this demo layer has no per-frame logic of its own.
         void OnUpdate() override;
 
@@ -45,5 +45,4 @@ namespace Demo
         /// No-op — this demo layer owns no resources beyond what `shared_ptr` already manages.
         void Destroy() override;
     };
-
 } // namespace Demo

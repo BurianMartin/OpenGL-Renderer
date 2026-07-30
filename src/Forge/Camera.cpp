@@ -230,6 +230,13 @@ namespace Forge
         UpdateFront();
     }
 
+    bool Camera::ScreenPointToRay(GLfloat screenX, GLfloat screenY, Ray &outRay) const
+    {
+        GLint x, y, width, height;
+        viewport_.GetPixelRect(x, y, width, height);
+        return UnprojectScreenPoint(screenX, screenY, x, y, width, height, GetViewMatrix(), GetProjectionMatrix(), outRay);
+    }
+
     void Camera::UpdateFront()
     {
         glm::vec3 direction;
