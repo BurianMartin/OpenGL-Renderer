@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "Forge/Model.hpp"
+#include "Forge/Rendering/Model.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 

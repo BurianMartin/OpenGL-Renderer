@@ -1,7 +1,7 @@
 #include "Demo/LightDemoLayer.hpp"
-#include "Forge/Material.hpp"
-#include "Forge/Light.hpp"
-#include "Forge/Prop.hpp"
+#include "Forge/Rendering/Material.hpp"
+#include "Forge/Lighting/Light.hpp"
+#include "Forge/Rendering/Prop.hpp"
 
 #include <glm/gtc/constants.hpp>
 #include "LightDemoLayer.hpp"

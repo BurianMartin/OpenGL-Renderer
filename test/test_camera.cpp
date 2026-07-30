@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "Forge/Camera.hpp"
+#include "Forge/Rendering/Camera.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 

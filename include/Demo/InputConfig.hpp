@@ -4,8 +4,8 @@
 
 #include "Utils.hpp"
 
-#include "Forge/Camera.hpp"
-#include "Forge/Keys.hpp"
+#include "Forge/Rendering/Camera.hpp"
+#include "Forge/Core/Keys.hpp"
 
 /// Maps Forge::Key to Camera movement directions, used by LightDemoScene::OnEvent and
 /// MultiCameraDemoScene::OnEvent to translate raw WASD/Space/Left-Shift key events into

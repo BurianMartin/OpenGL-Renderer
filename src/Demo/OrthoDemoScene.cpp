@@ -1,7 +1,7 @@
 #include "Demo/OrthoDemoScene.hpp"
-#include "Forge/Camera.hpp"
-#include "Forge/Lights.hpp"
-#include "Forge/DebugOverlayLayer.hpp"
+#include "Forge/Rendering/Camera.hpp"
+#include "Forge/Lighting/Lights.hpp"
+#include "Forge/Scene/DebugOverlayLayer.hpp"
 
 namespace Demo
 {

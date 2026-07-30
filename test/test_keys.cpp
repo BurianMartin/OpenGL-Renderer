@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "Forge/Keys.hpp"
+#include "Forge/Core/Keys.hpp"
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>

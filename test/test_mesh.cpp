@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "Forge/Mesh.hpp"
+#include "Forge/Rendering/Mesh.hpp"
 
 #include <sstream>
 

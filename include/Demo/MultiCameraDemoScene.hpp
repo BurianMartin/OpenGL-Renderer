@@ -1,10 +1,10 @@
 #pragma once
 #include "Utils.hpp"
-#include "Forge/Scene.hpp"
-#include "Forge/Layer.hpp"
-#include "Forge/Camera.hpp"
-#include "Forge/InputEvents.hpp"
-#include "Forge/ResourceManager.hpp"
+#include "Forge/Scene/Scene.hpp"
+#include "Forge/Scene/Layer.hpp"
+#include "Forge/Rendering/Camera.hpp"
+#include "Forge/Core/InputEvents.hpp"
+#include "Forge/Core/ResourceManager.hpp"
 
 #include "Demo/LightDemoLayer.hpp"
 #include "Demo/InputConfig.hpp"

@@ -21,26 +21,32 @@ find_package(glm REQUIRED)
 add_library(EngineCore STATIC
         src/glad/gl.c
 
-        src/Forge/Mesh.cpp
-        src/Forge/Model.cpp
-        src/Forge/Camera.cpp
-        src/Forge/Shader.cpp
-        src/Forge/Texture.cpp
-        src/Forge/Material.cpp
-        src/Forge/Colors.cpp
-        src/Forge/Renderer.cpp
-        src/Forge/Engine.cpp
-        src/Forge/EventHandler.cpp
-        src/Forge/ResourceManager.cpp
-        src/Forge/Scene.cpp
-        src/Forge/Lights.cpp
-        src/Forge/DebugOverlayLayer.cpp
+        # Core: engine bootstrap, GLFW event wiring, resource loading
+        src/Forge/Core/Engine.cpp
+        src/Forge/Core/EventHandler.cpp
+        src/Forge/Core/ResourceManager.cpp
+        src/Forge/Core/Renderer.cpp
+
+        # Scene: the Engine -> Scene -> Layer hierarchy + per-frame data
+        src/Forge/Scene/Scene.cpp
+        src/Forge/Scene/DebugOverlayLayer.cpp
+
+        # Rendering: geometry, transforms, camera, materials/shaders/textures, picking
+        src/Forge/Rendering/Mesh.cpp
+        src/Forge/Rendering/Model.cpp
+        src/Forge/Rendering/Camera.cpp
+        src/Forge/Rendering/Shader.cpp
+        src/Forge/Rendering/Texture.cpp
+        src/Forge/Rendering/Material.cpp
+        src/Forge/Rendering/Colors.cpp
+
+        # Lighting
+        src/Forge/Lighting/Lights.cpp
     )
 
 target_include_directories(EngineCore
     PUBLIC
         ${CMAKE_SOURCE_DIR}/include
-        ${CMAKE_SOURCE_DIR}/include/Forge
         ${CMAKE_SOURCE_DIR}/include/glad
 )
 

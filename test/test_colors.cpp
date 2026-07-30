@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "Forge/Colors.hpp"
+#include "Forge/Rendering/Colors.hpp"
 
 #include <algorithm>
 #include <vector>
