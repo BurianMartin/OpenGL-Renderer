@@ -185,7 +185,7 @@ namespace Forge
         OnUpdate(delta_time);
         for (auto layer : layers_)
         {
-            layer->Update(delta_time);
+            layer->Update(delta_time, fctx_);
         }
     }
 

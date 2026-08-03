@@ -4,6 +4,7 @@
 #include "Forge/Rendering/Shader.hpp"
 #include "Forge/Rendering/Texture.hpp"
 #include "Forge/Rendering/Material.hpp"
+#include "Forge/Rendering/Font.hpp"
 
 #include <memory>
 #include <unordered_map>
@@ -26,6 +27,7 @@ namespace Forge
         std::unordered_map<std::string, std::weak_ptr<Mesh>> meshes_;
         std::unordered_map<std::string, std::weak_ptr<Shader>> shaders_;
         std::unordered_map<std::string, std::weak_ptr<Material>> materials_;
+        std::unordered_map<std::string, std::weak_ptr<Font>> fonts_;
 
     public:
         ResourceManager() = default;
@@ -47,5 +49,8 @@ namespace Forge
 
         std::shared_ptr<Material> LoadMaterial(std::shared_ptr<Shader> shader, const std::string &tag,
                                                glm::vec3 ambient = {0.17f, 0.14f, 0.1f}, glm::vec3 diffuse = {0.57f, 0.47f, 0.34f}, glm::vec3 specular = {0.56f, 0.52f, 0.48f}, float shininess = 55.0f);
+
+        /// @param ttfPath Path to a `.ttf` file. @param pixelHeight Bake size in pixels, part of the cache key (the same path at two sizes is two distinct atlases). @return The font, or `nullptr` if loading failed.
+        std::shared_ptr<Font> LoadFont(const std::string &ttfPath, float pixelHeight);
     };
 } // namespace Forge

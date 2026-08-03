@@ -3,6 +3,7 @@
 #include "Forge/Rendering/Model.hpp"
 #include "Forge/Rendering/Mesh.hpp"
 #include "Forge/Rendering/Shader.hpp"
+#include "Forge/Rendering/Button.hpp"
 #include "Forge/Core/InputEvents.hpp"
 #include "Forge/Scene/FrameContext.hpp"
 #include "Forge/Core/ResourceManager.hpp"
@@ -38,11 +39,23 @@ namespace Demo
         /// Handles Q (randomize the Gold material's color); consumes every event (always returns `true`, i.e. never blocks propagation to layers below).
         bool OnEvent(Forge::Event &e, std::shared_ptr<Forge::FrameContext> ctx) override;
         /// No-op — this demo layer has no per-frame logic of its own.
-        void OnUpdate() override;
+        void OnUpdate(std::shared_ptr<Forge::FrameContext> ctx) override;
 
         /// Binds each material once, then sets `uModel`/`uNormalMatrix` and draws every model in its bucket.
         void OnRender(std::shared_ptr<Forge::FrameContext> ctx) const override;
         /// No-op — this demo layer owns no resources beyond what `shared_ptr` already manages.
         void Destroy() override;
+
+        /// Randomizes the Gold material's color — the one shared action behind both the `Q`
+        /// key handler and the "Randomize Gold" UI button (see GetRandomizeButton()).
+        void RandomizeGold() { materials_[1]->SetColor(Forge::Color_A1::RandomColor()); }
+
+        /// @return The "Randomize Gold" Forge::Button built in the constructor, for whichever
+        /// Scene owns this layer to register into its own Forge::UILayer — this layer draws
+        /// its own 3D content, not screen-space UI, so it doesn't draw this button itself.
+        std::shared_ptr<Forge::Button> GetRandomizeButton() const { return randomizeButton_; }
+
+    private:
+        std::shared_ptr<Forge::Button> randomizeButton_;
     };
 } // namespace Demo

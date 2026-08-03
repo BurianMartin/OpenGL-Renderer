@@ -55,4 +55,15 @@ namespace Forge
         return material;
     }
 
+    std::shared_ptr<Font> ResourceManager::LoadFont(const std::string &ttfPath, float pixelHeight)
+    {
+        auto &weak = fonts_[ttfPath + "@" + std::to_string(pixelHeight)];
+        if (auto existing = weak.lock())
+            return existing;
+
+        auto fresh = Font::Create(ttfPath, pixelHeight);
+        weak = fresh;
+        return fresh;
+    }
+
 } // namespace Forge

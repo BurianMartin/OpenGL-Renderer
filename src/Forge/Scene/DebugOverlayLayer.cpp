@@ -1,6 +1,8 @@
 #include "Forge/Scene/DebugOverlayLayer.hpp"
 #include "Forge/Rendering/Material.hpp"
 
+#include <format>
+
 namespace Forge
 {
     namespace
@@ -76,6 +78,16 @@ namespace Forge
                 tracked_.emplace_back(model, box);
             }
         }
+
+        font_ = resourceManager->LoadFont("fonts/DejaVuSans.ttf", 18.0f);
+        if (!font_)
+            debug_error("Failed to load fonts/DejaVuSans.ttf");
+
+        infoText_ = Text::Create(resourceManager, font_,
+                                 std::format("F3 DEBUG OVERLAY - tracking {} AABB(s), green = Model::GetWorldBounds()", tracked_.size()),
+                                 10.0f, 15.0f, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+        // Placeholder string — real content is set every frame in OnUpdate(), where delta_time_ is actually available.
+        statsText_ = Text::Create(resourceManager, font_, "Frame: -- ms (-- FPS)", 10.0f, 37.0f, glm::vec4(0.6f, 1.0f, 0.6f, 1.0f));
     }
 
     bool DebugOverlayLayer::OnEvent(Forge::Event &e, std::shared_ptr<Forge::FrameContext> ctx)
@@ -83,7 +95,7 @@ namespace Forge
         return true;
     }
 
-    void DebugOverlayLayer::OnUpdate()
+    void DebugOverlayLayer::OnUpdate(std::shared_ptr<Forge::FrameContext> ctx)
     {
         for (auto &[source, box] : tracked_)
         {
@@ -91,9 +103,20 @@ namespace Forge
             box->SetPosition((bounds.min + bounds.max) * 0.5f);
             box->SetScale(bounds.max - bounds.min);
         }
+
+        if (statsText_)
+        {
+            float fps = ctx->delta_time_ > 0.0f ? 1.0f / ctx->delta_time_ : 0.0f;
+            statsText_->SetString(std::format("Frame: {:.2f} ms ({:.0f} FPS)", ctx->delta_time_ * 1000.0f, fps));
+        }
     }
 
     void DebugOverlayLayer::OnRender(std::shared_ptr<Forge::FrameContext> ctx) const
     {
+        if (statsText_)
+            statsText_->Draw(ctx->window_width_, ctx->window_height_);
+
+        if (infoText_)
+            infoText_->Draw(ctx->window_width_, ctx->window_height_);
     }
 } // namespace Forge

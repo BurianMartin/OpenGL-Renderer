@@ -31,7 +31,7 @@ add_library(EngineCore STATIC
         src/Forge/Scene/Scene.cpp
         src/Forge/Scene/DebugOverlayLayer.cpp
 
-        # Rendering: geometry, transforms, camera, materials/shaders/textures, picking
+        # Rendering: geometry, transforms, camera, materials/shaders/textures, picking, text
         src/Forge/Rendering/Mesh.cpp
         src/Forge/Rendering/Model.cpp
         src/Forge/Rendering/Camera.cpp
@@ -39,6 +39,8 @@ add_library(EngineCore STATIC
         src/Forge/Rendering/Texture.cpp
         src/Forge/Rendering/Material.cpp
         src/Forge/Rendering/Colors.cpp
+        src/Forge/Rendering/Font.cpp
+        src/Forge/Rendering/Text.cpp
 
         # Lighting
         src/Forge/Lighting/Lights.cpp
@@ -106,6 +108,7 @@ if(BUILD_TESTS)
         test/test_prop.cpp
         test/test_colors.cpp
         test/test_keys.cpp
+        test/test_clickable_region.cpp
     )
     target_link_libraries(EngineCore_tests PRIVATE EngineCore GTest::gtest GTest::gtest_main)
 
