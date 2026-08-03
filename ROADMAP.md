@@ -32,58 +32,99 @@ The known-bug backlog, `ResourceManager::LoadMaterial`, and the `RenderContext`�
 Multi-camera/split-screen, Skybox/Skydome, and sub-mesh support are all done — see Open
 Architecture below and the Completed section.
 
+## ✅ Text/UI rendering, clickable-region abstraction, `Layer::OnUpdate` FrameContext — done
+
+`Forge::Font`/`Forge::Text` (stb_truetype baked-atlas rendering), `Forge::ClickableRegion`/
+`Forge::Button`/`Forge::UILayer` (a real 2D clickable-region/UI-element abstraction), and
+`Layer::OnUpdate(shared_ptr<FrameContext>)` (matching `OnEvent`'s existing signature) are
+all implemented and exercised end-to-end: `DebugOverlayLayer`'s F3 overlay now shows a live
+frame-time/FPS readout alongside its wireframe boxes, and every demo scene has a working
+"Randomize Gold" `Forge::Button` wired through a `Forge::UILayer`. See "Next: Text/UI
+Rendering" below for the implementation notes (kept for the design rationale) and Known
+Bugs for one real gap this surfaced (`Button` click routing under `CursorMode::Captured`).
+
 ## 🔜 Next up — per `SCOPE.md`: Tier 2
 
-**Tier 2 (net-new, required for v1 — the real remaining work):** text/UI rendering, a
-clickable-region abstraction, threading `FrameContext` into `Layer::OnUpdate` (`OnEvent`
-already gets one — see Open Architecture below), and networking (client-server,
-home-server-hosted, ENet, ported over the existing home VPN). The 2D/orthographic +
-picking primitives bullet that used to be listed here is done — see Open Architecture.
-All of this used to live under Redline's "optional, not on the roadmap" Phase F — it no
-longer is optional. Full detail and reasoning in `SCOPE.md`.
+**Tier 2 (net-new, required for v1 — the one item left):** networking (client-server,
+home-server-hosted, ENet, ported over the existing home VPN). Everything else Tier 2 used
+to track — text/UI rendering, the clickable-region abstraction, `Layer::OnUpdate`'s
+`FrameContext`, and the 2D/orthographic + picking primitives — is done, see above and Open
+Architecture below. Full detail and reasoning in `SCOPE.md`.
 
 ---
 
-## 🐛 Known bugs — 2026-07-13 audit pass (unfixed, ranked by severity)
+## 🐛 Known bugs — 2026-07-13 + 2026-08-03 audit passes (unfixed, ranked by severity)
 
 A full pass over every `Forge`/`Demo` source file, each finding verified against the
 actual code (and in two cases against actual compiled behavior) before being logged here.
-Nothing in this section has been fixed yet — this is the starting punch list for whoever
-picks it up next.
+The 2026-08-03 pass added a second full sweep (six parallel per-subsystem audits — Core,
+Scene/Layer, geometry/camera, materials/text/UI, lighting, Demo) on top of the original;
+two of its findings were specifically double-checked by re-reading the cited code directly
+because they contradicted either an existing "fixed" entry or the project's own
+architecture doc (marked below). **Every single entry in this section — all 38, old and
+new — was then independently re-verified against current code in a follow-up pass, later
+the same day**: zero were found false or regressed; corrections below are all just
+line-number drift from the day's own churn (recorded, not silently fixed). Nothing in this
+section has been fixed yet — this is the starting punch list for whoever picks it up next.
 
 **High — visibly wrong or crash-risk today**
 
-- [ ] **Ruby cube's "spin" orbits instead of spinning in place** (`models/cube.obj`, `Model.cpp:30-37`, `LightDemoLayer.cpp:104-107`) — `cube.obj`'s vertices span `z ∈ [0,20]`, so its local origin sits on one face, not the centroid. `GetModelMatrix()` rotates before translating, so `SetSpin` sweeps the cube's visual center in a circle instead of rotating it in place. Visible in every demo scene right now.
+- [ ] **Click-to-pick uses the wrong camera's view/projection in any multi-camera scene** (`Scene.cpp:131-141` `UpdateFrameContext`, `Scene.cpp:245-260` `Render`, `Engine.cpp:101-104` `Run`) — `Scene::Render()` loops every camera and calls `UpdateFrameContext(i)` on each iteration, which *unconditionally overwrites* the single shared `fctx_->view_`/`projection_`/`camera_position_` — so once the loop finishes, `fctx_` holds the **last** camera's matrices, not `active_camera_`'s. `Engine::Run()`'s loop order is `Update → RenderScene → SwapBuffers → PollEvents`, and `glfwPollEvents()` (where a mouse click actually gets dispatched to `Layer::OnEvent` → `GetClickedOnObj`) always runs *after* that frame's render — so it always sees this stale, last-camera `fctx_`. Concretely reproducible today in `MultiCameraDemoScene` (main free-fly camera at index 0, fixed elevated-overview PiP camera at index 1): every click-to-pick ray is built from the **PiP camera's fixed pose**, not the main camera the player is actually looking/clicking through — clicking a station while free-flying picks against the wrong frustum entirely. `LightDemoScene`/`OrthoDemoScene` are unaffected only because they each have exactly one camera, so "last" and "active" happen to coincide.
+- [x] **`Forge::Button`/`Forge::UILayer` can't be meaningfully clicked while the cursor is `Captured`** (`UILayer.hpp:OnEvent`) — fixed: confirmed first that the click event itself is never gated on cursor mode (`EventHandler.cpp`'s `glfwSetMouseButtonCallback` fires unconditionally on press/release), so the actual bug was only ever that `ev.GetX()/GetY()` is GLFW's virtual mouse-look accumulator while `Captured`, not a real screen pixel — the same problem `Layer::GetClickedOnObj()` already works around for 3D picking (aims from the window's center pixel instead), except a fixed 2D button has no equivalent "what am I looking at" substitute position, so there's nothing sensible to test against. `UILayer::OnEvent` now checks `ctx->cursor_mode_` (the same field `GetClickedOnObj` already reads) and skips button hit-testing entirely while `Captured`, returning `true` (pass-through, not consumed) so the click event still reaches whatever's behind it (e.g. 3D picking). Deliberately fixed at the consumer (`UILayer`), not by sanitizing coordinates at the event source (`EventHandler`) — keeps `ClickableRegion` a generic, `FrameContext`-independent primitive and avoids a magic out-of-bounds sentinel value. Scene-level "switch to `Normal` cursor mode automatically for UI-heavy scenes" is a separate, still-open design decision left to whoever builds the next UI-heavy scene.
+- [ ] **Ruby cube's "spin" orbits instead of spinning in place** (`models/cube.obj`, `Model.cpp:32-39`, `LightDemoLayer.cpp:104-107`) — `cube.obj`'s vertices span `z ∈ [0,20]`, so its local origin sits on one face, not the centroid. `GetModelMatrix()` rotates before translating, so `SetSpin` sweeps the cube's visual center in a circle instead of rotating it in place. Visible in every demo scene right now.
 - [x] **Sprint boost doesn't apply to strafing** (`Camera.cpp:117-125`) — fixed: `MoveLeft`/`MoveRight` now scale by `(speed_ + boost_)` like the other four movement methods.
-- [x] **Window resize only reaches the active scene** (`Engine.cpp:219`) — fixed, indirectly: `WindowResize` still only updates the shared `FrameContext`'s window size and forwards to the active scene, but `Scene::Resume()` (see the new Suspend/Resume scene-switch lifecycle) now re-syncs every camera's `Viewport` from that shared `FrameContext` whenever a scene becomes active again, so a scene that missed a resize while inactive catches up the moment it's switched back to.
+- [x] **Window resize only reaches the active scene** (`Scene.hpp:123-131`, `Resume()` — citation corrected from a stale `Engine.cpp:219`, which is blank space today) — fixed, indirectly: `WindowResize` still only updates the shared `FrameContext`'s window size and forwards to the active scene, but `Scene::Resume()` (see the new Suspend/Resume scene-switch lifecycle) now re-syncs every camera's `Viewport` from that shared `FrameContext` whenever a scene becomes active again, so a scene that missed a resize while inactive catches up the moment it's switched back to. **Not a contradiction** with the "`WindowResize` is app-level policy" Medium entry below — both are true simultaneously: this fixes the *scene-switch* catch-up case specifically; the Medium entry is about who actually calls `AdjustViewport` in the first place (`main.cpp`, not `Engine` itself). Don't read this entry as "Engine handles resize automatically."
 - [ ] **Texture loader picks the wrong GL format for grayscale images** (`Texture.cpp:30`) — any non-4-channel image is treated as `GL_RGB`; a 1- or 2-channel image (e.g. a grayscale roughness map) was only allocated 1–2 bytes/pixel by `stbi_load`, so `glTexImage2D` reads past the buffer.
 - [ ] **`debug_error` is a silent no-op in Release builds** (`Utils.hpp:19-31`) — bundled into the same `#ifndef NDEBUG` block as `debug_info`/`debug_warn`, contradicting the documented "always throws" contract. In Release, a missing shader/texture file silently proceeds with `nrChannels`/`width_`/`height_` uninitialized.
-- [x] **No cap on light count vs. the UBO's fixed 32-slot capacity** (`Scene.cpp:144-163`, `FrameContext.hpp:38`) — fixed: `AddLight` now checks `lights_.size()` against `fctx_->MAX_LIGHTS` and drops (with a `debug_warn`) instead of pushing past capacity. Unexercised today (every demo scene uses 5 lights).
+- [x] **No cap on light count vs. the UBO's fixed 32-slot capacity** (`Scene.cpp:159-167`, `FrameContext.hpp:38`) — fixed: `AddLight` now checks `lights_.size()` against `fctx_->MAX_LIGHTS` and drops (with a `debug_warn`) instead of pushing past capacity. Unexercised today (every demo scene uses 5 lights).
 
 **Medium — real, latent, or contract-violating**
 
 - [ ] **Shader compile/link failure leaks GL shader objects** (`Shader.cpp:27-49`) — `glDeleteShader`/`glDeleteProgram` cleanup only runs on the success path.
-- [ ] **`Material`/`LoadMaterial` never null-check the injected shader** (`Material.cpp:19-26`, `ResourceManager.cpp:48-57`) — a failed shader load cascades into a null-pointer crash far away, inside `Material::Bind()`.
-- [ ] **Double-Tab within one frame collapses to a single scene advance** (`Engine::NextScene`, `Engine.cpp:234`) — `SetScene((current_scene_+1)%...)` reads the stale `current_scene_`, not the already-pending `next_scene_`. Unaffected by the `Engine::HandleEvent`/global-callback rework below — `NextScene()` is just where the same old logic lives now.
+- [ ] **`Material`/`LoadMaterial` never null-check the injected shader** (`Material.cpp:19-26`, `ResourceManager.cpp:47-56`) — a failed shader load cascades into a null-pointer crash far away, inside `Material::Bind()`.
+- [ ] **Double-Tab within one frame collapses to a single scene advance** (`Engine::NextScene`, `Engine.cpp:233-236`, body at line 235) — `SetScene((current_scene_+1)%...)` reads the stale `current_scene_`, not the already-pending `next_scene_`. Unaffected by the `Engine::HandleEvent`/global-callback rework below — `NextScene()` is just where the same old logic lives now.
 - [x] **Tab/backtick aren't actually intercepted before reaching the scene** — fixed, as a side effect of the `Engine::HandleEvent`/global-callback rework (see Open Architecture below): `main.cpp`'s registered handler returns `false` (consumed) for Escape/Tab/GraveAccent, so `Engine::RaiseEvent` no longer forwards those key events to the active scene at all.
-- [ ] **`LoadMaterial`'s cache is keyed only by tag, not `(shader, tag)`** (`ResourceManager.cpp:48-57`) — two different shaders sharing a tag string silently collide.
-- [ ] **A tween finish-callback that chains `AddTween` would invalidate `UpdateTweens`'s iterators mid-loop** (`Layer.hpp:39-47`, `Tweens.hpp:53`) — latent; nothing calls `SetFinishFunction` yet.
-- [ ] **`Viewport::RecomputeAspectRatio` divides by zero on a 0×0 resize** (`Camera.hpp:35-38`) — GLFW can legitimately deliver this on minimize; produces NaN/Inf straight into the projection matrix.
+- [ ] **`LoadMaterial`'s cache is keyed only by tag, not `(shader, tag)`** (`ResourceManager.cpp:47-56`) — two different shaders sharing a tag string silently collide.
+- [ ] **A tween finish-callback that chains `AddTween` would invalidate `UpdateTweens`'s iterators mid-loop** (`Layer.hpp:45-53`, `Tweens.hpp:53`) — latent; nothing calls `SetFinishFunction` yet.
+- [ ] **`Viewport::RecomputeAspectRatio` divides by zero on a 0×0 resize** (`Camera.hpp:36-39`) — GLFW can legitimately deliver this on minimize; produces NaN/Inf straight into the projection matrix.
+- [ ] **`Forge::UILayer`/`DebugOverlayLayer`'s screen-space text redraws once per camera instead of once per frame in a multi-camera scene** (`Scene.cpp:245-260` `Render`) — every layer's `Render()`, including `UILayer`'s button and `DebugOverlayLayer`'s F3 text, runs inside the same per-camera loop as 3D content, once per camera, each time under that camera's own `glScissor` rect. `Text::Draw()` always rebuilds a fixed full-window ortho projection regardless of which camera's pass is active, so a screen-space element is issued `cameras_.size()` times per frame instead of once, and only actually survives whichever pass's scissor rect happens to contain its fixed pixel position. Same root cause as the click-to-pick bug above (`Scene::Render()` treating per-camera-instance state — here, the scissor rect, there, `fctx_`'s matrices — as if it applied uniformly). Currently invisible in `MultiCameraDemoScene` only by position coincidence: the button/debug-text sit top-left, the PiP inset is top-right, so the second pass's scissor cleanly clips it away with no visible double-draw. Would visibly double-draw or get partially clipped mid-glyph in a genuine half-and-half split-screen layout.
+- [ ] **`DirectionalLight`/`SpotLight` never guard against a zero-length direction vector before `normalize()`** (`Lights.cpp`, both constructors and `SetDirection`) — a zero vector normalizes to NaN, and `fragment.glsl`'s per-fragment light-accumulation loop (`totalLight += ...`) doesn't stop NaN propagation: one NaN-producing light corrupts every fragment's total lighting, not just its own contribution. Latent — no current call site passes a zero vector, but the blast radius is disproportionate to "one broken light" if it were ever hit (e.g. a future "aim this spotlight at a target position" feature would produce exactly a zero direction whenever target == light position).
+- [ ] **`Mesh`'s move constructor/move-assignment silently drop `boundsMin`/`boundsMax`** (`Mesh.hpp:184-185`, `Mesh.cpp:337-367` move ops — member names corrected, no trailing underscore) — neither the move constructor (`337-347`) nor move-assignment (`350-367`) mentions the bounds members, so a moved-to `Mesh` gets the sentinel "empty box" default (`max()`/`lowest()`) instead of the source's real computed bounds. `Model::GetWorldBounds()` on it would silently produce a degenerate/inverted AABB, breaking click-to-pick with no error. Latent — the only `std::move` touching a `Mesh` anywhere in the repo (`Mesh.cpp:79`) moves a `shared_ptr<Mesh>` handle, not a `Mesh` by value, so this move-op path is currently dead code.
+- [ ] **`Model::Draw()`/`Model::GetWorldBounds()` unconditionally dereference `mesh_` with no null check** (`Model.cpp`) — `Model`'s constructor accepts any `shared_ptr<Mesh>` including `nullptr`, and this project's own test suite deliberately relies on `Model(nullptr)` being safe for transform-only bookkeeping (`Vec3Tween`/`Prop` tests). That "safe" contract is real but unenforced: the moment a `Model(nullptr)` reaches anything that actually calls `Draw()` (any real `Layer::Render()`) or `GetWorldBounds()` (click-to-pick, `DebugOverlayLayer`) instead of only transform setters, it's an immediate null-pointer crash with nothing documenting `mesh_` as nullable.
+- [ ] **`Vec3Tween` never validates `duration_ > 0`**, and `NormalizedT()` divides by it unconditionally (`Tweens.hpp`) — a tween constructed with `duration = 0.0f` computes `0.0f / 0.0f` = NaN on its very first `Update()`, which `glm::mix()`/`glm::slerp()` then silently propagate into the model's position/rotation (object vanishes or renders garbage, no warning). Latent — both current call sites (`LightDemoLayer`'s ruby-spin/emerald-bob tweens) pass `3.0f`/`1.0f`.
+- [ ] **`WindowResize` handling is app-level policy, not the engine-level bookkeeping `CLAUDE.md` documents it as** (`Engine.cpp`'s `RaiseEvent` has no `WindowResize` branch at all; `main.cpp:46-51`) — `CLAUDE.md` describes `WindowResize` updating `FrameContext`'s window size + `glViewport` as "fixed, always-on bookkeeping" inside `Engine::RaiseEvent`, the same tier as `WindowLostFocus` (which *is* actually handled that way, verified). In the real code, that update only happens because `main.cpp`'s registered `SetEventHandler` callback happens to call `Engine::AdjustViewport()` itself on `WindowResize` and return `true` to forward it — verified as the *only* call site of `AdjustViewport` anywhere in the repo. Works today only because this one app replicates that exact handling; given the project's shift toward being a reusable library, a different consumer that doesn't replicate `main.cpp`'s `WindowResize` case gets a silently stale viewport and `FrameContext` window size on resize, with zero warning, despite the doc's promise that this "just works" at the engine level.
+- [ ] **`WindowLostFocusEvent` never reaches the app-settable global handler or the active scene's `OnEvent`** (`Engine.cpp`'s `RaiseEvent`) — it hard-`return`s immediately after clearing the held-key table, before the `HandleEvent`/scene-forward path every other event type (including `WindowResize`, above) falls through to. Not hit today (nothing currently reacts to focus loss), but structurally blocks an extremely common feature (auto-pause on focus loss) from ever being implementable through the documented `SetEventHandler`/`Layer::OnEvent` extension points — would need an `Engine.cpp` change, not app-layer code, to ever support it.
+- [ ] **`Button`/`ClickableRegion` click callbacks are captured via a raw `this` pointer with no lifetime tie to the owning `Layer`** (`LightDemoLayer.cpp`'s `randomizeButton_->SetOnClick([this](){ RandomizeGold(); })`; `Button.hpp`/`ClickableRegion.hpp` provide no mechanism to prevent this) — if a `Button` (or the `UILayer` holding it) ever outlived the `Layer` whose method it captured, clicking it would invoke a dangling pointer. Not exercised today only because `LightDemoLayer` and the `UILayer` holding its button share the same `Scene::layers_` vector's lifetime.
 
 **Low — real but narrow/cosmetic**
 
 - [ ] **`Mesh::Create(filename)` throws instead of returning `nullptr`** (`Mesh.cpp:31-40`) — contradicts its own doc comment and its two sibling `Create()` overloads. Masked today because its one caller (`ResourceManager::LoadMesh`) happens to catch it.
-- [ ] **OBJ parser doesn't support negative/relative face indices** (`Mesh.cpp:127-136`) — silently collapses that vertex to the origin instead of resolving it; a whole-face collapse can further produce a NaN normal.
-- [ ] **Skydome shader failing to compile leaks one VAO/frame in Debug builds** (`Scene.cpp:95-99`) — never triggered by shaders currently in the repo.
+- [ ] **OBJ parser doesn't support negative/relative face indices** (`Mesh.cpp:180-201`, the `vIdx > 0` check at line 198 — file has restructured since this was first logged) — silently collapses that vertex to the origin (`Vertex v{}`'s zero-initialized default at line 180) instead of resolving negative/relative OBJ indexing; a whole-face collapse can further produce a NaN normal.
+- [ ] **Skydome shader failing to compile leaks one VAO/frame in Debug builds** (`Scene.cpp:94-98`) — worse than originally described: `DrawSkydomeBackground()` only guards `glGenVertexArrays` behind `if (!skydomeShader_)`, never behind "did the shader load actually succeed" — so if `LoadShader` fails, `skydomeShader_` stays null and **every subsequent frame** re-enters the block and re-calls `glGenVertexArrays`, overwriting `skydomeVAO_` and losing the only handle that could free the previous one. Leaks one VAO *per frame*, not once. Never triggered by shaders currently in the repo.
 - [ ] **`Shader`/`Texture` own a raw GL handle but never disable copy** (`Shader.hpp`, `Texture.hpp`) — an accidental copy would double-free. Never triggered today (both only ever used via `shared_ptr`).
-- [ ] **`LightDemoLayer`'s Q-key handler indexes `materials_[1]` directly instead of a tag lookup** (`LightDemoLayer.cpp:132`) — works today only by `push_back` order coincidence (already flagged in a comment there).
-- [ ] **`LoadShader`'s cache key could theoretically collide** (`ResourceManager.cpp:29`) — `vertPath + "||" + fragPath`; no current shader path contains `"||"`.
-- [ ] **Malformed `v`/`vn`/`vt` lines silently default missing components to `0.0`** (`Mesh.cpp:69-84`) — no warning, unlike `f` lines which do get a token-count check.
+- [ ] **`SpotLight` never validates `innerCutoff <= outerCutoff`** (`Lights.hpp`/`Lights.cpp` constructor) — inverted or equal values push `fragment.glsl`'s `epsilon = innerCutoff_ - outerCutoff_` negative (broken falloff) or to exactly zero (division by zero → NaN, same propagation risk as the directional/spot zero-direction entry above). Every current demo scene uses the same valid 12.5°/17.5° defaults.
+- [ ] **`WindowSpecification::isResizable` is dead config, never applied** (`Specifications.hpp`, `Engine::Init`) — zero `glfwWindowHint` calls anywhere in `src/Forge/Core/`; GLFW windows default to resizable regardless of this field's value.
+- [ ] **`debug_info`/`debug_warn`/`debug_error` macros aren't wrapped in `do { ... } while(0)`** (`Utils.hpp:11-31`) — each expands to a bare `{ ... }` block, the classic unguarded-macro hazard (`if (cond) debug_error(x); else foo();` would fail to compile, orphaning the `else`). Not triggered by any current call site.
+- [ ] **`OrthoDemoScene::OnEvent`'s `KeyPressed` case has no `break`** (`OrthoDemoScene.cpp:27-44`), unlike `LightDemoScene`/`MultiCameraDemoScene`'s equivalent blocks — falls through into `default: break;`, currently harmless only because `default`'s body is itself just `break`. Fragile: anything added to `default:` later, or a case inserted in between, would silently change behavior for every non-F3 key press.
+- [ ] **`Text::Draw()` saves/restores the `GL_DEPTH_TEST`/`GL_BLEND`/`GL_CULL_FACE` enable bits but never the actual blend function or which texture was bound to unit 0 beforehand** (`Text.cpp`) — `glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)` is left set even after `GL_BLEND` is disabled again, and unit 0's texture binding is never restored. Harmless today only because `Text.cpp` is currently the only `glEnable(GL_BLEND)`/`glBlendFunc` call site in the engine, and every `Material::Bind()` that uses a texture explicitly rebinds unit 0 itself first. Would silently leak state into any future transparent-drawing feature (particle effects, card-sprite alpha) that doesn't set its own blend func / rebind its own texture.
+- [ ] **`Font::Create` never validates `pixelHeight > 0`** (`Font.cpp`) — every other failure path (file open, file read, atlas-too-small) gets a clean `debug_warn` + `nullptr`; a zero/negative `pixelHeight` goes straight into `stbtt_BakeFontBitmap` with no guard, producing an unspecified/garbage atlas instead of a clean rejection. Not hit by either current call site (both hardcode `18.0f`).
+- [ ] **`Camera::SetUp()` calls `glm::normalize()` on its argument with no zero-vector guard** (`Camera.cpp`) — same missing-validation shape as the already-listed `SetOrthographic`/`SetBoost` entries below; no current call site passes a zero vector.
+- [ ] **`LightDemoLayer`'s Q-key handler indexes `materials_[1]` directly instead of a tag lookup** (`include/Demo/LightDemoLayer.hpp:51`, inside `RandomizeGold()` — relocated there from `LightDemoLayer.cpp` when the Q-key/button-shared helper was added) — works today only by `push_back` order coincidence (already flagged in a comment there).
+- [ ] **`LoadShader`'s cache key could theoretically collide** (`ResourceManager.cpp:28`) — `vertPath + "||" + fragPath`; no current shader path contains `"||"`.
+- [ ] **Malformed `v`/`vn`/`vt` lines silently default missing components to `0.0`** (`Mesh.cpp:129-144`) — no warning, unlike `f` lines which do get a token-count check (`Mesh.cpp:157-168`).
 - [ ] **`SetOrthographic`/`SetBoost` accept invalid values with no validation** (`Camera.cpp`) — zero/negative half-height, negative boost. Not hit by any current call site.
 
 ---
 
 ## Known bugs / issues found in audit
+
+Re-verified 2026-08-03 alongside the newer audit passes above: 11 of 12 entries below still
+hold exactly as described (a couple with harmless line-number drift from later refactors,
+not called out individually). Two corrections did come out of it, applied in place below —
+entry 7's own "no `CLAUDE.md` exists" parenthetical is now false (one exists at the repo
+root today), and entry 12's claimed fix (`0.1 *` ambient scale + `clamp()`) no longer exists
+in `fragment.glsl` at all — the whole file was later rewritten into the multi-light
+Blinn-Phong UBO system documented in Steps 6–7 below, which doesn't reuse that mechanism.
 
 - [x] **Normal matrix computed on GPU** (`vertex.glsl:18`) — fixed: computed once per draw on the CPU (`glm::transpose(glm::inverse(modelMatrix))`) and uploaded as `uniform mat3 uNormalMatrix`; the vertex shader just does `vNormal = uNormalMatrix * aNormal` now. Originally landed in `TestLayer::OnRender`, later moved into base `Layer::Render()` — see the Completed section.
 - [x] **OBJ loader drops non-triangle faces** (`Mesh.cpp:81`) — fixed: faces are parsed into a per-face vertex-index list first, then fan-triangulated (`indices[0]` anchors triangles against every consecutive pair) instead of requiring exactly 3 tokens. Assumes convex, planar faces — true for Blender's default export.
@@ -91,14 +132,14 @@ picks it up next.
 - **`ResourceManager::LoadShader` cache ignores tag** (`ResourceManager.cpp:28`) — not a bug: tags aren't used to differentiate cache entries yet, this is intentional future-proofing until something actually needs per-tag shader variants.
 - [x] **`getModelMatrix()` camelCase** (`Model.cpp:30`) — fixed: renamed to `GetModelMatrix()` everywhere (header, implementation, `TestLayer.cpp` call site).
 - [x] **`if (!Init())` in Engine constructor doesn't actually guard construction** (`Engine.cpp:10`) — fixed: `debug_error` only throws when `NDEBUG` is unset, so in a release build it was a no-op and the constructor just `return`ed early, leaving the `Engine` half-constructed. The constructor now always `throw`s a plain `std::runtime_error` on `Init()` failure, independent of `NDEBUG` — `debug_error` still logs (and throws again, harmlessly unreachable) in debug builds, but the guard itself no longer depends on it.
-- [x] **`Layer.hpp`'s interface doesn't match `CLAUDE.md`'s description** — resolved by decision, not by matching the doc to a pure-virtual `Destroy()`: none of `Suspend()`/`Transition()`/`Destroy()` need to be mandatory on every `Layer`. Suspend is just switching the active `Scene`/`Layer`, `Destroy` is redundant with a subclass's own destructor running via `shared_ptr`, and `Transition` can be implemented however a given `Layer` needs — none of it belongs on the base interface as a forced override. `Destroy()` is commented out of `Layer.hpp` accordingly. (Note: there is no `CLAUDE.md` in this repo currently, so "matches the doc" doesn't apply either way — this line item is now just stale.)
+- [x] **`Layer.hpp`'s interface doesn't match `CLAUDE.md`'s description** — resolved by decision, not by matching the doc to a pure-virtual `Destroy()`: none of `Suspend()`/`Transition()`/`Destroy()` need to be mandatory on every `Layer`. Suspend is just switching the active `Scene`/`Layer` (and now actually lives on `Scene`, not `Layer` — `Scene::Suspend()`, default no-op), `Destroy` is redundant with a subclass's own destructor running via `shared_ptr` (has a default `{}` body, not pure virtual), and `Transition` can be implemented however a given `Layer` needs (commented out of `Layer.hpp`) — none of it belongs on the base interface as a forced override. (Corrected note: this repo *does* have a `CLAUDE.md` at the repo root today — the original parenthetical claiming otherwise was stale as of the 2026-08-03 re-verification. The design decision itself is unaffected.)
 - [x] **`Texture::Unbind()` unbinds whatever texture unit is currently active, not necessarily unit 0** (`Texture.cpp:59`) — fixed: `Unbind(GLuint slot = 0)` now calls `glActiveTexture(GL_TEXTURE0 + slot)` before unbinding.
 - [x] **`LightType::Area` has no matching class** (`Light.hpp`) — resolved: enumerator dropped from `LightType` (never implemented, out of scope per `SCOPE.md`'s "area lights" exclusion).
 - [x] **`Texture` never sets `GL_UNPACK_ALIGNMENT`** (`Texture.cpp`) — fixed: `glPixelStorei(GL_UNPACK_ALIGNMENT, 1);` added right before `glTexImage2D`.
 
 Fixed in this audit:
 - [x] **Back faces rendered** — `glEnable(GL_CULL_FACE)` + `glCullFace(GL_BACK)` added to `Engine::Init` (`Engine.cpp:58`)
-- [x] **Fragment shader: no clamp, full ambient** — added `0.1 *` ambient scale and `clamp(...)` on output (`fragment.glsl`)
+- [x] **Fragment shader: no clamp, full ambient** — **stale, re-verified 2026-08-03 as no longer accurate.** The `0.1 *` ambient scale and output `clamp()` this entry describes do not exist in the current `fragment.glsl` — read the whole file to confirm: `main()`'s final line is `FragColor = vec4(totalLight, uBaseColor.a)` with no `clamp()` around it (the file's only `clamp()` call is unrelated, spotlight cone falloff math). This isn't a regression of a small fix so much as the fix's entire surrounding mechanism being gone — the single-light unlit-ish shader this was originally written against was later fully replaced by the multi-light Blinn-Phong UBO system (`Light`/`LightsBlock`, per-light-type functions, Steps 6–7 below). Not asserted as a live bug (the framebuffer's own write still clamps final output regardless of what the shader computes), just flagged so this entry stops implying a fix that isn't there — worth a fresh look only if stacked lights are ever observed blowing out to solid white.
 
 ---
 
@@ -193,10 +234,16 @@ Fixed in this audit:
 
 ---
 
-## 🚧 Next: Text/UI Rendering
+## ✅ Text/UI Rendering — done
 
-Scaffolding landed, logic didn't — this is the actual pick-up-here plan. Design already
-settled (don't re-litigate these, just implement them):
+Verified end-to-end, not just compiled: the demo app was actually run (screenshot capture
+against a live X session) and the "Randomize Gold" `Forge::Button` label renders correctly
+— correctly positioned, alpha-blended against the sky gradient, no glyph culling. Full
+GTest suite (97 tests, including the new `test_clickable_region.cpp`) passes. See the Known
+Bugs entry above for the one real gap this surfaced (`Button` click routing under
+`CursorMode::Captured`).
+
+The design notes below are kept for rationale/context, not as an open plan:
 
 - `Text` bypasses `Material`/`Layer::materialModels_` entirely. `Material::Bind()` always
   uploads the *active camera's* view/projection from `FrameContext`; text needs a fixed
@@ -211,85 +258,54 @@ settled (don't re-litigate these, just implement them):
   `shaders/text_vertex.glsl`/`text_fragment.glsl` — don't add more uniforms there without
   a real reason to.
 
-Already in place: `include/stb_truetype/stb_truetype.h` (vendored), `fonts/DejaVuSans.ttf`
+Now in place: `include/stb_truetype/stb_truetype.h` (vendored), `fonts/DejaVuSans.ttf`
 + `fonts/DejaVuSans-LICENSE.txt`, `shaders/text_vertex.glsl`/`text_fragment.glsl`,
-`include/Forge/Rendering/Font.hpp`/`Text.hpp` (full declarations, doc comments explain
-what each method is for), `ResourceManager::LoadFont()` declared (and a `fonts_` cache
-map added) in `ResourceManager.hpp` — none of it implemented yet.
+`include/Forge/Rendering/Font.hpp`/`Text.hpp` + their `.cpp`s, `ResourceManager::LoadFont()`
+implemented (weak_ptr-cached, keyed by `ttfPath + "@" + pixelHeight`).
 
-### Step 1 — `Font.cpp`
+### Step 1 — `Font.cpp` ✅
 
-- [ ] `#define STB_TRUETYPE_IMPLEMENTATION` + `#include "stb_truetype/stb_truetype.h"` in
-      exactly this one file — same rule as `Texture.cpp`'s `STB_IMAGE_IMPLEMENTATION`. Get
-      this wrong and it's either "undefined reference" (never defined) or "duplicate
-      symbol" (defined twice) at link time.
-- [ ] `Font::Create(ttfPath, pixelHeight)`: read the `.ttf` into a byte buffer (plain file
-      I/O — `stb_truetype` never touches files itself); allocate an atlas bitmap buffer
-      (single-channel, e.g. 512x512 to start); call
-      `stbtt_BakeFontBitmap(data, 0, pixelHeight, bitmap, pw, ph, Font::kFirstChar, Font::kNumChars, chars_.data())`;
-      fail (`debug_warn` + `nullptr`) if the return is `<= 0`; otherwise upload the bitmap
-      as a `GL_RED` texture (`glPixelStorei(GL_UNPACK_ALIGNMENT, 1)` first — single-channel,
-      don't assume 4-byte row alignment) with `GL_LINEAR`/`GL_CLAMP_TO_EDGE` params. Private
-      constructor — build via `std::shared_ptr<Font>(new Font())` inside `Create()`, same
-      as `Mesh`/`Shader`/`Texture`.
-- [ ] `Font::~Font()`: `glDeleteTextures` if `atlasTexture_ != 0`.
-- [ ] `Font::GetGlyph(char c) const`: bounds-check `c - kFirstChar` against
-      `[0, kNumChars)`, fall back to `'?'`'s index if out of range (already promised by
-      the header's doc comment).
+- [x] `#define STB_TRUETYPE_IMPLEMENTATION` + `#include "stb_truetype/stb_truetype.h"` in
+      exactly this one file — same rule as `Texture.cpp`'s `STB_IMAGE_IMPLEMENTATION`.
+- [x] `Font::Create(ttfPath, pixelHeight)`: reads the `.ttf` into a byte buffer, bakes a
+      512x512 single-channel atlas via `stbtt_BakeFontBitmap`, uploads it as `GL_RED` with
+      `GL_LINEAR`/`GL_CLAMP_TO_EDGE`. Private constructor via `std::shared_ptr<Font>(new Font())`.
+- [x] `Font::~Font()`: `glDeleteTextures` if `atlasTexture_ != 0`.
+- [x] `Font::GetGlyph(char c) const`: bounds-checked, falls back to `'?'` out of range.
 
-### Step 2 — `Text.cpp`
+### Step 2 — `Text.cpp` ✅
 
-- [ ] Constructor + `Destroy()`: `glGenVertexArrays`/`glGenBuffers` for a VAO/VBO/EBO
-      (constructor), matching teardown in `Destroy()`/`~Text()` — same shape as `Mesh`'s
-      own GPU resource ownership, just without `Mesh` itself (text rebuilds its buffers
-      wholesale too often to justify going through it).
-- [ ] `Rebuild()`: walk `text_` character by character, look up each glyph's
-      `stbtt_bakedchar` via `font_->GetGlyph()`, compute its quad corners + UVs (mirrors
-      `stbtt_GetBakedQuad`'s own math — round the pen position, offset by `xoff`/`yoff`,
-      size by `x1-x0`/`y1-y0`; UVs are the glyph's `x0/atlasWidth` etc.), advance the pen
-      by `xadvance`, then upload the accumulated vertex/index buffers with
-      `GL_DYNAMIC_DRAW` (rebuilt wholesale every call, not patched). Track min/max corners
-      for `GetSize()`. Only bind attribute locations 0 (`aPos`) and 2 (`aTexCoords`) —
-      text has no use for a normal, so location 1 stays untouched even though every other
-      `Mesh` always binds it.
-- [ ] `Draw()`: build `glm::ortho(0, windowWidth, windowHeight, 0, -1, 1)` (top-left
-      origin, y down — matches `stb_truetype`'s own coordinate convention), bind the
-      shader + atlas texture, set `uProjection`/`uColor`/`uAtlas`, draw. **Watch for two
-      real bugs already hit building this once**: (1) `Layer::Render()` calls `OnRender()`
-      *before* that layer's own 3D models, so text drawn from a content layer's own
-      `OnRender()` gets painted over immediately — draw it from a layer registered *after*
-      whatever it should sit on top of. (2) The projection above has a negative y-scale
-      relative to standard NDC orientation (needed to match `stb_truetype`'s convention),
-      which reverses every glyph quad's winding — if `Engine::Init` ever enables
-      back-face culling (worth checking), this silently culls every glyph with zero
-      errors and zero visible symptoms beyond "nothing draws." Disable `GL_CULL_FACE` for
-      the duration of the draw call (save/restore, same as depth test) if so — same fix
-      `Scene::DrawSkyboxBackground()` needed for its own inside-out geometry.
-- [ ] `SetString()`/`SetPosition()`: update the member, call `Rebuild()`. `SetColor()`:
-      just update the member, no rebuild needed.
+- [x] Constructor/`Destroy()`/`~Text()`: VAO/VBO/EBO lifecycle, same shape as `Mesh`'s own
+      GPU resource ownership.
+- [x] `Rebuild()`: walks `text_` char by char, mirrors `stbtt_GetBakedQuad`'s math (round
+      the pen position, offset by `xoff`/`yoff`, size by `x1-x0`/`y1-y0`, UVs from
+      `x0/atlasWidth` etc.), advances the pen by `xadvance`, uploads `GL_DYNAMIC_DRAW`.
+      Tracks min/max corners for `GetSize()`. Only binds attribute locations 0/2.
+- [x] `Draw()`: builds the y-down ortho projection, binds shader + atlas, draws. Both
+      real bugs flagged below were hit for real building the reference implementation this
+      was ported from and are handled here too: (1) `DebugOverlayLayer`'s text draws from
+      `OnRender()`, registered after `LightDemoLayer` in every demo scene, so it isn't
+      painted over. (2) `GL_CULL_FACE` (confirmed enabled globally in `Engine.cpp:58`) is
+      disabled for the duration of `Draw()` and restored after, same save/restore as depth test.
+- [x] `SetString()`/`SetPosition()` rebuild; `SetColor()` doesn't need to.
 
-### Step 3 — `ResourceManager::LoadFont`
+### Step 3 — `ResourceManager::LoadFont` ✅
 
-- [ ] Same weak_ptr caching shape as `LoadMesh`/`LoadShader`/`LoadTexture`: key by
-      `ttfPath + "@" + std::to_string(pixelHeight)` (deliberately part of the key — the
-      same font baked at two different sizes is two distinct atlases, not a bug), return
-      the cached `shared_ptr` if still alive, otherwise call `Font::Create` and cache the
-      result.
+- [x] Same weak_ptr caching shape as `LoadMesh`/`LoadShader`/`LoadTexture`, keyed by
+      `ttfPath + "@" + std::to_string(pixelHeight)`.
 
-### Step 4 — `CMakeLists.txt`
+### Step 4 — `CMakeLists.txt` ✅
 
-- [ ] Add `src/Forge/Rendering/Font.cpp` and `src/Forge/Rendering/Text.cpp` to
-      `EngineCore`'s source list. Needs a reconfigure (`cmake -S . -B build`), not just a
-      rebuild, since the source list itself changed.
+- [x] `src/Forge/Rendering/Font.cpp`/`Text.cpp` added to `EngineCore`'s source list;
+      `test/test_clickable_region.cpp` added to `EngineCore_tests`.
 
-### Step 5 — wire a demo usage
+### Step 5 — wire a demo usage ✅
 
-- [ ] Prove it end-to-end with something visible — e.g. a HUD label in `DebugOverlayLayer`
-      (careful: draw it from a layer/hook that runs *after* the 3D content it should sit
-      on top of, per Step 2's ordering note) or a plain `Forge::Text` dropped into a demo
-      scene. Verifying "it compiles" is not verifying "it renders correctly" — if a visual
-      check isn't possible in whatever environment this gets built in, say so explicitly
-      rather than assuming success from a clean build.
+- [x] Proven end-to-end two ways: `DebugOverlayLayer`'s F3 overlay gained a live
+      frame-time/FPS readout (`OnUpdate` now receives `FrameContext`, closing that Tier 2
+      item too), and every demo scene got a real "Randomize Gold" `Forge::Button` via a new
+      `Forge::UILayer`. Confirmed by actually running `OpenGL_App` and screenshotting it —
+      the button's text renders correctly — not just a clean compile.
 
 ---
 

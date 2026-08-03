@@ -135,8 +135,10 @@ namespace Forge
         /// @return `false` to consume the event and stop propagation to layers below; `true` to pass it on.
         virtual bool OnEvent(Forge::Event &e, std::shared_ptr<Forge::FrameContext> ctx) = 0;
 
-        /// Per-frame logic, called once per frame before rendering.
-        virtual void OnUpdate() = 0;
+        /// Per-frame logic, called once per frame before rendering. Receives the same
+        /// per-frame FrameContext OnEvent/OnRender do — e.g. for view/projection-dependent
+        /// updates or ctx->delta_time_-driven state that isn't a Vec3Tween.
+        virtual void OnUpdate(std::shared_ptr<Forge::FrameContext> ctx) = 0;
         // virtual void Transition() = 0;
 
         /// Is called before rendering the layer's objects
@@ -147,10 +149,10 @@ namespace Forge
         /// Release any layer-owned resources ahead of destruction.
         virtual void Destroy() {};
 
-        /// Calls OnUpdate(), then advances/prunes this layer's tweens. Called once per frame by Scene::Update.
-        void Update(GLfloat delta_time)
+        /// Calls OnUpdate(ctx), then advances/prunes this layer's tweens. Called once per frame by Scene::Update.
+        void Update(GLfloat delta_time, std::shared_ptr<Forge::FrameContext> ctx)
         {
-            OnUpdate();
+            OnUpdate(ctx);
             UpdateTweens(delta_time);
         }
 

@@ -147,6 +147,22 @@ namespace Demo
         AddTween(std::move(emeraldBob));
 
         srand(time(NULL));
+
+        // --- "Randomize Gold" UI button — same action as the Q key, but a real clickable
+        // UI element (Forge::Button/Forge::ClickableRegion) instead of a keyboard shortcut.
+        // Font loaded via the same path+size DebugOverlayLayer already uses, so
+        // ResourceManager::LoadFont's cache means this doesn't bake a second atlas.
+        // Positioned clear of DebugOverlayLayer's two F3 text lines (y 10-47) so the two
+        // don't visually collide when both are on screen at once. Drawing/click-testing
+        // is NOT this layer's job — see GetRandomizeButton()/RandomizeGold() — whichever
+        // Scene owns this layer registers the returned Button into its own Forge::UILayer. ---
+        auto uiFont = resourceManager->LoadFont("fonts/DejaVuSans.ttf", 18.0f);
+        if (!uiFont)
+            debug_error("Failed to load fonts/DejaVuSans.ttf");
+        randomizeButton_ = Forge::Button::Create(resourceManager, uiFont, "Randomize Gold", 10.0f, 60.0f);
+        if (randomizeButton_)
+            randomizeButton_->SetOnClick([this]()
+                                         { RandomizeGold(); });
     }
 
     bool LightDemoLayer::OnEvent(Forge::Event &event, std::shared_ptr<Forge::FrameContext> ctx)
@@ -160,7 +176,7 @@ namespace Demo
             {
             case Forge::Key::Q:
             {
-                materials_[1]->SetColor(Forge::Color_A1::RandomColor());
+                RandomizeGold();
                 return true;
             }
             default:
@@ -195,7 +211,7 @@ namespace Demo
         return true;
     }
 
-    void LightDemoLayer::OnUpdate()
+    void LightDemoLayer::OnUpdate(std::shared_ptr<Forge::FrameContext> ctx)
     {
     }
 

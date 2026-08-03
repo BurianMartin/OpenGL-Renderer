@@ -2,6 +2,7 @@
 #include "Forge/Rendering/Camera.hpp"
 #include "Forge/Lighting/Lights.hpp"
 #include "Forge/Scene/DebugOverlayLayer.hpp"
+#include "Forge/Scene/UILayer.hpp"
 
 namespace Demo
 {
@@ -77,6 +78,12 @@ namespace Demo
             "Overlay", rmanager_, std::vector<std::shared_ptr<Forge::Layer>>{lightDemoLayer});
         debugOverlay->Hide();
         AddLayer(debugOverlay);
+
+        // Always-on screen-space UI — added last so it draws over everything above and gets
+        // first look at clicks (Scene::OnEvent dispatches in reverse registration order).
+        auto uiLayer = std::make_shared<Forge::UILayer>("UI");
+        uiLayer->AddButton(lightDemoLayer->GetRandomizeButton());
+        AddLayer(uiLayer);
 
         SetBackgroundColor(glm::vec4(0.05f, 0.05f, 0.08f, 1.0f));
 

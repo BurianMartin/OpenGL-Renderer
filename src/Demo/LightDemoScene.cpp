@@ -2,6 +2,7 @@
 #include "Forge/Rendering/Camera.hpp"
 #include "Forge/Lighting/Lights.hpp"
 #include "Forge/Scene/DebugOverlayLayer.hpp"
+#include "Forge/Scene/UILayer.hpp"
 #include "LightDemoScene.hpp"
 
 namespace Demo
@@ -120,6 +121,12 @@ namespace Demo
             "Overlay", rmanager_, std::vector<std::shared_ptr<Forge::Layer>>{lightDemoLayer});
         debugOverlay->Hide();
         AddLayer(debugOverlay);
+
+        // Always-on screen-space UI — added last so it draws over everything above and gets
+        // first look at clicks (Scene::OnEvent dispatches in reverse registration order).
+        auto uiLayer = std::make_shared<Forge::UILayer>("UI");
+        uiLayer->AddButton(lightDemoLayer->GetRandomizeButton());
+        AddLayer(uiLayer);
 
         // Real sky instead of a flat color — also lets the directional light below read as
         // actual "sunlight" rather than an arbitrary vector.

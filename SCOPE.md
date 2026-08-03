@@ -32,21 +32,24 @@ this doesn't need to be.
 Tier 1 is closed — everything below is what's actually left for v1.0.
 
 **Tier 2 — net-new, driven by exactly what the TCG needs, nothing more**
-- [ ] **Text/UI rendering.** The most-flagged gap across every retrospective so far. A
-  card game with no on-screen text for names/costs/life totals isn't shippable. The
-  single biggest chunk of remaining work — see Redline Phase F. **In progress**:
-  scaffolding is in (vendored `stb_truetype.h`, `fonts/DejaVuSans.ttf`, the text shader
-  pair, `Font.hpp`/`Text.hpp` declarations, `ResourceManager::LoadFont` declared) but none
-  of the actual logic is written yet — see `ROADMAP.md`'s "Next: Text/UI Rendering"
-  section for the concrete build order.
-- [ ] **A real clickable-region/UI-element abstraction.** Diagnosed via Solitaire;
-  needed for any button or menu, not just cards. Redline Phase F.
-- [ ] **`Layer` access to per-frame context in `OnUpdate`.** Diagnosed via Solitaire; a
+- [x] **Text/UI rendering.** The most-flagged gap across every retrospective so far. A
+  card game with no on-screen text for names/costs/life totals isn't shippable. Done:
+  `Forge::Font`/`Forge::Text` (stb_truetype baked-atlas rendering), verified end-to-end by
+  actually running the demo app and screenshotting it, not just a clean compile — see
+  `ROADMAP.md`'s "Text/UI Rendering" section.
+- [x] **A real clickable-region/UI-element abstraction.** Diagnosed via Solitaire;
+  needed for any button or menu, not just cards. Done: `Forge::ClickableRegion` (rect
+  hit-test + callback), `Forge::Button` (`Text` + padded `ClickableRegion`), and
+  `Forge::UILayer` (owns buttons/labels, routes clicks, registers last so it draws over
+  and gets first look at input) — exercised by a working "Randomize Gold" button in every
+  demo scene. `UILayer` correctly skips button hit-testing while `CursorMode::Captured`
+  (see `ROADMAP.md`'s Known Bugs) — a captured cursor has no meaningful screen position to
+  test a fixed 2D button against.
+- [x] **`Layer` access to per-frame context in `OnUpdate`.** Diagnosed via Solitaire; a
   TCG's interactions (drag, targeting, hover previews) lean on this harder than a
-  solitaire game did. Half done: `Layer::OnEvent` now takes a `shared_ptr<FrameContext>`
-  (landed alongside the picking work below — it's what lets a click be turned into a
-  world-space ray without the Layer needing its own Camera reference). `OnUpdate()` still
-  doesn't receive one. Redline Phase F.
+  solitaire game did. Done: `Layer::OnUpdate(shared_ptr<FrameContext>)` now matches
+  `OnEvent`'s signature — `DebugOverlayLayer`'s live frame-time/FPS readout is the first
+  real user of it (previously had to live in `OnRender()` just to reach `delta_time_`).
 - [x] **2D/orthographic camera mode + picking primitives.** Orthographic mode was already
   done (`Camera::SetOrthographic`/`SetUp`, `OrthoDemoScene`); picking is done now too —
   `Forge::Ray`/`Forge::AABB` (`include/Forge/RayCast.hpp`), `UnprojectScreenPoint`,
@@ -96,8 +99,20 @@ All three Tier 3 items are now done.
 
 - ImGui / editor tooling — a separate project with its own UX design work, not a bolt-on
   feature.
-- Matching SDL2's actual scope — multi-OS platform hardening, audio, gamepad support.
-  GLFW already covers what this needs. **No audio.**
+- Matching SDL2's actual scope — multi-OS platform hardening, gamepad support. GLFW
+  already covers what this needs.
+- **Audio — reconsidered, not decided (2026-08-03).** Previously a hard "no audio" here
+  alongside gamepad support; worth reopening now that the framework/library itself (not
+  just the TCG) is the deliverable being shown off — a silent engine reads incomplete next
+  to one that draws, lights, picks, and has UI. If taken on: a small non-positional 2D
+  module (one-shot SFX + looping music, not full 3D positional audio) via a vendored
+  single-header library (`miniaudio`), same vendoring pattern as `stb_image`/
+  `stb_truetype`. Rough estimate ~3-4 hours: design (~30-45 min — SFX cached/fully-decoded
+  vs. music streamed is a real API-shape decision, unlike Text/UI which had its design
+  fully settled before implementation started), core `Sound`/`AudioClip`/`AudioEngine`
+  classes (~1-1.5 hr), `ResourceManager`/`Engine` lifecycle wiring (~30-45 min), demo
+  wiring + verification (~30-45 min). See "Immediate schedule" below for where this sits
+  in the queue.
 - Area lights — never implemented, `LightType::Area` was dropped from the enum entirely
   (see `ROADMAP.md`'s Known Bugs). The only formerly-3D-only item genuinely staying out of
   scope — skybox/skydome, sub-mesh, and multi-camera moved to Tier 3 above instead.
@@ -110,7 +125,7 @@ All three Tier 3 items are now done.
 ## Path
 
 1. ~~Finish Tier 1 (mechanical, already estimated in Redline).~~ Done.
-2. Build Tier 2, text/UI first — nothing else is even visible to a player without it.
+2. ~~Build Tier 2's text/UI rendering + clickable-region abstraction — nothing else is even visible to a player without it.~~ Done. Networking is the only Tier 2 item left.
 3. Build the TCG's rules/state layer the way Solitaire's `Game` namespace was built:
    pure C++, zero `Forge`/GL dependency. This unlocks the headless server for free.
 4. Build the headless server + ENet client integration.
@@ -119,3 +134,15 @@ All three Tier 3 items are now done.
    surface things not visible yet, the way Solitaire did.
 6. Ship it to friends, over the VPN, through the home server. That's the real finish
    line — not "the engine is done," but "people are playing, from separate computers."
+
+## Immediate schedule (as of 2026-08-03)
+
+Day-by-day plan for right now, distinct from the longer-arc Path above:
+
+1. **Bugs** — work through the 33 unfixed entries in `ROADMAP.md`'s Known Bugs section
+   (full list re-verified against current code the same day it was logged; see that
+   section's intro for what "verified" means here).
+2. **Networking** — client-server via ENet, per the Tier 2 design above. Extensive
+   back-and-forth expected — new territory, user-driven design discussion, not a handoff.
+3. **Audio, maybe** — see the reconsidered "Audio" bullet above. Not decided yet; picked up
+   only after bugs + networking, if at all.
