@@ -21,6 +21,29 @@ and trustworthy enough that building the TCG on it is faster than starting from 
 — not matching SDL2's actual scope, which is a multi-decade, many-contributor project
 this doesn't need to be.
 
+**Networking is deliberately not part of this.** SDL2 itself has no networking — that's
+the model here too. Forge stays a rendering/window/input/resource framework, period;
+client-server, ENet, and the Game/Rules split all belong to whatever's *built on* Forge
+(the Riftbound TCG, in its own separate repo), never to Forge itself. Audio is the one
+item that could still join Forge proper later (SDL2 does have audio) — see the reconsidered
+bullet below; still undecided.
+
+**Installable as a real library (2026-08-04).** `cmake --install build --prefix <dir>`
+installs `libEngineCore.a` + all `Forge`/`glad`/`stb_image`/`stb_truetype` headers (not
+`Demo` — that's example app code, not engine) + a `ForgeConfig.cmake` package, so a
+separate project just does `find_package(Forge REQUIRED)` +
+`target_link_libraries(... Forge::EngineCore)`. Verified end-to-end with a real throwaway
+consumer project, not just a clean `cmake --install` — it configured, linked against the
+installed static library, and ran. One real wrinkle worth knowing before starting a new
+consumer project: a handful of Forge features (`DebugOverlayLayer`'s wireframe-overlay
+shader, `Text`'s shader pair, the shared vertex shader, the default debug font) load their
+asset by a hardcoded path relative to the *process's working directory* at runtime, not
+relative to the install prefix — this is the same "always run from project root" constraint
+`CLAUDE.md` already documents for this repo's own demo, just now relevant to a second
+repo too. `cmake --install` copies those specific files to `<prefix>/share/forge/{shaders,fonts}`
+as reference copies; a new consumer needs its own copies (or symlinks) of them at
+`shaders/...`/`fonts/...` relative to wherever *it* runs from.
+
 ## Definition of done — Framework v1.0
 
 **Tier 1 — done** (tracked in `ROADMAP.md`/Redline; Steps 6–7 done)
@@ -135,14 +158,17 @@ All three Tier 3 items are now done.
 6. Ship it to friends, over the VPN, through the home server. That's the real finish
    line — not "the engine is done," but "people are playing, from separate computers."
 
-## Immediate schedule (as of 2026-08-03)
+## Immediate schedule (as of 2026-08-03, updated 2026-08-04)
 
 Day-by-day plan for right now, distinct from the longer-arc Path above:
 
-1. **Bugs** — work through the 33 unfixed entries in `ROADMAP.md`'s Known Bugs section
-   (full list re-verified against current code the same day it was logged; see that
-   section's intro for what "verified" means here).
-2. **Networking** — client-server via ENet, per the Tier 2 design above. Extensive
-   back-and-forth expected — new territory, user-driven design discussion, not a handoff.
+1. ~~**Bugs**~~ — done as of 2026-08-04: 30 of 33 `ROADMAP.md` Known Bugs entries fixed
+   and independently re-verified against current code; the other 3 are 2 confirmed-
+   reasonable deliberate non-fixes and 1 attempted fix (`Viewport::RecomputeAspectRatio`'s
+   divide-by-zero guard) that turned out not to actually work and is still open — see that
+   section for the one-line correct guard.
+2. **Networking** — up next. Client-server via ENet, per the Tier 2 design above.
+   Extensive back-and-forth expected — new territory, user-driven design discussion, not a
+   handoff.
 3. **Audio, maybe** — see the reconsidered "Audio" bullet above. Not decided yet; picked up
-   only after bugs + networking, if at all.
+   only after networking, if at all.
