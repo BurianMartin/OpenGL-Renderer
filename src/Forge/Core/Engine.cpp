@@ -29,6 +29,8 @@ namespace Forge
         specification_.windowSpec.EventCallback = [this](Event &event)
         { RaiseEvent(event); };
 
+        specification_.windowSpec.isResizable ? glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE) : glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+
         window_ = glfwCreateWindow(specification_.windowSpec.width, specification_.windowSpec.height, specification_.windowSpec.Title.c_str(), NULL, NULL);
         if (!window_)
         {
@@ -171,7 +173,15 @@ namespace Forge
         if (event.GetEventType() == Forge::EventType::WindowLostFocus)
         {
             key_states_.fill(KeyState::Released);
-            return;
+        }
+        else if (event.GetEventType() == Forge::EventType::WindowResize)
+        {
+            // Fixed, always-on engine bookkeeping — same tier as WindowLostFocus above, not
+            // app policy. Previously this only happened because main.cpp's registered
+            // SetEventHandler callback called AdjustViewport() itself; a consumer app that
+            // didn't replicate that got a silently stale viewport/FrameContext on resize.
+            auto ev = static_cast<Forge::WindowResizeEvent &>(event);
+            AdjustViewport(ev.GetWidth(), ev.GetHeight());
         }
         else if (event.GetEventType() == Forge::EventType::KeyPressed)
         {

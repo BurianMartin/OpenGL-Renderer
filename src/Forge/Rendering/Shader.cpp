@@ -28,19 +28,37 @@ namespace Forge
         vertexShader = glCreateShader(GL_VERTEX_SHADER);
         glShaderSource(vertexShader, 1, &vCode, NULL);
         glCompileShader(vertexShader);
-        CheckCompileErrors(vertexShader, "VERTEX");
+        if (!CheckCompileErrors(vertexShader, "VERTEX"))
+        {
+            glDeleteShader(vertexShader);
+            debug_warn("Failed to compile vertex shader");
+            return;
+        }
 
         GLuint fragmentShader;
         fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
         glShaderSource(fragmentShader, 1, &fCode, NULL);
         glCompileShader(fragmentShader);
-        CheckCompileErrors(fragmentShader, "FRAGMENT");
+        if (!CheckCompileErrors(fragmentShader, "FRAGMENT"))
+        {
+            glDeleteShader(vertexShader);
+            glDeleteShader(fragmentShader);
+            debug_warn("Failed to compile fragment shader");
+            return;
+        }
 
         ID = glCreateProgram();
         glAttachShader(ID, vertexShader);
         glAttachShader(ID, fragmentShader);
         glLinkProgram(ID);
-        CheckCompileErrors(ID, "PROGRAM");
+        if (!CheckCompileErrors(ID, "PROGRAM"))
+        {
+            glDeleteShader(vertexShader);
+            glDeleteShader(fragmentShader);
+            glDeleteProgram(ID);
+            debug_warn("Failed to link shader program");
+            return;
+        }
 
         glDeleteShader(vertexShader);
         glDeleteShader(fragmentShader);
@@ -119,7 +137,7 @@ namespace Forge
         return Tag_;
     }
 
-    void Shader::CheckCompileErrors(GLuint shader, const std::string &type)
+    bool Shader::CheckCompileErrors(GLuint shader, const std::string &type)
     {
         int success;
 
@@ -147,6 +165,7 @@ namespace Forge
                 debug_error("Shader compile error (" << type << "): " << infoLog);
             }
         }
+        return success != 0;
     }
 
     std::string Shader::LoadFile(const char *path)

@@ -30,13 +30,21 @@ namespace Forge
 
     std::shared_ptr<Mesh> Mesh::Create(const std::string &filename, GLenum drawMode)
     {
-        std::ifstream file(filename);
-        if (!file.is_open())
-            throw std::runtime_error("Failed to open OBJ file: " + filename);
+        try
+        {
+            std::ifstream file(filename);
+            if (!file.is_open())
+                throw std::runtime_error("Failed to open OBJ file: " + filename);
 
-        ParsedMeshData parsed = ParseObjFile(file, filename);
+            ParsedMeshData parsed = ParseObjFile(file, filename);
 
-        return std::shared_ptr<Mesh>(new Mesh(filename, parsed.vertices, parsed.indices, drawMode));
+            return std::shared_ptr<Mesh>(new Mesh(filename, parsed.vertices, parsed.indices, drawMode));
+        }
+        catch (const std::exception &e)
+        {
+            std::cerr << e.what() << '\n';
+            return nullptr;
+        }
     }
 
     std::vector<MeshGroup> Mesh::CreateGroups(const std::string &filename, GLenum drawMode)
@@ -130,18 +138,24 @@ namespace Forge
             {
                 glm::vec3 pos;
                 ss >> pos.x >> pos.y >> pos.z;
+                if (ss.fail())
+                    debug_warn("Malformed 'v' line in " << sourceName << ": \"" << line << "\" -- missing component(s) default to 0.0");
                 positions.push_back(pos);
             }
             else if (token == "vn")
             {
                 glm::vec3 normal;
                 ss >> normal.x >> normal.y >> normal.z;
+                if (ss.fail())
+                    debug_warn("Malformed 'vn' line in " << sourceName << ": \"" << line << "\" -- missing component(s) default to 0.0");
                 normals.push_back(normal);
             }
             else if (token == "vt")
             {
                 glm::vec2 uv;
                 ss >> uv.x >> uv.y;
+                if (ss.fail())
+                    debug_warn("Malformed 'vt' line in " << sourceName << ": \"" << line << "\" -- missing component(s) default to 0.0");
                 uv.y = 1.0f - uv.y; // flip Y for OpenGL
                 texCoords.push_back(uv);
             }
@@ -178,7 +192,7 @@ namespace Forge
                         uniqueVertices[ft] = static_cast<unsigned int>(vertices.size());
 
                         Vertex v{};
-                        int vIdx = 0, vtIdx = -1, vnIdx = -1;
+                        int vIdx = 0, vtIdx = 0, vnIdx = 0;
 
                         if (ft.find("//") != std::string::npos)
                         {
@@ -193,6 +207,19 @@ namespace Forge
                             }
                             // matched == 2 → v/vt, matched == 3 → v/vt/vn
                         }
+
+                        // OBJ negative indices are relative to how many v/vt/vn entries have
+                        // been parsed so far (e.g. -1 = the most recently defined one, not
+                        // "0, so treat as absent") — resolve them to the equivalent positive
+                        // 1-based index before the range checks below. 0 (vIdx's initial
+                        // value, and vtIdx/vnIdx's when a face token omits that slot) is never
+                        // a valid OBJ index either way, so it's left alone as "absent".
+                        if (vIdx < 0)
+                            vIdx = static_cast<int>(positions.size()) + vIdx + 1;
+                        if (vtIdx < 0)
+                            vtIdx = static_cast<int>(texCoords.size()) + vtIdx + 1;
+                        if (vnIdx < 0)
+                            vnIdx = static_cast<int>(normals.size()) + vnIdx + 1;
 
                         // OBJ is 1-based
                         if (vIdx > 0 && vIdx <= (int)positions.size())
@@ -338,7 +365,7 @@ namespace Forge
         : tag_(std::move(other.tag_)),
           VAO(other.VAO), VBO(other.VBO), EBO(other.EBO),
           vertexCount(other.vertexCount), indexCount(other.indexCount),
-          drawMode(other.drawMode)
+          drawMode(other.drawMode), boundsMin(other.boundsMin), boundsMax(other.boundsMax)
     {
         other.VAO = 0;
         other.VBO = 0;
@@ -359,6 +386,8 @@ namespace Forge
             vertexCount = other.vertexCount;
             indexCount = other.indexCount;
             drawMode = other.drawMode;
+            boundsMin = other.boundsMin;
+            boundsMax = other.boundsMax;
             other.VAO = 0;
             other.VBO = 0;
             other.EBO = 0;

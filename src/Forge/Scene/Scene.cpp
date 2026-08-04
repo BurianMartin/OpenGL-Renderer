@@ -91,8 +91,9 @@ namespace Forge
 
     void Scene::DrawSkydomeBackground()
     {
-        if (!skydomeShader_)
+        if (!skydomeInitAttempted_)
         {
+            skydomeInitAttempted_ = true;
             skydomeShader_ = rmanager_->LoadShader("shaders/skydome_vertex.glsl", "shaders/skydome_fragment.glsl", "Skydome");
             glGenVertexArrays(1, &skydomeVAO_);
         }
@@ -257,5 +258,21 @@ namespace Forge
                 layer->Render(fctx_);
         }
         glDisable(GL_SCISSOR_TEST);
+
+        // The loop above leaves fctx_ holding whichever camera rendered *last*, not
+        // necessarily active_camera_ — re-sync it now so anything that reads fctx_ after
+        // this frame's render (click-to-pick during the next glfwPollEvents call, chiefly)
+        // sees the camera actually being looked/clicked through, not an arbitrary one.
+        UpdateFrameContext(active_camera_);
+
+        // Screen-space content (UILayer's buttons, DebugOverlayLayer's F3 readout, any
+        // other OnRender()-only drawing) is independent of any one camera's view/projection
+        // and must be issued exactly once per frame — not once per camera, which is what
+        // used to happen when this lived inside the loop above under each camera's own
+        // scissored sub-viewport. Reset the GL viewport to the full window first, since the
+        // loop above may have left it at the last camera's (possibly smaller) sub-rect.
+        glViewport(0, 0, fctx_->window_width_, fctx_->window_height_);
+        for (const auto &layer : layers_)
+            layer->RenderScreenSpace(fctx_);
     }
 } // namespace Forge

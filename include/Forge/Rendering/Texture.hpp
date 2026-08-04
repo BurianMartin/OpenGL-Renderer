@@ -23,6 +23,10 @@ namespace Forge
         static std::shared_ptr<Texture> Create(const std::string &path);
         ~Texture();
 
+        // Owns a raw GL texture handle — copying would double-delete it on destruction.
+        Texture(const Texture &) = delete;
+        Texture &operator=(const Texture &) = delete;
+
         /// Binds this texture to a texture unit (`glActiveTexture(GL_TEXTURE0 + slot)` then `glBindTexture`); pair with `Shader::SetInt` to point a sampler uniform at the same slot.
         void Bind(GLuint slot = 0) const;
 

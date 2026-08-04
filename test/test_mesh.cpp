@@ -238,6 +238,34 @@ TEST(MeshTest, OutOfRangeIndicesDefaultWithoutCrashing)
     ExpectVec3Eq(result.vertices[2].normal, glm::vec3(0.0f, 0.0f, 0.0f));
 }
 
+TEST(MeshTest, NegativeFaceIndicesResolveRelativeToCurrentCount)
+{
+    // Negative OBJ indices count backward from however many v/vt/vn entries have been
+    // parsed so far, at the point the "f" line appears — "-1" is the most recently defined
+    // one, "-2" the one before that, etc. All three slots use the same three v's/vt's/vn's
+    // defined above this face line, so -1/-2/-3 should resolve to the same vertices as the
+    // equivalent positive indices 3/2/1.
+    auto result = ParseObjString(
+        "v 0 0 0\n"
+        "v 1 0 0\n"
+        "v 0 1 0\n"
+        "vt 0 0\n"
+        "vt 1 0\n"
+        "vt 0 1\n"
+        "vn 0 0 1\n"
+        "vn 0 1 0\n"
+        "vn 1 0 0\n"
+        "f -3/-3/-3 -2/-2/-2 -1/-1/-1\n");
+
+    ASSERT_EQ(result.vertices.size(), 3u);
+    ExpectVec3Eq(result.vertices[0].position, glm::vec3(0.0f, 0.0f, 0.0f));
+    ExpectVec3Eq(result.vertices[0].normal, glm::vec3(0.0f, 0.0f, 1.0f));
+    ExpectVec3Eq(result.vertices[1].position, glm::vec3(1.0f, 0.0f, 0.0f));
+    ExpectVec3Eq(result.vertices[1].normal, glm::vec3(0.0f, 1.0f, 0.0f));
+    ExpectVec3Eq(result.vertices[2].position, glm::vec3(0.0f, 1.0f, 0.0f));
+    ExpectVec3Eq(result.vertices[2].normal, glm::vec3(1.0f, 0.0f, 0.0f));
+}
+
 // --- Flat normal generation branch ------------------------------------------------------
 //
 // These two tests share identical geometry - two triangles fanning a quad, sharing an edge -

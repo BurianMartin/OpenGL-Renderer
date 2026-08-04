@@ -39,6 +39,10 @@ namespace Forge
 
         ~Shader();
 
+        // Owns a raw GL program handle — copying would double-delete it on destruction.
+        Shader(const Shader &) = delete;
+        Shader &operator=(const Shader &) = delete;
+
         /// Binds this program (`glUseProgram`) so subsequent `Set*`/draw calls apply to it.
         void Use();
 
@@ -79,7 +83,7 @@ namespace Forge
         Shader(const char *vertexPath, const char *fragmentPath, const std::string &tag);
 
         GLint GetUniformLocation(const std::string &name) const;
-        void CheckCompileErrors(GLuint shader, const std::string &type);
+        bool CheckCompileErrors(GLuint shader, const std::string &type);
 
         std::string LoadFile(const char *path);
 

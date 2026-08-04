@@ -23,11 +23,10 @@ namespace Forge
      * layers would be. Toggle with the inherited Show()/Hide()/SetShow() (e.g. bind F3 in
      * whichever Scene owns this) — Layer::Render() skips a hidden layer's draw entirely.
      *
-     * Registration order matters for the text half: Layer::Render() calls OnRender()
-     * *before* that layer's own materialModels_ draw loop, so for this layer's text to sit
-     * on top of the *scene's* 3D content (not just its own wireframe boxes), this layer as
-     * a whole needs to be added to the Scene *after* whatever it's watching — same
-     * requirement the wireframe boxes already had, so no new constraint.
+     * The text half draws via OnRender() -> Layer::RenderScreenSpace(), which Scene::Render()
+     * calls once per frame, after every camera's own Render() (3D) pass — so this layer's
+     * text always sits on top of the *scene's* full 3D content, including its own wireframe
+     * boxes, regardless of registration order.
      *
      * Wireframe boxes: built on the same "shared geometry, per-instance transform" pattern
      * as any other Model — one unit wireframe cube Mesh (GL_LINES, corners at +-0.5) built
@@ -57,7 +56,7 @@ namespace Forge
         /// reach delta_time_, mixing "update state" and "draw" responsibilities that don't
         /// otherwise belong together.
         void OnUpdate(std::shared_ptr<Forge::FrameContext> ctx) override;
-        /// Draws both text lines — see class doc for why this needs to run before this layer's own model draw loop, not after.
+        /// Draws both text lines — see class doc for why this always ends up on top of this layer's own wireframe boxes (and everything else).
         void OnRender(std::shared_ptr<Forge::FrameContext> ctx) const override;
 
     private:
