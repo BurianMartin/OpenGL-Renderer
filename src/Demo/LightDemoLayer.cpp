@@ -50,22 +50,28 @@ namespace Demo
         if (!cubeMesh)
             debug_error("Failed to load models/cube.obj");
 
+        // cube.obj's vertices used to span z in [0,20] (local origin on one face, not the
+        // centroid) — recentered to [-10,10] so SetSpin below rotates the cube in place
+        // instead of orbiting it (GetModelMatrix() rotates before translating, so an
+        // off-centroid pivot swings the whole cube through an arc as it spins). The four
+        // station positions below are offset by +0.25 (10 units * this 0.025 scale) on Z
+        // to land in exactly the same on-screen spot as before the mesh was recentered.
         auto goldCube = std::make_shared<Forge::Model>(cubeMesh);
         goldCube->SetScale(0.025f);
-        goldCube->SetPosition(glm::vec3(-2.5f, -0.05f, -1.0f)); // Station 1 — point light (warm key)
+        goldCube->SetPosition(glm::vec3(-2.5f, -0.05f, -0.75f)); // Station 1 — point light (warm key)
 
         auto silverCube = std::make_shared<Forge::Model>(cubeMesh);
         silverCube->SetScale(0.025f);
-        silverCube->SetPosition(glm::vec3(2.5f, 0.05f, -3.5f)); // Station 2 — point light (cool rim)
+        silverCube->SetPosition(glm::vec3(2.5f, 0.05f, -3.25f)); // Station 2 — point light (cool rim)
 
         auto rubyCube = std::make_shared<Forge::Model>(cubeMesh);
         rubyCube->SetScale(0.025f);
-        glm::vec3 rubyCubePos(-2.5f, -0.05f, -6.0f); // Station 3 — point light (warm rim)
+        glm::vec3 rubyCubePos(-2.5f, -0.05f, -5.75f); // Station 3 — point light (warm rim)
         rubyCube->SetPosition(rubyCubePos);
 
         auto emeraldCube = std::make_shared<Forge::Model>(cubeMesh);
         emeraldCube->SetScale(0.025f);
-        glm::vec3 emeraldCubePos(2.5f, -0.05f, -8.5f); // Station 4 — spot light, aimed straight down
+        glm::vec3 emeraldCubePos(2.5f, -0.05f, -8.25f); // Station 4 — spot light, aimed straight down
         emeraldCube->SetPosition(emeraldCubePos);
 
         // --- Fifth station: the textured crate — demonstrates diffuse+specular texture
@@ -88,9 +94,9 @@ namespace Demo
         materialModels_[silverMat].push_back(silverCube);
         materialModels_[rubyMat].push_back(rubyCube);
         materialModels_[emeraldMat].push_back(emeraldCube);
-        // goldMat pushed right after floorMat so materials_[1] (the Q-handler's target below)
-        // stays a flat-colored preset — SetColor() has zero visible effect on crateMat, since
-        // fragment.glsl always prefers a bound texture over uBaseColor when uHasTexture is true.
+        // RandomizeGold() looks goldMat up by tag ("Gold") rather than by index now — SetColor()
+        // would have zero visible effect on crateMat anyway, since fragment.glsl always prefers
+        // a bound texture over uBaseColor when uHasTexture is true.
         materials_.push_back(goldMat);
         materials_.push_back(silverMat);
         materials_.push_back(rubyMat);
@@ -161,8 +167,19 @@ namespace Demo
             debug_error("Failed to load fonts/DejaVuSans.ttf");
         randomizeButton_ = Forge::Button::Create(resourceManager, uiFont, "Randomize Gold", 10.0f, 60.0f);
         if (randomizeButton_)
-            randomizeButton_->SetOnClick([this]()
-                                         { RandomizeGold(); });
+        {
+            // Weak-captures the Gold Material itself, not `this` — the Button is handed off
+            // to whichever Scene owns this layer (see GetRandomizeButton()) and registered
+            // into that Scene's own Forge::UILayer, a *different* object with no guaranteed
+            // lifetime relationship to this Layer. A `[this]` capture here would dangle if
+            // this Layer were ever destroyed while the UILayer/Button it handed the callback
+            // to lived on; a `weak_ptr` to the Material just no-ops via `lock()` instead.
+            std::weak_ptr<Forge::Material> weakGoldMat = goldMat;
+            randomizeButton_->SetOnClick([weakGoldMat]()
+                                         {
+                if (auto gold = weakGoldMat.lock())
+                    gold->SetColor(Forge::Color_A1::RandomColor()); });
+        }
     }
 
     bool LightDemoLayer::OnEvent(Forge::Event &event, std::shared_ptr<Forge::FrameContext> ctx)

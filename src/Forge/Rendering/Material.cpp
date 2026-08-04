@@ -18,6 +18,10 @@ namespace Forge
     Material::Material(std::shared_ptr<Shader> shader, const std::string &tag)
         : shader_(shader), tag_(tag), ambient_(0.1f), diffuse_(1.0f), specular_(0.5f), color_(1.0f), shininess_(32.0f)
     {
+        if (!shader)
+        {
+            debug_warn("Invalid shader provided to Material constructor");
+        }
     }
 
     void Material::Bind(std::shared_ptr<FrameContext> ctx) const

@@ -41,6 +41,7 @@ namespace Demo
                 layer->SetShow(!layer->IsShown());
                 return;
             }
+            break;
         }
 
         default:

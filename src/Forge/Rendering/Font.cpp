@@ -20,6 +20,12 @@ namespace Forge
 
     std::shared_ptr<Font> Font::Create(const std::string &ttfPath, float pixelHeight)
     {
+        if (pixelHeight <= 0.0f)
+        {
+            debug_warn("Font::Create: invalid pixel height");
+            return nullptr;
+        }
+
         std::ifstream file(ttfPath, std::ios::binary | std::ios::ate);
         if (!file)
         {
@@ -40,12 +46,12 @@ namespace Forge
 
         auto font = std::shared_ptr<Font>(new Font());
         int result = stbtt_BakeFontBitmap(ttfBuffer.data(), 0, pixelHeight,
-                                           bitmap.data(), kAtlasSize, kAtlasSize,
-                                           kFirstChar, kNumChars, font->chars_.data());
+                                          bitmap.data(), kAtlasSize, kAtlasSize,
+                                          kFirstChar, kNumChars, font->chars_.data());
         if (result <= 0)
         {
             debug_warn("Font::Create: " << ttfPath << " at " << pixelHeight
-                                         << "px didn't fit the atlas (stbtt_BakeFontBitmap returned " << result << ")");
+                                        << "px didn't fit the atlas (stbtt_BakeFontBitmap returned " << result << ")");
             return nullptr;
         }
 

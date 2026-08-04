@@ -164,6 +164,16 @@ namespace Forge
         GLboolean blendWasEnabled = glIsEnabled(GL_BLEND);
         GLboolean cullFaceWasEnabled = glIsEnabled(GL_CULL_FACE);
 
+        GLint prevBlendSrc, prevBlendDst;
+        glGetIntegerv(GL_BLEND_SRC_RGB, &prevBlendSrc);
+        glGetIntegerv(GL_BLEND_DST_RGB, &prevBlendDst);
+
+        GLint prevActiveTexture;
+        glGetIntegerv(GL_ACTIVE_TEXTURE, &prevActiveTexture);
+        glActiveTexture(GL_TEXTURE0);
+        GLint prevTexture0Binding;
+        glGetIntegerv(GL_TEXTURE_BINDING_2D, &prevTexture0Binding);
+
         glDisable(GL_DEPTH_TEST); // text always draws on top of the 3D scene, regardless of draw order
         // Engine::Init() enables back-face culling globally. The screen-space projection
         // below is built with a top-left origin/y-down convention (to match stb_truetype's
@@ -194,11 +204,18 @@ namespace Forge
         glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indexCount_), GL_UNSIGNED_INT, nullptr);
         glBindVertexArray(0);
 
+        // glBlendFunc is separate GL state from the GL_BLEND enable bit — restore it
+        // regardless, so a later glEnable(GL_BLEND) elsewhere doesn't inherit this call's
+        // GL_SRC_ALPHA/GL_ONE_MINUS_SRC_ALPHA instead of whatever was actually set before.
+        glBlendFunc(static_cast<GLenum>(prevBlendSrc), static_cast<GLenum>(prevBlendDst));
         if (!blendWasEnabled)
             glDisable(GL_BLEND);
         if (depthTestWasEnabled)
             glEnable(GL_DEPTH_TEST);
         if (cullFaceWasEnabled)
             glEnable(GL_CULL_FACE);
+
+        glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(prevTexture0Binding));
+        glActiveTexture(static_cast<GLenum>(prevActiveTexture));
     }
 } // namespace Forge

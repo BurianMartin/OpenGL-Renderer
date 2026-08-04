@@ -21,13 +21,28 @@ namespace Forge
     {
         stbi_set_flip_vertically_on_load(true);
 
-        int nrChannels;
+        GLint nrChannels;
         unsigned char *data = stbi_load(path.c_str(), &width_, &height_, &nrChannels, 0);
 
         if (!data)
             debug_error("Failed to load texture: " + path);
 
-        GLenum format = (nrChannels == 4) ? GL_RGBA : GL_RGB;
+        GLenum format;
+        switch (nrChannels)
+        {
+        case 1:
+            format = GL_RED;
+            break;
+        case 2:
+            format = GL_RG;
+            break;
+        case 4:
+            format = GL_RGBA;
+            break;
+        default:
+            format = GL_RGB;
+            break;
+        }
 
         glGenTextures(1, &ID_);
         glBindTexture(GL_TEXTURE_2D, ID_);

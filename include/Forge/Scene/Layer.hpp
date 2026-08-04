@@ -44,9 +44,17 @@ namespace Forge
     private:
         void UpdateTweens(GLfloat delta_time)
         {
-            for (auto &tween : tweens_)
+            // Snapshot the count rather than range-for'ing over tweens_ directly: a finish
+            // callback (Vec3Tween::SetFinishFunction) can call AddTween(), which push_backs
+            // into this same vector mid-loop and can reallocate it, invalidating a
+            // range-based for's begin/end iterators out from under it. Indexing by a
+            // pre-loop count instead only ever touches slots that existed before this call
+            // started — safe under reallocation — and simply defers any tween added by a
+            // finish callback to next frame's Update() instead of ticking it same-frame.
+            size_t count = tweens_.size();
+            for (size_t i = 0; i < count; ++i)
             {
-                tween->Update(delta_time);
+                tweens_[i]->Update(delta_time);
             }
             std::erase_if(tweens_, [](const std::shared_ptr<Vec3Tween> &tween)
                           { return tween->IsDone(); });
@@ -141,7 +149,13 @@ namespace Forge
         virtual void OnUpdate(std::shared_ptr<Forge::FrameContext> ctx) = 0;
         // virtual void Transition() = 0;
 
-        /// Is called before rendering the layer's objects
+        /// Screen-space/layer-specific drawing, independent of any one camera — called
+        /// exactly once per frame by Scene::Render() via RenderScreenSpace() (below),
+        /// after every camera's own 3D pass, with a full-window glViewport. This is
+        /// where UILayer/DebugOverlayLayer draw their Text — a fixed-ortho screen-space
+        /// element would otherwise redraw once per camera and only "work" by scissor-rect
+        /// position coincidence. Not the place for camera-dependent drawing; there isn't
+        /// currently a per-camera hook, since nothing has needed one yet.
         virtual void OnRender(std::shared_ptr<FrameContext> ctx) const = 0;
 
         // ------------ Base methods end ------------
@@ -156,13 +170,17 @@ namespace Forge
             UpdateTweens(delta_time);
         }
 
-        /// Submit this layer's draw calls. Typically binds each Material once, then sets `uModel` and draws every Model in its bucket. No-op while Hide()/SetShow(false) has this layer hidden.
+        /// Submit this layer's camera-dependent 3D draw calls: binds each Material once,
+        /// then sets `uModel`/`uNormalMatrix` and draws every Model in its bucket. Called
+        /// once per camera by Scene::Render() (each call sees that camera's own view/
+        /// projection via `ctx`) — does NOT call OnRender() anymore; see
+        /// RenderScreenSpace() for the once-per-frame screen-space pass. No-op while
+        /// Hide()/SetShow(false) has this layer hidden.
         void Render(std::shared_ptr<FrameContext> ctx)
         {
             if (!show_)
                 return;
 
-            OnRender(ctx);
             for (const auto &[material, models] : materialModels_)
             {
                 material->Bind(ctx);
@@ -178,6 +196,18 @@ namespace Forge
                     model->Draw();
                 }
             }
+        }
+
+        /// Submit this layer's screen-space content by calling OnRender(ctx). Called
+        /// exactly once per frame by Scene::Render(), after every camera's own Render()
+        /// pass above, with a full-window glViewport (no per-camera scissor) — so a
+        /// fixed-ortho screen-space draw (Text, UI) only ever issues once. No-op while
+        /// Hide()/SetShow(false) has this layer hidden.
+        void RenderScreenSpace(std::shared_ptr<FrameContext> ctx) const
+        {
+            if (!show_)
+                return;
+            OnRender(ctx);
         }
 
         /// Every Model registered across materialModels_, flattened — e.g. so a debug

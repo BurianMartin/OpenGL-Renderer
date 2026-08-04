@@ -24,13 +24,21 @@ namespace Forge
 
     void Camera::SetOrthographic(GLfloat half_height)
     {
+        if (half_height <= 0.0f)
+        {
+            debug_warn("Camera::SetOrthographic: half_height must be positive, ignoring " << half_height);
+            return;
+        }
         is_orthographic_ = true;
         ortho_half_height_ = half_height;
     }
 
     void Camera::SetUp(const glm::vec3 &up)
     {
-        up_ = glm::normalize(up);
+        if (glm::length(up) > 0.0f)
+        {
+            up_ = glm::normalize(up);
+        }
     }
 
     glm::mat4 Camera::GetViewMatrix() const
@@ -214,6 +222,11 @@ namespace Forge
 
     void Camera::SetBoost(GLfloat boost)
     {
+        if (boost < 0.0f)
+        {
+            debug_warn("Camera::SetBoost: boost must be non-negative, ignoring " << boost);
+            return;
+        }
         boost_ = boost;
     }
 

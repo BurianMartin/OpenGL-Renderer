@@ -48,7 +48,8 @@ namespace Forge
         std::shared_ptr<Shader> skyboxShader_;
         std::shared_ptr<Mesh> skyboxMesh_;
         std::shared_ptr<Shader> skydomeShader_;
-        GLuint skydomeVAO_ = 0; // intentionally has no bound attributes/buffers — see DrawSkydomeBackground
+        GLuint skydomeVAO_ = 0;             // intentionally has no bound attributes/buffers — see DrawSkydomeBackground
+        bool skydomeInitAttempted_ = false; // set on the first DrawSkydomeBackground call regardless of load success, so a failed load doesn't re-gen skydomeVAO_ every frame
 
     protected:
         glm::vec4 backgroundColor_ = glm::vec4(0);

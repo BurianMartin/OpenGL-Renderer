@@ -11,6 +11,7 @@
 #include "Forge/Rendering/Colors.hpp"
 #include "Demo/InputConfig.hpp"
 
+#include <algorithm>
 #include <memory>
 
 namespace Demo
@@ -46,9 +47,20 @@ namespace Demo
         /// No-op — this demo layer owns no resources beyond what `shared_ptr` already manages.
         void Destroy() override;
 
-        /// Randomizes the Gold material's color — the one shared action behind both the `Q`
-        /// key handler and the "Randomize Gold" UI button (see GetRandomizeButton()).
-        void RandomizeGold() { materials_[1]->SetColor(Forge::Color_A1::RandomColor()); }
+        /// Randomizes the Gold material's color — used by the `Q` key handler. The
+        /// "Randomize Gold" UI button (see GetRandomizeButton()) does the same thing but
+        /// does *not* call this method: its click callback weak-captures the Gold Material
+        /// directly instead of `this`, since the Button outlives this call and is handed off
+        /// to a different object (whichever Scene's Forge::UILayer ends up owning it).
+        void RandomizeGold()
+        {
+            auto it = std::ranges::find_if(materials_, [](const auto &m)
+                                            { return m->GetTag() == "Gold"; });
+            if (it != materials_.end())
+            {
+                (*it)->SetColor(Forge::Color_A1::RandomColor());
+            }
+        }
 
         /// @return The "Randomize Gold" Forge::Button built in the constructor, for whichever
         /// Scene owns this layer to register into its own Forge::UILayer — this layer draws

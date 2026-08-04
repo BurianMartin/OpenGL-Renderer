@@ -25,7 +25,10 @@ namespace Forge
 
     std::shared_ptr<Shader> ResourceManager::LoadShader(const std::string &vertex_filename, const std::string &fragment_filename, const std::string &tag)
     {
-        auto &weak = shaders_[vertex_filename + "||" + fragment_filename];
+        // Length-prefixed instead of a plain "||" join, so a path that happens to contain "||"
+        // itself can never produce the same key as a different (vertex, fragment) pair.
+        auto &weak = shaders_[std::to_string(vertex_filename.size()) + ":" + vertex_filename +
+                               std::to_string(fragment_filename.size()) + ":" + fragment_filename];
         if (auto existing = weak.lock())
             return existing;
         auto fresh = Shader::Create(vertex_filename.c_str(), fragment_filename.c_str(), tag);
@@ -46,12 +49,22 @@ namespace Forge
 
     std::shared_ptr<Material> ResourceManager::LoadMaterial(std::shared_ptr<Shader> shader, const std::string &tag, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular, float shininess)
     {
-        if (auto existing = materials_[tag].lock())
+        if (!shader)
+        {
+            debug_warn("Invalid shader provided to ResourceManager::LoadMaterial");
+            return nullptr;
+        }
+
+        // Keyed by (shader, tag), not tag alone — otherwise two different shaders sharing a tag
+        // string would silently collide and one would get served the other's shader.
+        std::string key = std::to_string(reinterpret_cast<uintptr_t>(shader.get())) + ":" + tag;
+
+        if (auto existing = materials_[key].lock())
         {
             return existing;
         }
         auto material = Material::Create(shader, tag, ambient, diffuse, specular, shininess);
-        materials_[tag] = material;
+        materials_[key] = material;
         return material;
     }
 

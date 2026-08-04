@@ -16,13 +16,23 @@ namespace Forge
     }
 
     DirectionalLight::DirectionalLight(glm::vec3 direction, glm::vec3 color, float intensity)
-        : Light(color, intensity), direction_(glm::normalize(direction))
+        : Light(color, intensity)
     {
+        if (direction != glm::vec3(0.0f))
+        {
+            direction_ = glm::normalize(direction);
+        }
     }
 
     glm::vec3 DirectionalLight::GetDirection() const { return direction_; }
 
-    void DirectionalLight::SetDirection(glm::vec3 direction) { direction_ = glm::normalize(direction); }
+    void DirectionalLight::SetDirection(glm::vec3 direction)
+    {
+        if (direction != glm::vec3(0.0f))
+        {
+            direction_ = glm::normalize(direction);
+        }
+    }
 
     GPULight DirectionalLight::ToGPULight() const
     {
@@ -89,7 +99,7 @@ namespace Forge
         try
         {
             return std::shared_ptr<SpotLight>(new SpotLight(position, direction, color, intensity,
-                                                             innerCutoff, outerCutoff, constant, linear, quadratic));
+                                                            innerCutoff, outerCutoff, constant, linear, quadratic));
         }
         catch (const std::exception &e)
         {
@@ -101,11 +111,24 @@ namespace Forge
     SpotLight::SpotLight(glm::vec3 position, glm::vec3 direction, glm::vec3 color, float intensity,
                          float innerCutoff, float outerCutoff,
                          float constant, float linear, float quadratic)
-        : Light(color, intensity), position_(position), direction_(glm::normalize(direction)),
-          constant_(constant), linear_(linear), quadratic_(quadratic),
-          innerCutoff_(glm::cos(glm::radians(innerCutoff))),
-          outerCutoff_(glm::cos(glm::radians(outerCutoff)))
+        : Light(color, intensity), position_(position),
+          constant_(constant), linear_(linear), quadratic_(quadratic)
     {
+        if (direction != glm::vec3(0.0f))
+        {
+            direction_ = glm::normalize(direction);
+        }
+
+        if (innerCutoff > outerCutoff)
+        {
+            debug_warn("SpotLight innerCutoff (" << innerCutoff << ") is wider than outerCutoff (" << outerCutoff << ") -- swapping them");
+            float tmp = innerCutoff;
+            innerCutoff = outerCutoff;
+            outerCutoff = tmp;
+        }
+
+        innerCutoff_ = glm::cos(glm::radians(innerCutoff));
+        outerCutoff_ = glm::cos(glm::radians(outerCutoff));
     }
 
     glm::vec3 SpotLight::GetPosition() const { return position_; }
@@ -117,7 +140,13 @@ namespace Forge
     float SpotLight::GetOuterCutoff() const { return outerCutoff_; }
 
     void SpotLight::SetPosition(glm::vec3 position) { position_ = position; }
-    void SpotLight::SetDirection(glm::vec3 direction) { direction_ = glm::normalize(direction); }
+    void SpotLight::SetDirection(glm::vec3 direction)
+    {
+        if (direction != glm::vec3(0.0f))
+        {
+            direction_ = glm::normalize(direction);
+        }
+    }
     void SpotLight::SetAttenuation(float constant, float linear, float quadratic)
     {
         constant_ = constant;

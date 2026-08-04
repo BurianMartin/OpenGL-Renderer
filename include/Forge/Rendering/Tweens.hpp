@@ -34,7 +34,14 @@ namespace Forge
         };
 
         Vec3Tween(std::shared_ptr<Model> model, glm::vec3 start_pos, glm::vec3 end_pos, GLfloat duration, glm::quat start_rot = glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::quat end_rot = glm::quat(1.0f, 0.0f, 0.0f, 0.0f), Ease ease = Ease::EaseOutQuad)
-            : model_(model), start_position_(start_pos), end_position_(end_pos), start_rotation_(start_rot), end_rotation_(end_rot), duration_(duration), ease_(ease) {}
+            : model_(model), start_position_(start_pos), end_position_(end_pos), start_rotation_(start_rot), end_rotation_(end_rot), duration_(duration), ease_(ease)
+        {
+            if (duration <= 0.0f)
+            {
+                duration_ = 1.0f;
+                debug_warn("Tween duration is zero or negative, defaulting to 1.0f");
+            }
+        }
 
         // Ease has no default here (unlike the constructor above) — a bare 4-arg call
         // (model, start_pos, end_pos, duration) would otherwise match this constructor and

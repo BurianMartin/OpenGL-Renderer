@@ -43,12 +43,10 @@ int main(void)
             }
             break;
         }
-        case Forge::EventType::WindowResize:
-        {
-            auto ev = static_cast<Forge::WindowResizeEvent &>(event);
-            engine.AdjustViewport(ev.GetWidth(), ev.GetHeight());
-            return true; // forward to scene so it can update aspect ratio
-        }
+        // WindowResize's AdjustViewport() call is now fixed, always-on Engine bookkeeping
+        // (Engine::RaiseEvent), not app policy — nothing to do here; just fall through to
+        // `default:` and forward the event to the active scene so it can update its
+        // camera(s)' aspect ratio.
 
         default:
             return true;

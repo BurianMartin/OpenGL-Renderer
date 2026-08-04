@@ -12,14 +12,14 @@ namespace Forge
      * @brief Always-visible screen-space UI: owns `Button`s and/or plain `Text` labels,
      * draws them every frame, and forwards left-clicks to each Button's hit-test.
      *
-     * Registration order matters, same reason `DebugOverlayLayer`'s text does:
-     * `Layer::Render()` calls `OnRender()` *before* that layer's own `materialModels_`
-     * draw loop, so for this layer's UI to sit on top of the *scene's* 3D content, this
-     * layer as a whole needs to be added to the Scene *after* whatever it should draw
-     * over. `Scene::OnEvent` dispatches to layers in reverse registration order, so a
-     * `UILayer` added last also gets first look at input — a click on a button is
-     * consumed (returns `false`) before it can fall through to 3D object picking
-     * underneath it; a click that misses every button passes through untouched.
+     * `Scene::Render()` draws every layer's screen-space content (via `OnRender()` ->
+     * `RenderScreenSpace()`) in one pass *after* every camera's 3D pass has finished, so
+     * this layer's UI always sits on top of the scene's 3D content regardless of
+     * registration order. Registration order still matters for input, though:
+     * `Scene::OnEvent` dispatches to layers in reverse registration order, so a `UILayer`
+     * added last also gets first look at input — a click on a button is consumed
+     * (returns `false`) before it can fall through to 3D object picking underneath it;
+     * a click that misses every button passes through untouched.
      *
      * Deliberately generic and demo-independent — a `Scene` builds whatever `Button`s/
      * `Text` it needs (typically handed in from whichever `Layer` actually owns the
