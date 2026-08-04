@@ -35,7 +35,7 @@ namespace Forge
 
         void RecomputeAspectRatio()
         {
-            if (window_height_ + height_ != 0)
+            if (window_height_ != 0 && height_ != 0)
             {
                 aspect_ratio_ = (static_cast<GLfloat>(window_width_) * width_) / (static_cast<GLfloat>(window_height_) * height_);
             }
