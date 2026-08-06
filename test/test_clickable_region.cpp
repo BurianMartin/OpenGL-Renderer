@@ -95,6 +95,42 @@ TEST(ClickableRegionTest, HandleClickReturnsTrueEvenWithNoCallbackSet)
     EXPECT_TRUE(region.HandleClick(ev));
 }
 
+TEST(FindTopmostContainingTest, ReturnsMinusOneWhenNothingContainsThePoint)
+{
+    std::vector<Forge::ClickableRegion> regions{
+        Forge::ClickableRegion(0.0f, 0.0f, 10.0f, 10.0f),
+        Forge::ClickableRegion(20.0f, 20.0f, 10.0f, 10.0f),
+    };
+    EXPECT_EQ(Forge::FindTopmostContaining(regions, 15.0f, 15.0f), -1);
+}
+
+TEST(FindTopmostContainingTest, ReturnsTheOnlyMatchWhenRegionsDontOverlap)
+{
+    std::vector<Forge::ClickableRegion> regions{
+        Forge::ClickableRegion(0.0f, 0.0f, 10.0f, 10.0f),
+        Forge::ClickableRegion(20.0f, 20.0f, 10.0f, 10.0f),
+    };
+    EXPECT_EQ(Forge::FindTopmostContaining(regions, 5.0f, 5.0f), 0);
+    EXPECT_EQ(Forge::FindTopmostContaining(regions, 25.0f, 25.0f), 1);
+}
+
+TEST(FindTopmostContainingTest, PrefersTheLastRegionWhenOverlapping)
+{
+    // Vector order doubles as z-order (last = drawn/registered most recently = on top) --
+    // see the function's own doc comment.
+    std::vector<Forge::ClickableRegion> regions{
+        Forge::ClickableRegion(0.0f, 0.0f, 100.0f, 100.0f),
+        Forge::ClickableRegion(10.0f, 10.0f, 20.0f, 20.0f),
+    };
+    EXPECT_EQ(Forge::FindTopmostContaining(regions, 15.0f, 15.0f), 1);
+}
+
+TEST(FindTopmostContainingTest, EmptyCollectionReturnsMinusOne)
+{
+    std::vector<Forge::ClickableRegion> regions;
+    EXPECT_EQ(Forge::FindTopmostContaining(regions, 0.0f, 0.0f), -1);
+}
+
 TEST(ClickableRegionTest, SetOnClickReplacesThePreviousCallback)
 {
     Forge::ClickableRegion region(0.0f, 0.0f, 100.0f, 100.0f);

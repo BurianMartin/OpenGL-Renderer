@@ -74,6 +74,10 @@ namespace Demo
         }
         case Forge::EventType::MouseMoved:
         {
+            // See LightDemoScene's identical guard -- Engine forwards every MouseMoved
+            // regardless of cursor mode now, so camera-look has to gate itself on Captured.
+            if (fctx_->cursor_mode_ != Forge::CursorMode::Captured)
+                break;
             auto ev = static_cast<Forge::MouseMovedEvent &>(event);
             cameras_[active_camera_].ProcessMousePosition(ev.GetX(), ev.GetY());
             return;

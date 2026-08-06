@@ -3,6 +3,8 @@
 #include "Forge/Lighting/Lights.hpp"
 #include "Forge/Scene/DebugOverlayLayer.hpp"
 #include "Forge/Scene/UILayer.hpp"
+#include "Forge/Scene/DragLayer.hpp"
+#include "Forge/Rendering/Panel.hpp"
 #include "LightDemoScene.hpp"
 
 namespace Demo
@@ -76,6 +78,12 @@ namespace Demo
         }
         case Forge::EventType::MouseMoved:
         {
+            // Camera-look only makes sense while the cursor is captured (FPS-style) --
+            // Engine now forwards every MouseMoved regardless of cursor mode (a Normal-mode
+            // UI, e.g. drag-and-drop, needs them too), so this scene has to make that call
+            // itself via FrameContext::cursor_mode_ instead of relying on Engine to filter.
+            if (fctx_->cursor_mode_ != Forge::CursorMode::Captured)
+                break;
             auto ev = static_cast<Forge::MouseMovedEvent &>(event);
             cameras_[active_camera_].ProcessMousePosition(ev.GetX(), ev.GetY());
             return;
@@ -122,11 +130,53 @@ namespace Demo
         debugOverlay->Hide();
         AddLayer(debugOverlay);
 
-        // Always-on screen-space UI — added last so it draws over everything above and gets
-        // first look at clicks (Scene::OnEvent dispatches in reverse registration order).
+        // Always-on screen-space UI — draws over the 3D scene above it and gets first look
+        // at clicks among the non-drag layers (Scene::OnEvent dispatches in reverse
+        // registration order); the DragLayer below is registered after this one so a card
+        // drag still takes priority over it.
         auto uiLayer = std::make_shared<Forge::UILayer>("UI");
         uiLayer->AddButton(lightDemoLayer->GetRandomizeButton());
+
+        // Panel/DragLayer demo: two draggable cards, one drop zone. Exercises the new
+        // screen-space quad primitive (Panel) and generic drag-and-drop (DragLayer) the
+        // same way "Randomize Gold" above exercises Button/ClickableRegion — drag either
+        // card onto the yellow-bordered zone to see it accepted (stays), drop it anywhere
+        // else to see it snap back.
+        constexpr float kZoneX = 300.0f, kZoneY = 120.0f, kZoneW = 140.0f, kZoneH = 140.0f;
+        auto dropZoneVisual = Forge::Panel::Create(rmanager_, kZoneX, kZoneY, kZoneW, kZoneH,
+                                                     glm::vec4(0.15f, 0.15f, 0.15f, 0.5f), glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), 3.0f);
+        auto cardA = Forge::Panel::Create(rmanager_, 20.0f, 120.0f, 80.0f, 110.0f,
+                                            glm::vec4(0.8f, 0.2f, 0.2f, 1.0f), glm::vec4(1.0f), 3.0f);
+        auto cardB = Forge::Panel::Create(rmanager_, 110.0f, 120.0f, 80.0f, 110.0f,
+                                            glm::vec4(0.2f, 0.3f, 0.8f, 1.0f), glm::vec4(1.0f), 3.0f);
+        if (dropZoneVisual)
+            uiLayer->AddPanel(dropZoneVisual);
+
         AddLayer(uiLayer);
+
+        // Registered after uiLayer so cards draw on top of the drop-zone panel and get
+        // first look at clicks (Scene::OnEvent dispatches in reverse registration order) —
+        // same reasoning the comment above gives for uiLayer itself.
+        if (dropZoneVisual && cardA && cardB)
+        {
+            auto dragLayer = std::make_shared<Forge::DragLayer>("Drag");
+            dragLayer->AddDraggable("CardA", cardA);
+            dragLayer->AddDraggable("CardB", cardB);
+            dragLayer->AddDropZone("PlayZone", kZoneX, kZoneY, kZoneW, kZoneH);
+            dragLayer->SetOnDrop([](const std::string &id, const std::string &zoneId)
+                                  {
+                                      bool accepted = zoneId == "PlayZone";
+                                      debug_info(id << (accepted ? " dropped on PlayZone -- accepted"
+                                                                  : " dropped outside PlayZone -- rejected, snapping back"));
+                                      return accepted;
+                                  });
+            // Brightens the zone's border while a card is being dragged over it, back to
+            // plain yellow otherwise -- proves OnHover independently of OnDrop.
+            dragLayer->SetOnHover([dropZoneVisual](const std::string &, const std::string &zoneId)
+                                   { dropZoneVisual->SetBorderColor(zoneId == "PlayZone" ? glm::vec4(0.3f, 1.0f, 0.3f, 1.0f)
+                                                                                          : glm::vec4(1.0f, 1.0f, 0.0f, 1.0f)); });
+            AddLayer(dragLayer);
+        }
 
         // Real sky instead of a flat color — also lets the directional light below read as
         // actual "sunlight" rather than an arbitrary vector.
