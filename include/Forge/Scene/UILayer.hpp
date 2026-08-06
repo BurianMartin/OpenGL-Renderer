@@ -2,6 +2,7 @@
 #include "Forge/Scene/Layer.hpp"
 #include "Forge/Rendering/Button.hpp"
 #include "Forge/Rendering/Text.hpp"
+#include "Forge/Rendering/Panel.hpp"
 
 #include <memory>
 #include <vector>
@@ -9,8 +10,8 @@
 namespace Forge
 {
     /**
-     * @brief Always-visible screen-space UI: owns `Button`s and/or plain `Text` labels,
-     * draws them every frame, and forwards left-clicks to each Button's hit-test.
+     * @brief Always-visible screen-space UI: owns `Panel`s, `Button`s, and/or plain `Text`
+     * labels, draws them every frame, and forwards left-clicks to each Button's hit-test.
      *
      * `Scene::Render()` draws every layer's screen-space content (via `OnRender()` ->
      * `RenderScreenSpace()`) in one pass *after* every camera's 3D pass has finished, so
@@ -34,6 +35,9 @@ namespace Forge
 
         void AddButton(std::shared_ptr<Button> button) { buttons_.push_back(std::move(button)); }
         void AddLabel(std::shared_ptr<Text> label) { labels_.push_back(std::move(label)); }
+        /// Non-interactive background visual — e.g. marking a `DragLayer` drop zone. Drawn
+        /// before labels/buttons so it sits behind them.
+        void AddPanel(std::shared_ptr<Panel> panel) { panels_.push_back(std::move(panel)); }
 
         /// Tests every Button's HandleClick() on a left-click; consumes the event (returns
         /// `false`) the moment one of them handles it. Anything else passes through.
@@ -63,9 +67,12 @@ namespace Forge
         /// No-op — buttons/labels here are static once created; nothing to update per frame.
         void OnUpdate(std::shared_ptr<Forge::FrameContext>) override {}
 
-        /// Draws every label, then every button's label.
+        /// Draws every panel, then every label, then every button's label.
         void OnRender(std::shared_ptr<Forge::FrameContext> ctx) const override
         {
+            for (const auto &panel : panels_)
+                if (panel)
+                    panel->Draw(ctx->window_width_, ctx->window_height_);
             for (const auto &label : labels_)
                 if (label)
                     label->Draw(ctx->window_width_, ctx->window_height_);
@@ -75,6 +82,7 @@ namespace Forge
         }
 
     private:
+        std::vector<std::shared_ptr<Panel>> panels_;
         std::vector<std::shared_ptr<Button>> buttons_;
         std::vector<std::shared_ptr<Text>> labels_;
     };

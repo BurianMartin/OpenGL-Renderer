@@ -220,10 +220,6 @@ namespace Forge
             return;
         }
 
-        // Only rotate camera when cursor is captured
-        if (event.GetEventType() == Forge::EventType::MouseMoved && cursor_mode_ != Forge::CursorMode::Captured)
-            return;
-
         scenes_[current_scene_]->OnEvent(event);
     }
 

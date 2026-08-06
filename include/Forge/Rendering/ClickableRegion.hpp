@@ -3,6 +3,7 @@
 #include "Forge/Core/InputEvents.hpp"
 
 #include <functional>
+#include <vector>
 
 namespace Forge
 {
@@ -72,4 +73,23 @@ namespace Forge
         float x_, y_, width_, height_;
         std::function<void()> onClick_;
     };
+
+    /**
+     * @brief Picks whichever of several overlapping regions is "on top."
+     *
+     * A free function rather than a method since it operates over a whole collection —
+     * `DragLayer` uses this to decide which draggable a click should pick up, and which
+     * drop zone a release lands on, when more than one candidate's rect contains the point.
+     * "On top" means last in `regions` (vector order doubles as z-order, matching how
+     * `Scene::OnEvent`/`UILayer` already treat later-registered/-drawn things as being
+     * visually in front) — no separate z-index field to keep in sync.
+     * @return The index of the topmost region containing (x, y), or -1 if none do.
+     */
+    inline int FindTopmostContaining(const std::vector<ClickableRegion> &regions, float x, float y)
+    {
+        for (int i = static_cast<int>(regions.size()) - 1; i >= 0; --i)
+            if (regions[i].Contains(x, y))
+                return i;
+        return -1;
+    }
 } // namespace Forge

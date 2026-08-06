@@ -43,6 +43,7 @@ add_library(EngineCore STATIC
         src/Forge/Rendering/Colors.cpp
         src/Forge/Rendering/Font.cpp
         src/Forge/Rendering/Text.cpp
+        src/Forge/Rendering/Panel.cpp
 
         # Lighting
         src/Forge/Lighting/Lights.cpp
@@ -148,7 +149,8 @@ install(DIRECTORY include/
 
 # Core engine assets Forge itself loads via CWD-relative paths at runtime — not demo content:
 # the shared vertex shader, DebugOverlayLayer's unlit overlay fragment shader, Text's shader
-# pair, and the default font DebugOverlayLayer/demo code load by that exact relative path.
+# pair, Panel's shader pair, and the default font DebugOverlayLayer/demo code load by that
+# exact relative path.
 # Forge resolves resource paths relative to the running process's working directory by design
 # (see CLAUDE.md's "always run from project root"), so these are installed as reference copies,
 # not auto-discovered by the installed library at runtime — a new consumer project needs its
@@ -159,6 +161,8 @@ install(FILES
     shaders/debug_overlay_fragment.glsl
     shaders/text_vertex.glsl
     shaders/text_fragment.glsl
+    shaders/panel_vertex.glsl
+    shaders/panel_fragment.glsl
     DESTINATION ${CMAKE_INSTALL_DATADIR}/forge/shaders
 )
 install(FILES
