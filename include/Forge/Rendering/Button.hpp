@@ -33,8 +33,14 @@ namespace Forge
             if (!text)
                 return nullptr;
 
+            // Padded around the label's actual visual bounding box (GetTopLeft(), not (x, y)
+            // -- (x, y) is the text's BASELINE, which sits below where ascenders/capitals
+            // actually render; using it directly here used to leave tall glyphs poking out
+            // the top of the region/background box).
             glm::vec2 size = text->GetSize();
-            ClickableRegion region(x - paddingX, y - paddingY, size.x + 2.0f * paddingX, size.y + 2.0f * paddingY);
+            glm::vec2 topLeft = text->GetTopLeft();
+            ClickableRegion region(topLeft.x - paddingX, topLeft.y - paddingY, size.x + 2.0f * paddingX,
+                                    size.y + 2.0f * paddingY);
             return std::shared_ptr<Button>(new Button(std::move(text), region));
         }
 

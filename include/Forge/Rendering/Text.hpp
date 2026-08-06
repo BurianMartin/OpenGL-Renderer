@@ -58,6 +58,14 @@ namespace Forge
         /// @return This string's on-screen width/height in pixels at its baked font size (e.g. for centering).
         glm::vec2 GetSize() const { return size_; }
 
+        /// @return The top-left corner of this string's actual rendered glyph bounding box,
+        /// in the same screen-space pixel coordinates as Create()'s x/y -- NOT the same point
+        /// as (x, y) itself, since (x, y) is the baseline-left origin (see Create's doc) and
+        /// ascenders/capitals render above the baseline. A caller building a box AROUND the
+        /// visible text (e.g. Button's ClickableRegion/background) needs this, not (x, y)
+        /// directly, or the box sits too low and tall glyphs poke out its top edge.
+        glm::vec2 GetTopLeft() const { return topLeft_; }
+
         /**
          * @brief Draws this string.
          *
@@ -85,6 +93,7 @@ namespace Forge
         float x_ = 0.0f;
         float y_ = 0.0f;
         glm::vec2 size_{0.0f, 0.0f};
+        glm::vec2 topLeft_{0.0f, 0.0f};
 
         GLuint VAO_ = 0, VBO_ = 0, EBO_ = 0;
         unsigned int indexCount_ = 0;

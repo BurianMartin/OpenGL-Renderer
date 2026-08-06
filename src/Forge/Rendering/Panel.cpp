@@ -3,21 +3,36 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
+namespace
+{
+    /// Applied by `Panel::SetFillColor` to derive a subtle top-lighter/bottom-darker
+    /// gradient pair from one flat color — see the class doc's "AutoShade" reference.
+    constexpr float kAutoShadeFactor = 0.12f;
+} // namespace
+
 namespace Forge
 {
     Panel::Panel(std::shared_ptr<Shader> shader, const glm::vec4 &fillColor, const glm::vec4 &borderColor,
-                 float borderThicknessPx)
-        : shader_(std::move(shader)), fillColor_(fillColor), borderColor_(borderColor),
-          borderThicknessPx_(borderThicknessPx)
+                 float borderThicknessPx, float cornerRadiusPx)
+        : shader_(std::move(shader)), borderColor_(borderColor), borderThicknessPx_(borderThicknessPx),
+          cornerRadiusPx_(cornerRadiusPx)
     {
+        SetFillColor(fillColor);
         glGenVertexArrays(1, &VAO_);
         glGenBuffers(1, &VBO_);
         glGenBuffers(1, &EBO_);
     }
 
+    void Panel::SetFillColor(const glm::vec4 &color)
+    {
+        glm::vec3 rgb = glm::vec3(color);
+        fillColorTop_ = glm::vec4(glm::clamp(rgb * (1.0f + kAutoShadeFactor), 0.0f, 1.0f), color.a);
+        fillColorBottom_ = glm::vec4(glm::clamp(rgb * (1.0f - kAutoShadeFactor), 0.0f, 1.0f), color.a);
+    }
+
     std::shared_ptr<Panel> Panel::Create(std::shared_ptr<ResourceManager> rmanager, float x, float y, float width,
                                           float height, const glm::vec4 &fillColor, const glm::vec4 &borderColor,
-                                          float borderThicknessPx)
+                                          float borderThicknessPx, float cornerRadiusPx)
     {
         auto shader = rmanager->LoadShader("shaders/panel_vertex.glsl", "shaders/panel_fragment.glsl", "Panel");
         if (!shader)
@@ -26,7 +41,8 @@ namespace Forge
             return nullptr;
         }
 
-        auto panel = std::shared_ptr<Panel>(new Panel(std::move(shader), fillColor, borderColor, borderThicknessPx));
+        auto panel = std::shared_ptr<Panel>(
+            new Panel(std::move(shader), fillColor, borderColor, borderThicknessPx, cornerRadiusPx));
         panel->x_ = x;
         panel->y_ = y;
         panel->width_ = width;
@@ -131,16 +147,29 @@ namespace Forge
 
         shader_->Use();
         shader_->SetMat4("uProjection", projection);
-        shader_->SetVec4("uFillColor", fillColor_);
+        shader_->SetVec4("uFillColorTop", fillColorTop_);
+        shader_->SetVec4("uFillColorBottom", fillColorBottom_);
         shader_->SetVec4("uBorderColor", borderColor_);
-        glm::vec2 borderThicknessUV = borderThicknessPx_ > 0.0f
-                                           ? glm::vec2(borderThicknessPx_ / width_, borderThicknessPx_ / height_)
-                                           : glm::vec2(0.0f);
-        shader_->SetVec2("uBorderThicknessUV", borderThicknessUV);
+        shader_->SetVec2("uSizePx", glm::vec2(width_, height_));
+        shader_->SetFloat("uBorderThicknessPx", borderThicknessPx_);
+        // Clamped so a radius request bigger than the Panel itself can't invert the SDF's
+        // inner box (glm::min, not std::min -- width_/height_ are floats, no ambiguity, but
+        // this matches the glm types already in play here).
+        shader_->SetFloat("uCornerRadiusPx", glm::min(cornerRadiusPx_, 0.5f * glm::min(width_, height_)));
+
+        shader_->SetBool("uHasTexture", texture_ != nullptr);
+        if (texture_)
+        {
+            texture_->Bind(0);
+            shader_->SetInt("uTexture", 0);
+        }
 
         glBindVertexArray(VAO_);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
         glBindVertexArray(0);
+
+        if (texture_)
+            texture_->Unbind(0);
 
         glBlendFunc(static_cast<GLenum>(prevBlendSrc), static_cast<GLenum>(prevBlendDst));
         if (!blendWasEnabled)
