@@ -133,6 +133,7 @@ namespace Forge
         }
 
         size_ = vertices.empty() ? glm::vec2(0.0f) : (maxCorner - minCorner);
+        topLeft_ = vertices.empty() ? glm::vec2(x_, y_) : minCorner;
         indexCount_ = static_cast<unsigned int>(indices.size());
 
         glBindVertexArray(VAO_);
