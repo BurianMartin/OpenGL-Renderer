@@ -22,7 +22,7 @@
  *
  * Forge has zero compile-time dependency on demo-layer types — demo
  * application code lives in the separate `Demo` namespace instead
- * (`include/Demo/`, `src/Demo/`). See CLAUDE.md's "Forge/Demo separation" notes.
+ * (`include/Demo/`, `src/Demo/`). See docs/DEVELOPMENT.md's "Forge/Demo separation" notes.
  */
 namespace Forge
 {

@@ -140,7 +140,7 @@ install(TARGETS EngineCore
 # into OpenGL_App, not EngineCore, so they have no symbols in the installed static library;
 # installing the headers without them would produce link errors for anyone who tried to use
 # Demo:: classes against the installed package. Demo is app-specific example code, not part
-# of the reusable engine (see CLAUDE.md's Forge/Demo namespace split) -- a new consumer
+# of the reusable engine (see docs/DEVELOPMENT.md's Forge/Demo namespace split) -- a new consumer
 # project doesn't want or need it.
 install(DIRECTORY include/
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
@@ -152,7 +152,7 @@ install(DIRECTORY include/
 # pair, Panel's shader pair, and the default font DebugOverlayLayer/demo code load by that
 # exact relative path.
 # Forge resolves resource paths relative to the running process's working directory by design
-# (see CLAUDE.md's "always run from project root"), so these are installed as reference copies,
+# (see docs/DEVELOPMENT.md's "always run from project root"), so these are installed as reference copies,
 # not auto-discovered by the installed library at runtime — a new consumer project needs its
 # own copies (or symlinks) of these specific files in ITS working directory, at these same
 # relative paths (shaders/..., fonts/...), for any Forge feature that loads them by name to work.

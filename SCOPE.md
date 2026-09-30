@@ -39,7 +39,7 @@ consumer project: a handful of Forge features (`DebugOverlayLayer`'s wireframe-o
 shader, `Text`'s shader pair, the shared vertex shader, the default debug font) load their
 asset by a hardcoded path relative to the *process's working directory* at runtime, not
 relative to the install prefix — this is the same "always run from project root" constraint
-`CLAUDE.md` already documents for this repo's own demo, just now relevant to a second
+`docs/DEVELOPMENT.md` already documents for this repo's own demo, just now relevant to a second
 repo too. `cmake --install` copies those specific files to `<prefix>/share/forge/{shaders,fonts}`
 as reference copies; a new consumer needs its own copies (or symlinks) of them at
 `shaders/...`/`fonts/...` relative to wherever *it* runs from.

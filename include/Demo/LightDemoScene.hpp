@@ -18,7 +18,7 @@
  * @brief Engine-layer demo code built on top of the `Forge` engine (`LightDemoScene`,
  * `LightDemoLayer`, `MultiCameraDemoScene`).
  *
- * Depends on `Forge` but not vice versa — see CLAUDE.md's "Forge/Demo
+ * Depends on `Forge` but not vice versa — see docs/DEVELOPMENT.md's "Forge/Demo
  * separation" notes.
  */
 namespace Demo

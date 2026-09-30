@@ -59,7 +59,7 @@ make demo     # build + run just the demo app
 make lib      # build only libEngineCore.a, no demo code — for an external consumer project
 ```
 
-See `CLAUDE.md` for the full build/test/architecture reference, `ROADMAP.md` for
+See [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) for the full build/test/architecture reference, `ROADMAP.md` for
 open bugs and in-progress work, and `SCOPE.md` for why this exists and how much of
 the roadmap is actually in scope.
 
